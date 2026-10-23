@@ -17,12 +17,15 @@ const MAX_DETAIL_CHARS = 2000;
 
 /** Removes credentials embedded in URLs and caps length. Output reaches the renderer and the database. */
 export function redact(text: string): string {
+  return redactSecrets(text).slice(0, MAX_DETAIL_CHARS).trim();
+}
+
+/** Same masking without the cap or trim, for streams where whitespace and length must survive. */
+export function redactSecrets(text: string): string {
   return text
     .replace(/(\b[a-z][a-z0-9+.-]*:\/\/)[^\s/@]+@/gi, '$1***@')
     .replace(/\b(gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})\b/g, '***')
-    .replace(/(authorization:\s*)\S+(\s+\S+)?/gi, '$1***')
-    .slice(0, MAX_DETAIL_CHARS)
-    .trim();
+    .replace(/(authorization:\s*)\S+(\s+\S+)?/gi, '$1***');
 }
 
 export function classifyGitFailure(stdout: string, stderr: string): ClassifiedFailure {

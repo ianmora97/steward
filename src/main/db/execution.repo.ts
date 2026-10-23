@@ -18,6 +18,7 @@ interface ExecutionRow {
   duration_ms: number | null;
   error_code: string | null;
   error_message: string | null;
+  log_path: string | null;
 }
 
 function toExecution(row: ExecutionRow): Execution {
@@ -37,7 +38,8 @@ function toExecution(row: ExecutionRow): Execution {
     finishedAt: row.finished_at,
     durationMs: row.duration_ms,
     errorCode: row.error_code,
-    errorMessage: row.error_message
+    errorMessage: row.error_message,
+    logPath: row.log_path
   };
 }
 
@@ -45,10 +47,10 @@ export function insertExecution(db: SqlDatabase, execution: Execution): void {
   db.prepare(
     `INSERT INTO executions (id, project_id, repository_id, kind, context, command, args_json, cwd, status,
                              exit_code, confirmed_by_user, started_at, finished_at, duration_ms,
-                             error_code, error_message)
+                             error_code, error_message, log_path)
      VALUES (:id, :project_id, :repository_id, :kind, :context, :command, :args_json, :cwd, :status,
              :exit_code, :confirmed_by_user, :started_at, :finished_at, :duration_ms,
-             :error_code, :error_message)`
+             :error_code, :error_message, :log_path)`
   ).run({
     id: execution.id,
     project_id: execution.projectId,
@@ -65,7 +67,35 @@ export function insertExecution(db: SqlDatabase, execution: Execution): void {
     finished_at: execution.finishedAt,
     duration_ms: execution.durationMs,
     error_code: execution.errorCode,
-    error_message: execution.errorMessage
+    error_message: execution.errorMessage,
+    log_path: execution.logPath
+  });
+}
+
+export interface ExecutionFinish {
+  status: Execution['status'];
+  exitCode: number | null;
+  finishedAt: string;
+  durationMs: number;
+  errorCode: string | null;
+  errorMessage: string | null;
+}
+
+/** A plain UPDATE: if the row was removed by a cascade (project deleted), it is a no-op, not an error. */
+export function updateExecutionFinish(db: SqlDatabase, id: string, finish: ExecutionFinish): void {
+  db.prepare(
+    `UPDATE executions
+        SET status = :status, exit_code = :exit_code, finished_at = :finished_at,
+            duration_ms = :duration_ms, error_code = :error_code, error_message = :error_message
+      WHERE id = :id`
+  ).run({
+    id,
+    status: finish.status,
+    exit_code: finish.exitCode,
+    finished_at: finish.finishedAt,
+    duration_ms: finish.durationMs,
+    error_code: finish.errorCode,
+    error_message: finish.errorMessage
   });
 }
 

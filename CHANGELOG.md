@@ -11,6 +11,12 @@ Categories: **Added** · **Changed** · **Fixed** · **Removed** · **Security**
 ## [Unreleased]
 
 ### Added
+- **M4** Terminal tab: real interactive shells (colours, resize, full-screen programs) opened in the folder of any repository of the project.
+- **M4** Several terminals per project, with tabs. They keep running when you switch tab or project and repaint with their history when you come back.
+- **M4** Pick the shell for each terminal from a menu, like Windows Terminal: detected PowerShell, Windows PowerShell, Command Prompt, Git Bash and WSL on Windows (`$SHELL` and `/etc/shells` elsewhere). Only shells that exist on your machine are listed.
+- **M4** Custom shells (name, executable, arguments) shared by every project, and a default shell chosen per project.
+- **M4** Each terminal session is recorded in the Activity history, with its exit code and duration; its output is saved to a log file capped at 5 MB, and the tab tells you when the cap is reached.
+- **M4** At most 8 terminals at once; closing a tab, deleting the project or repository, or quitting Steward ends their processes.
 - **M3** Commit graph: the history drawn with lanes, merges (hollow dot), and HEAD / branch / remote / tag labels.
 - **M3** History is read a page at a time (400 commits) and only the visible rows are rendered, so large repositories stay responsive.
 - **M3** Commit details: author, committer, parents (click to navigate), changed files with `+`/`−` counts, and a per-file diff. Merge commits are compared with their first parent; root commits are supported.
@@ -30,6 +36,7 @@ Categories: **Added** · **Changed** · **Fixed** · **Removed** · **Security**
 - **M1** CI on Windows and Linux: typecheck, lint, build and package.
 - **Tooling** ESLint with `typescript-eslint` and `react-hooks`; `npm run lint`, `lint:fix` and `check` (typecheck + lint).
 - **Docs** `CLAUDE.md` with project rules, architecture and security notes; this changelog; a redesigned README.
+- **M4** Tooling: `node-pty` (pseudo-terminals) and `@xterm/xterm` added; the native module is unpacked from the app archive when packaging.
 
 ### Changed
 - **M3** Git tab layout: the staging area (or the selected commit's details) sits on the right, and the code diff sits under the graph, so code and files are visible together. Tabs are *Changes*, *Branches*, *Activity*, *Repositories*.
@@ -44,6 +51,7 @@ Categories: **Added** · **Changed** · **Fixed** · **Removed** · **Security**
 - **Tooling** `graphify-out/` and the Obsidian `vault/` are no longer tracked; they stay local and are ignored by Git.
 
 ### Security
+- **M4** The renderer can only send keystrokes and resize requests to terminals that already exist; folder and shell are resolved in the main process, and there is still no channel that runs a command string. Terminal logs mask URL credentials and GitHub tokens.
 - **M3** Commit hashes and file paths are validated in the schema before they reach `git`.
 - **M2** Git runs with `GIT_TERMINAL_PROMPT=0`, `GIT_LITERAL_PATHSPECS=1` and `LC_ALL=C`; arguments are always arrays, so a branch or file named like shell syntax is plain data.
 - **M2** Destructive actions (discard, force-delete a branch) require `confirmed: true` in the IPC schema, and the UI states what will be lost first.

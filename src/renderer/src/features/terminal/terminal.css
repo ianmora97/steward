@@ -1,0 +1,142 @@
+.termpanel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+  min-height: 0;
+  padding: 12px;
+}
+
+.termbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.termbar__tabs {
+  flex-wrap: wrap;
+  border-bottom: none;
+}
+
+.termbar__item {
+  display: inline-flex;
+  align-items: center;
+}
+
+.termbar__new {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.termsettings {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.termsettings__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.termnotice {
+  margin: 0;
+  padding: 6px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg-raised);
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+
+.termstack {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.termstack__item {
+  position: absolute;
+  inset: 0;
+  display: none;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-sunken);
+}
+
+.termstack__item--active {
+  display: block;
+}
+
+.termview {
+  width: 100%;
+  height: 100%;
+}
+
+.termmenu {
+  position: relative;
+  display: inline-flex;
+}
+
+.termmenu__toggle {
+  margin-left: 1px;
+  padding-inline: 8px;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.termmenu__list {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  min-width: 200px;
+  padding: 4px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+}
+
+.termmenu__item {
+  padding: 6px 10px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.termmenu__item:hover {
+  background: var(--bg-sunken);
+}
+
+.termmenu__item--settings {
+  margin-top: 4px;
+  border-top: 1px solid var(--border);
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  color: var(--text-muted);
+}
+
+.termsettings__list,
+.termsettings__form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.termsettings__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}

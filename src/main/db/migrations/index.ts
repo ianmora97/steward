@@ -121,6 +121,58 @@ const m002: Migration = {
   `
 };
 
-export const MIGRATIONS: readonly Migration[] = [m001, m002];
+/**
+ * Terminal sessions: one `executions` row per session, with the long output
+ * spilled to a capped log file, plus a per-project shell choice. Environment
+ * variables are deliberately not stored: they would invite secrets into the
+ * database.
+ */
+const m003: Migration = {
+  version: 3,
+  name: 'terminal',
+  sql: `
+    ALTER TABLE executions ADD COLUMN log_path TEXT;
+
+    CREATE TABLE project_terminal_settings (
+      project_id      TEXT NOT NULL PRIMARY KEY REFERENCES projects (id) ON DELETE CASCADE,
+      shell_path      TEXT,
+      shell_args_json TEXT NOT NULL DEFAULT '[]',
+      updated_at      TEXT NOT NULL
+    );
+  `
+};
+
+/**
+ * Shell profiles are global (like Windows Terminal's), and each project only
+ * remembers which one it opens by default. A shell path saved per project by
+ * the first terminal release becomes a custom profile so nothing is lost; the
+ * old columns stay unused rather than being dropped.
+ */
+const m004: Migration = {
+  version: 4,
+  name: 'terminal-profiles',
+  sql: `
+    CREATE TABLE terminal_profiles (
+      id              TEXT NOT NULL PRIMARY KEY,
+      name            TEXT NOT NULL,
+      shell_path      TEXT NOT NULL,
+      shell_args_json TEXT NOT NULL DEFAULT '[]',
+      created_at      TEXT NOT NULL
+    );
+
+    ALTER TABLE project_terminal_settings ADD COLUMN default_profile_id TEXT;
+
+    INSERT INTO terminal_profiles (id, name, shell_path, shell_args_json, created_at)
+      SELECT 'legacy-' || project_id, 'Custom shell', shell_path, shell_args_json, updated_at
+        FROM project_terminal_settings
+       WHERE shell_path IS NOT NULL;
+
+    UPDATE project_terminal_settings
+       SET default_profile_id = 'legacy-' || project_id
+     WHERE shell_path IS NOT NULL;
+  `
+};
+
+export const MIGRATIONS: readonly Migration[] = [m001, m002, m003, m004];
 
 export const LATEST_SCHEMA_VERSION = MIGRATIONS.reduce((max, m) => Math.max(max, m.version), 0);

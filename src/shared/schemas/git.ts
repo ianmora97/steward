@@ -177,7 +177,9 @@ export const executionSchema = z.object({
   finishedAt: isoTimestampSchema.nullable(),
   durationMs: z.number().int().nullable(),
   errorCode: z.string().nullable(),
-  errorMessage: z.string().nullable()
+  errorMessage: z.string().nullable(),
+  /** Where long output spilled to disk (terminal sessions). Null for runs that keep everything inline. */
+  logPath: z.string().nullable()
 });
 
 export type GitFileEntry = z.infer<typeof gitFileEntrySchema>;

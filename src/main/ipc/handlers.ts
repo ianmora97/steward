@@ -30,6 +30,17 @@ import {
   validateRepositoryPathInputSchema
 } from '@shared/schemas/repository';
 import {
+  terminalCreateInputSchema,
+  terminalGetSettingsInputSchema,
+  terminalDeleteProfileInputSchema,
+  terminalListInputSchema,
+  terminalResizeInputSchema,
+  terminalSaveProfileInputSchema,
+  terminalSessionIdInputSchema,
+  terminalSetSettingsInputSchema,
+  terminalWriteInputSchema
+} from '@shared/schemas/terminal';
+import {
   listTabsInputSchema,
   reorderTabsInputSchema,
   restoreTabsInputSchema,
@@ -69,6 +80,14 @@ import {
   removeRepository,
   validateRepositoryPath
 } from '../services/repository.service';
+import {
+  deleteProfile,
+  getSettings,
+  listProfiles,
+  saveProfile,
+  setSettings
+} from '../services/terminal-settings.service';
+import type { TerminalService } from '../services/terminal.service';
 import { listTabs, reorderTabs, restoreDefaultTabs, setTabVisibility } from '../services/tab.service';
 
 /**
@@ -88,6 +107,7 @@ export interface IpcHandlerDefinition<Input = unknown, Output = unknown> {
 
 export interface IpcContext {
   database: StewardDatabase;
+  terminal: TerminalService;
   /** Supplied by the Electron layer; see src/main/index.ts. */
   readAppInfo: () => Promise<AppInfo>;
   /** Opens the OS folder picker. Cancelling is a normal outcome, not an error. */
@@ -176,7 +196,10 @@ export function buildHandlerDefinitions(context: IpcContext): IpcHandlerDefiniti
     defineHandler({
       channel: IPC_CHANNELS.projectsDelete,
       schema: projectIdPayloadSchema,
-      handle: (input) => deleteProject(db, input.id)
+      handle: (input) => {
+        context.terminal.closeByProject(input.id);
+        return deleteProject(db, input.id);
+      }
     }),
 
     defineHandler({
@@ -192,7 +215,10 @@ export function buildHandlerDefinitions(context: IpcContext): IpcHandlerDefiniti
     defineHandler({
       channel: IPC_CHANNELS.repositoriesRemove,
       schema: repositoryIdPayloadSchema,
-      handle: (input) => removeRepository(db, input.id)
+      handle: (input) => {
+        context.terminal.closeByRepository(input.id);
+        return removeRepository(db, input.id);
+      }
     }),
     defineHandler({
       channel: IPC_CHANNELS.repositoriesValidatePath,
@@ -315,6 +341,71 @@ export function buildHandlerDefinitions(context: IpcContext): IpcHandlerDefiniti
       channel: IPC_CHANNELS.gitCommitDiff,
       schema: gitCommitDiffInputSchema,
       handle: (input) => getCommitDiff(db, input)
+    }),
+
+    defineHandler({
+      channel: IPC_CHANNELS.terminalCreate,
+      schema: terminalCreateInputSchema,
+      handle: (input) => context.terminal.create(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.terminalWrite,
+      schema: terminalWriteInputSchema,
+      handle: (input) => {
+        context.terminal.write(input);
+        return null;
+      }
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.terminalResize,
+      schema: terminalResizeInputSchema,
+      handle: (input) => {
+        context.terminal.resize(input);
+        return null;
+      }
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.terminalClose,
+      schema: terminalSessionIdInputSchema,
+      handle: (input) => {
+        context.terminal.close(input);
+        return null;
+      }
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.terminalList,
+      schema: terminalListInputSchema,
+      handle: (input) => context.terminal.list(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.terminalAttach,
+      schema: terminalSessionIdInputSchema,
+      handle: (input) => context.terminal.attach(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.terminalGetSettings,
+      schema: terminalGetSettingsInputSchema,
+      handle: (input) => getSettings(db, input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.terminalSetSettings,
+      schema: terminalSetSettingsInputSchema,
+      handle: (input) => setSettings(db, input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.terminalListProfiles,
+      schema: emptyPayloadSchema,
+      handle: () => listProfiles(db)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.terminalSaveProfile,
+      schema: terminalSaveProfileInputSchema,
+      handle: (input) => saveProfile(db, input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.terminalDeleteProfile,
+      schema: terminalDeleteProfileInputSchema,
+      handle: (input) => deleteProfile(db, input)
     })
   ];
 }

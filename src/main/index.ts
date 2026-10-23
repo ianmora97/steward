@@ -1,16 +1,18 @@
 import { join } from 'node:path';
 import { BrowserWindow, app, dialog, shell } from 'electron';
-import type { AppInfo, DirectoryPick } from '@shared/types/ipc';
+import { TERMINAL_EVENTS, type AppInfo, type DirectoryPick } from '@shared/types/ipc';
 import { openStewardDatabase, type StewardDatabase } from './db/connection';
 import { registerIpcHandlers } from './ipc/register';
 import { validateExistingDirectory } from './security/paths';
 import { getGitVersion } from './services/git.service';
+import { createTerminalService, type TerminalService } from './services/terminal.service';
 
 const isDev = !app.isPackaged;
 const rendererDevUrl = process.env['ELECTRON_RENDERER_URL'];
 
 let mainWindow: BrowserWindow | null = null;
 let database: StewardDatabase | null = null;
+let terminal: TerminalService | null = null;
 
 function databaseFilePath(): string {
   // An override keeps development and manual testing off the real database.
@@ -187,8 +189,22 @@ function startup(): void {
       (migration.applied.length > 0 ? `, applied ${migration.applied.join(', ')}` : '')
   );
 
+  const sendToWindow = (channel: string, payload: unknown): void => {
+    const target = mainWindow;
+    if (target !== null && !target.isDestroyed() && !target.webContents.isDestroyed()) {
+      target.webContents.send(channel, payload);
+    }
+  };
+  terminal = createTerminalService({
+    db: database.db,
+    logDirectory: join(app.getPath('userData'), 'terminal-logs'),
+    emitData: (event) => sendToWindow(TERMINAL_EVENTS.data, event),
+    emitExit: (event) => sendToWindow(TERMINAL_EVENTS.exit, event)
+  });
+
   registerIpcHandlers({
     database,
+    terminal,
     readAppInfo,
     pickDirectory
   });
@@ -223,6 +239,7 @@ if (!app.requestSingleInstanceLock()) {
   });
 
   app.on('will-quit', () => {
+    terminal?.shutdown();
     try {
       database?.db.close();
     } catch (error) {
