@@ -1,0 +1,15 @@
+appId: com.ianmora.steward
+productName: Steward
+directories:
+  output: release
+  buildResources: build
+files:
+  - out/**
+  - package.json
+win:
+  target: dir
+linux:
+  target: dir
+  category: Development
+mac:
+  target: dir
