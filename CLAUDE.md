@@ -23,7 +23,12 @@ Steward es un workspace de escritorio centrado en proyectos para DevOps: un proy
 - Además del export automático, mantén a mano las notas de proyecto en `vault/steward/`: `Proyecto.md` (explicación y arquitectura), `Decisiones.md` (decisiones técnicas con fecha y motivo) y `Estado.md` (milestone actual, qué funciona, qué falta, qué debe probar el usuario). Actualízalas al terminar cada tarea relevante.
 - Las notas de graphify son generadas: no las edites a mano, se sobrescriben.
 
-### 5. Lint y check de código
+### 5. Changelog, ramas y PRs
+- `CHANGELOG.md` se actualiza en **cada commit** (bajo `Unreleased`, categorías Added / Changed / Fixed / Removed / Security / Docs / Tooling, con etiqueta de milestone). Sirve como base de las release notes: escribe cada línea pensando en un usuario, no en un diff.
+- La rama se llama como el milestone en curso (`milestone-N-descripcion`). Antes de abrir un PR, comprueba que el nombre coincide con el milestone actual; si no, renómbrala.
+- Al terminar un milestone: `npm run check`, README y CHANGELOG al día, push y PR hacia `master` **antes** de empezar el siguiente milestone. Luego crea la rama del milestone nuevo.
+
+### 6. Lint y check de código
 - `npm run lint` (ESLint), `npm run lint:fix` (arreglos seguros), `npm run typecheck`, `npm run check` (typecheck + lint).
 - No silencies reglas con `eslint-disable` ni `@ts-ignore` sin una razón escrita en el mismo comentario.
 

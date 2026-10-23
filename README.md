@@ -1,10 +1,36 @@
+<div align="center">
+
 # Steward
 
-Steward brings CI/CD, deployments, infrastructure, and observability together in one workspace, simplifying the journey from code to production.
+**One workspace for code, pipelines and deployments — per project.**
 
-A project-centric desktop workspace: one project owns many repositories, environments and integrations, each with its own tabs. Git is the first tab of every project; terminal, SSH, GitHub Actions and deployments arrive in later milestones.
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue?style=flat-square)](LICENSE)
+[![Status](https://img.shields.io/badge/status-milestone%203%20of%207-orange?style=flat-square)](CHANGELOG.md)
+[![Electron](https://img.shields.io/badge/Electron-45-47848F?style=flat-square&logo=electron&logoColor=white)](https://www.electronjs.org/)
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Node](https://img.shields.io/badge/Node-%E2%89%A5%2022.12-339933?style=flat-square&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+[![SQLite](https://img.shields.io/badge/SQLite-local%20only-003B57?style=flat-square&logo=sqlite&logoColor=white)](#local-persistence)
+[![Platforms](https://img.shields.io/badge/platforms-Windows%20%C2%B7%20macOS%20%C2%B7%20Linux-555?style=flat-square)](#prerequisites)
 
-**Status: Milestone 3 — commit graph.** The Graph section draws the history with lanes, merges, branches and tags, loads it a page at a time, and shows each commit's metadata, changed files and diffs. Before that, Milestone 2 — everyday Git: Projects, repositories and the tab system persist, and the Git tab does status, diffs, stage/unstage, commit, branches (create, check out, delete) and fetch/pull/push against the installed `git`. Destructive actions (discard, force-delete a branch, abort a merge) ask for confirmation, and every action is recorded in the Activity list. Everything else is scaffolding with a clearly labelled panel, not a simulated feature.
+</div>
+
+Steward is a desktop app organised around **projects**, not repositories. A project can own several repositories (a web app, an API, infrastructure), environments and integrations, and each project gets its own set of tabs. Git comes first; terminal, SSH, GitHub Actions and deployments follow. It plugs into the CI/CD you already have instead of replacing it, keeps everything on your machine, and never reimplements Git: it asks the `git` you have installed.
+
+## What works today
+
+| | Feature |
+| --- | --- |
+| ✅ | **Projects** with many repositories each, persisted locally |
+| ✅ | **Configurable tabs** per project (reorder, hide, restore) |
+| ✅ | **Git — everyday**: status, diffs, stage / unstage, commit, branches, fetch / pull / push, abort merge |
+| ✅ | **Commit graph** with lanes, merges, branch / tag labels, paged history and per-commit file diffs |
+| ✅ | **Activity log**: every Git action Steward runs, with arguments, exit code and duration |
+| 🔜 | Terminal (M4) · SSH (M5) · GitHub PRs and Actions (M6) · Deployments (M7) |
+
+Destructive actions (discard, force-delete a branch, abort a merge) always ask first and say exactly what is lost. Push never forces.
+
+See the [CHANGELOG](CHANGELOG.md) for what changed in each step.
 
 ## Prerequisites
 
@@ -12,18 +38,30 @@ A project-centric desktop workspace: one project owns many repositories, environ
 | --- | --- | --- |
 | Node.js | ≥ 22.12 | Build toolchain, and `node:sqlite` for the local database |
 | npm | ≥ 9 | Dependency install |
-| Git | ≥ 2.39 | Steward orchestrates the installed Git; it never reimplements it |
+| Git | ≥ 2.39 | Steward orchestrates the installed Git |
 
-No database server, and no C++ toolchain: Steward has no native modules to compile.
+No database server and no C++ toolchain: there are no native modules to compile.
 
-## Setup
+## Run it locally
 
 ```bash
+git clone https://github.com/ianmora97/steward.git
+cd steward
 npm install
 npm run dev
 ```
 
-## Scripts
+Then create a project, open the **Git** tab and add a repository folder. Steward checks it with Git before recording anything.
+
+> Only one Steward instance can run at a time. Close any running copy before `npm run dev`.
+
+Keep the database somewhere else while developing:
+
+```bash
+STEWARD_DB_PATH=/tmp/steward-dev.sqlite npm run dev
+```
+
+### Scripts
 
 | Script | What it does |
 | --- | --- |
@@ -31,13 +69,13 @@ npm run dev
 | `npm run build` | Builds main, preload and renderer into `out/` |
 | `npm start` | Runs the built app without packaging |
 | `npm run typecheck` | Type-checks the Node and renderer projects separately |
-| `npm run lint` | ESLint over the whole repo (`lint:fix` applies safe fixes) |
+| `npm run lint` | ESLint (`lint:fix` applies safe fixes) |
 | `npm run check` | typecheck + lint — run before every commit |
 | `npm run package` | Builds, then produces an unpacked app in `release/` |
 
-There are no automated tests by design: the owner tests manually.
+There are no automated tests by design; testing is manual.
 
-## Architecture
+## How it is built
 
 ```
 src/
@@ -45,14 +83,14 @@ src/
 │  ├─ db/        node:sqlite driver, migrations, data access
 │  ├─ exec/      the single safe route to a child process
 │  ├─ security/  path validation
-│  ├─ services/  project, repository, git, tab
+│  ├─ services/  project, repository, tab, git (exec, parse, errors, ops, history)
 │  └─ ipc/       channel definitions (Electron-free) + registration
 ├─ preload/      the contextBridge surface, and nothing else
 ├─ renderer/     React UI; no Node access, no shell, no filesystem
-└─ shared/       types and Zod schemas used on both sides
+└─ shared/       types, Zod schemas and the graph lane layout, used on both sides
 ```
 
-The renderer calls named functions on `window.steward`; the preload forwards them to a declared channel; the main process validates the payload with Zod and runs a service. Adding a capability means adding all three. There is no generic `invoke(channel, payload)` and no `runCommand(string)`, because either one would hand the renderer arbitrary execution through the boundary that exists to prevent it.
+The renderer calls named functions on `window.steward`; the preload forwards them to a declared channel; the main process validates the payload with Zod and runs a service. Adding a capability means adding all three. There is no generic `invoke(channel, payload)` and no `runCommand(string)`: either would hand the renderer arbitrary execution through the boundary that exists to prevent it.
 
 Every operation returns one shape:
 
@@ -64,37 +102,20 @@ type StewardResult<T> =
 
 ### Security posture
 
-- Windows are created with `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`, `webviewTag: false`. The e2e suite asserts from inside the running renderer that `require`, `process`, `module` and `Buffer` are all absent.
-- A Content Security Policy is applied as a response header; navigation to other origins is cancelled; external links open in the OS browser only when the URL is plain `https:`.
-- Child processes are started with an executable plus an argument array — never `shell: true`, never a concatenated command string. Branch names, paths and remote output are treated as untrusted data; a branch named `$(touch_pwned)` is covered by a test.
-- Output is capped per execution and every run has a timeout and can be killed.
+- Windows use `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`, `webviewTag: false`, plus a strict Content Security Policy and guarded navigation. External links open in the OS browser only for plain `https:` URLs.
+- Child processes get an executable plus an argument array — never `shell: true`, never a concatenated string. Branch names, paths and remote output are untrusted data: a branch called `$(touch_pwned)` is just a name.
+- Git runs non-interactively with literal pathspecs; output is capped, every run has a timeout, and credentials or tokens are redacted before output leaves the main process.
 - Unexpected errors are logged in the main process and reported generically, so raw error text cannot carry paths or secrets into the UI.
 
 ### Local persistence
 
-SQLite through Node's built-in `node:sqlite`, in a single file under the OS application-data directory. `src/main/db/driver.ts` is a small interface, so the driver is replaceable in one file.
+SQLite through Node's built-in `node:sqlite`, in one file under the OS application-data directory, behind a small interface in `src/main/db/driver.ts` so the driver can be swapped in one place. Migrations are forward-only, applied at startup in a transaction, and a database that already holds data is copied to `<file>.v<n>.backup` before an upgrade.
 
-`better-sqlite3` was the first choice and remains the fallback, but it publishes no prebuilt binaries: installing it compiles from source and therefore requires MSVC on Windows. `node:sqlite` ships inside Node, so it needs no compilation and no per-Electron-release ABI rebuild. Running under Node 22 it prints an `ExperimentalWarning`; Electron 45 bundles Node 24, where the app itself runs without that warning.
+Steward stores only its own configuration and execution history. Git and provider data are re-read from Git and the provider APIs, never cached as a system of record.
 
-Migrations are forward-only (`src/main/db/migrations/`), applied at startup inside a transaction, tracked by `PRAGMA user_version` and audited in `schema_migrations`. A database that already holds data is copied to `<file>.v<n>.backup` before an upgrade.
+## Contributing
 
-Steward stores its own configuration and execution records only. Git and provider data are re-read from Git and the provider APIs rather than cached as a system of record.
-
-Override the database location while developing:
-
-```bash
-STEWARD_DB_PATH=/tmp/steward-dev.sqlite npm run dev
-```
-
-## Verifying Milestone 1 by hand
-
-1. `npm run dev`
-2. Create a project. It appears in the sidebar with a derived slug, and the Git tab is first.
-3. In the Git tab, point **Browse…** or the path field at a repository and press **Check**. Steward reports the work tree, branch, remote and provider, then **Add to project**.
-4. Point it at a folder that is not a repository. The reason is shown in the UI, and nothing is recorded.
-5. In **Workspace**, reorder and hide tabs. The Git tab refuses to be hidden and says why.
-6. Restart the app. Projects, repositories and tab order are all still there.
-7. In devtools, confirm `window.require`, `window.process` and `window.module` are `undefined` and `Object.keys(window.steward)` lists only `app`, `git`, `projects`, `repositories` and `tabs`.
+Branches are named after the milestone they carry (for example `milestone-3-commit-graph`). Run `npm run check` before committing, add a line to [CHANGELOG.md](CHANGELOG.md) with every commit, and keep commits in [Conventional Commits](https://www.conventionalcommits.org/) style.
 
 ## Licence
 
