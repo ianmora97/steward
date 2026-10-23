@@ -36,3 +36,7 @@ graphify-out/.graphify_*
 
 # Obsidian per-user state
 vault/**/.obsidian/workspace.json
+
+# Local Obsidian vault: notes stay on this machine only
+vault/
+graphify-out/20*/
