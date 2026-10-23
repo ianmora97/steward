@@ -1,4 +1,5 @@
 import type { CommitFile } from '@shared/schemas/graph';
+import { Icon } from '../../components/Icon';
 import { useGitStore } from '../../stores/git.store';
 import { DiffView } from './DiffView';
 
@@ -11,7 +12,7 @@ const STATUS_LETTER: Record<CommitFile['status'], string> = {
   typechange: 'T'
 };
 
-/** Metadata and changed files of the selected commit, with a per-file diff. */
+/** Summary card of the selected commit, with its changed files in their own scrolling list below. */
 export function CommitInfo(): React.JSX.Element {
   const detail = useGitStore((state) => state.commitDetail);
   const commitFile = useGitStore((state) => state.commitFile);
@@ -31,65 +32,57 @@ export function CommitInfo(): React.JSX.Element {
 
   return (
     <aside className="commitdetail" aria-label="Commit details">
-      <div className="commitdetail__info">
-      <div className="commitdetail__head">
-        <h3 className="commitdetail__subject">{detail.subject}</h3>
-        <button type="button" className="button button--ghost button--small" onClick={() => void selectCommit(null)}>
-          Close
-        </button>
-      </div>
+      <section className="commitcard">
+        <div className="commitcard__head">
+          <h3 className="commitcard__subject" title={detail.subject}>
+            {detail.subject}
+          </h3>
+          <button
+            type="button"
+            className="iconbutton"
+            onClick={() => void selectCommit(null)}
+            aria-label="Close commit"
+            title="Close"
+          >
+            <Icon name="x" size={14} />
+          </button>
+        </div>
 
-      {detail.body !== '' && <pre className="commitdetail__body">{detail.body}</pre>}
+        {detail.body !== '' && <pre className="commitcard__body">{detail.body}</pre>}
 
-      <dl className="commitdetail__meta">
-        <div>
-          <dt>Commit</dt>
-          <dd>
-            <code>{detail.sha}</code>
-          </dd>
+        <div className="commitcard__meta">
+          <span className="commitcard__author" title={`${detail.author} <${detail.email}>`}>
+            {detail.author}
+          </span>
+          <span className="commitcard__dot">·</span>
+          <span>{new Date(detail.authorDate).toLocaleDateString()}</span>
+          <code className="commitcard__sha" title={detail.sha}>
+            {detail.sha.slice(0, 7)}
+          </code>
         </div>
-        <div>
-          <dt>{detail.parents.length > 1 ? 'Parents (merge)' : 'Parent'}</dt>
-          <dd>
-            {detail.parents.length === 0 ? (
-              'none — root commit'
-            ) : (
-              detail.parents.map((parent) => (
-                <button
-                  key={parent}
-                  type="button"
-                  className="linkbutton"
-                  onClick={() => void selectCommit(parent)}
-                >
-                  {parent.slice(0, 7)}
-                </button>
-              ))
-            )}
-          </dd>
-        </div>
-        <div>
-          <dt>Author</dt>
-          <dd>
-            {detail.author} &lt;{detail.email}&gt; · {new Date(detail.authorDate).toLocaleString()}
-          </dd>
-        </div>
-        {detail.committer !== detail.author && (
-          <div>
-            <dt>Committer</dt>
-            <dd>
-              {detail.committer} · {new Date(detail.commitDate).toLocaleString()}
-            </dd>
+
+        {detail.parents.length > 0 && (
+          <div className="commitcard__meta">
+            <span className="commitcard__label">{detail.parents.length > 1 ? 'Merges' : 'Parent'}</span>
+            {detail.parents.map((parent) => (
+              <button key={parent} type="button" className="linkbutton" onClick={() => void selectCommit(parent)}>
+                {parent.slice(0, 7)}
+              </button>
+            ))}
           </div>
         )}
-      </dl>
 
-      <h4 className="filegroup__title">
-        {detail.files.length} file{detail.files.length === 1 ? '' : 's'} changed ·{' '}
-        <span className="stat--add">+{additions}</span> <span className="stat--del">−{deletions}</span>
-        {detail.isMerge && ' · compared with the first parent'}
-      </h4>
+        <div className="commitcard__stats">
+          <span>
+            {detail.files.length} file{detail.files.length === 1 ? '' : 's'}
+          </span>
+          <span className="stat--add">+{additions}</span>
+          <span className="stat--del">−{deletions}</span>
+          {detail.isMerge && <span className="chip">vs first parent</span>}
+        </div>
+      </section>
 
-      <ul className="filelist">
+      <ul className="filelist commitdetail__files">
         {detail.files.map((file) => (
           <li key={file.path} className={`file${commitFile === file.path ? ' file--active' : ''}`}>
             <button
@@ -119,8 +112,6 @@ export function CommitInfo(): React.JSX.Element {
           </li>
         ))}
       </ul>
-      </div>
-
     </aside>
   );
 }

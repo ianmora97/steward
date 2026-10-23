@@ -26,7 +26,8 @@ Steward is a desktop app organised around **projects**, not repositories. A proj
 | ✅ | **Git — everyday**: status, diffs, stage / unstage, commit, branches, fetch / pull / push, abort merge |
 | ✅ | **Commit graph** with lanes, merges, branch / tag labels, paged history and per-commit file diffs |
 | ✅ | **Activity log**: every Git action Steward runs, with arguments, exit code and duration |
-| ✅ | **Terminal**: real shells per project (several tabs, kept alive while you navigate), shell configurable per project, capped session logs |
+| ✅ | **Terminal**: real shells per project (several tabs, split view, rename, copy / paste, kept alive while you navigate), shell configurable per project, capped session logs |
+| ✅ | **Overview** home screen with every project, search and a collapsible sidebar |
 | 🔜 | SSH (M5) · GitHub PRs and Actions (M6) · Deployments (M7) |
 
 Destructive actions (discard, force-delete a branch, abort a merge) always ask first and say exactly what is lost. Push never forces.

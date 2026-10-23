@@ -1,18 +1,29 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { EmptyState } from './components/EmptyState';
 import { ErrorBanner } from './components/ErrorBanner';
+import { Overview } from './features/overview/Overview';
+import { NewProjectModal } from './features/projects/NewProjectModal';
 import { ProjectSidebar } from './features/projects/ProjectSidebar';
 import { GitPanel } from './features/git/GitPanel';
 import { TerminalPanel } from './features/terminal/TerminalPanel';
 import { PendingPanel } from './features/workspace/PendingPanel';
 import { TabBar } from './features/workspace/TabBar';
 import { WorkspaceSettings } from './features/workspace/WorkspaceSettings';
+import type { TabKey } from '@shared/schemas/tabs';
 import { useAppStore } from './stores/app.store';
 
 function ActivePanel(): React.JSX.Element {
   const activeTabKey = useAppStore((state) => state.activeTabKey);
 
-  switch (activeTabKey) {
+  return (
+    <div key={activeTabKey ?? 'none'} className="enter enter--fill">
+      <PanelFor tabKey={activeTabKey} />
+    </div>
+  );
+}
+
+function PanelFor({ tabKey }: { tabKey: TabKey | null }): React.JSX.Element {
+  switch (tabKey) {
     case 'git':
       return <GitPanel />;
     case 'settings':
@@ -48,6 +59,16 @@ function ActivePanel(): React.JSX.Element {
   }
 }
 
+const COLLAPSED_KEY = 'steward.sidebarCollapsed';
+
+function readCollapsed(): boolean {
+  try {
+    return localStorage.getItem(COLLAPSED_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
 export function App(): React.JSX.Element {
   const initialize = useAppStore((state) => state.initialize);
   const error = useAppStore((state) => state.error);
@@ -57,6 +78,9 @@ export function App(): React.JSX.Element {
   const projects = useAppStore((state) => state.projects);
   const selectedProjectId = useAppStore((state) => state.selectedProjectId);
   const tabs = useAppStore((state) => state.tabs);
+  const view = useAppStore((state) => state.view);
+  const [creating, setCreating] = useState(false);
+  const [collapsed, setCollapsed] = useState(readCollapsed);
 
   useEffect(() => {
     void initialize();
@@ -65,21 +89,31 @@ export function App(): React.JSX.Element {
   const project = projects.find((candidate) => candidate.id === selectedProjectId) ?? null;
 
   return (
-    <div className="app">
-      <ProjectSidebar />
+    <div className={`app${collapsed ? ' app--collapsed' : ''}`}>
+      <ProjectSidebar
+        onNewProject={() => setCreating(true)}
+        collapsed={collapsed}
+        onToggle={() =>
+          setCollapsed((value) => {
+            try {
+              localStorage.setItem(COLLAPSED_KEY, value ? '0' : '1');
+            } catch {
+              // The preference just won't persist.
+            }
+            return !value;
+          })
+        }
+      />
 
       <main className="workspace">
         {error !== null && <ErrorBanner error={error} onDismiss={dismissError} />}
 
-        {project === null ? (
-          <div className="workspace__body">
-            <EmptyState
-              title="Create your first project"
-              description="A project is an application or system. It can own several repositories, environments and integrations — one project is not one repository."
-            />
+        {view === 'overview' || project === null ? (
+          <div key="overview" className="workspace__body enter">
+            <Overview onNewProject={() => setCreating(true)} />
           </div>
         ) : (
-          <>
+          <div key={project.id} className="workspace__project enter">
             <header className="workspace__header">
               <div>
                 <h2 className="workspace__title">{project.name}</h2>
@@ -95,8 +129,10 @@ export function App(): React.JSX.Element {
             <div className="workspace__body">
               <ActivePanel />
             </div>
-          </>
+          </div>
         )}
+
+        {creating && <NewProjectModal onClose={() => setCreating(false)} />}
 
         <footer className="statusbar">
           {appInfo === null ? (

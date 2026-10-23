@@ -1,4 +1,5 @@
 import type { GitDiff } from '@shared/schemas/git';
+import { Icon } from '../../components/Icon';
 
 function lineClass(line: string): string {
   if (line.startsWith('+++') || line.startsWith('---') || line.startsWith('diff ') || line.startsWith('index ')) {
@@ -13,7 +14,12 @@ function lineClass(line: string): string {
 /** Renders Git's own unified diff, line by line. Nothing is reinterpreted. */
 export function DiffView({ diff, loading }: { diff: GitDiff | null; loading: boolean }): React.JSX.Element {
   if (diff === null) {
-    return <p className="diff__placeholder">{loading ? 'Loading diff…' : 'Select a file to see its changes.'}</p>;
+    return (
+      <div className="diff__empty">
+        <Icon name="git" size={18} />
+        <span>{loading ? 'Loading diff…' : 'Select a file to see its changes.'}</span>
+      </div>
+    );
   }
   if (diff.binary) {
     return <p className="diff__placeholder">Binary file — Git does not show a text diff for it.</p>;

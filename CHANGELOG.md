@@ -11,6 +11,13 @@ Categories: **Added** · **Changed** · **Fixed** · **Removed** · **Security**
 ## [Unreleased]
 
 ### Added
+- **M4.5** New home screen: an Overview of all your projects with search, summary cards (projects, repositories, open terminals, Git version) and one card per project showing its repositories and when it last changed. Steward opens on it instead of jumping into the last project.
+- **M4.5** New project dialog, opened from the Overview or the sidebar `+`.
+- **M4.5** Icons on every project tab (Git, Terminal, SSH, Actions, Deployments, Workspace) and in the sidebar.
+- **M4.5** Terminal split view: the *Split* button shows every terminal at once — two side by side, three as two above and one below, and so on. Click a pane to focus it.
+- **M4.5** Opening the Terminal tab starts a terminal automatically when the project has none.
+- **M4.5** Rename terminals: double-click a terminal tab, Enter to save, Esc to cancel.
+- **M4.5** Animations: panels slide and fade in, dialogs and menus fade and slide in and out, project cards rise in. They are disabled if your system asks for reduced motion.
 - **M4** Terminal tab: real interactive shells (colours, resize, full-screen programs) opened in the folder of any repository of the project.
 - **M4** Several terminals per project, with tabs. They keep running when you switch tab or project and repaint with their history when you come back.
 - **M4** Pick the shell for each terminal from a menu, like Windows Terminal: detected PowerShell, Windows PowerShell, Command Prompt, Git Bash and WSL on Windows (`$SHELL` and `/etc/shells` elsewhere). Only shells that exist on your machine are listed.
@@ -39,10 +46,19 @@ Categories: **Added** · **Changed** · **Fixed** · **Removed** · **Security**
 - **M4** Tooling: `node-pty` (pseudo-terminals) and `@xterm/xterm` added; the native module is unpacked from the app archive when packaging.
 
 ### Changed
+- **M4.5** Commit details are a compact raised card (title, author, date, short hash, parents, file and line totals); the file list below scrolls on its own. Email, full hash and the committer line are gone (hover for the full hash and email).
+- **M4.5** Git changes: the commit message box stays pinned at the bottom while only the file lists scroll; the graph is taller; the diff area appears only after you pick a file.
+- **M4.5** The sidebar collapses to an icon strip (button next to the logo) and remembers its state.
+- **M4.5** Shell settings open in a dialog over the app (gear button) instead of squeezing in above the terminal.
+- **M4.5** App redesign: navy theme, sidebar with the Steward logo, Overview and project list, and a blue accent.
+- **M4.5** Deleting a project moved from the sidebar to its card in the Overview.
+- **M4.5** With many terminals open the tab strip scrolls sideways instead of shrinking every tab.
 - **M3** Git tab layout: the staging area (or the selected commit's details) sits on the right, and the code diff sits under the graph, so code and files are visible together. Tabs are *Changes*, *Branches*, *Activity*, *Repositories*.
 - **M1** Database uses Node's built-in `node:sqlite` instead of `better-sqlite3`, so there is no native module or C++ toolchain to install. It sits behind the `SqlDatabase` interface in `src/main/db/driver.ts`.
 
 ### Fixed
+- **M4.5** Copy and paste in the terminal: Ctrl+C copies when text is selected (otherwise it still interrupts), Ctrl+Shift+C copies, Ctrl+V / Ctrl+Shift+V pastes, and right-click copies the selection or pastes.
+- **M4.5** Dropdown arrows are now vertically centred with space to the right edge.
 - **M3** Scrolling: the root layout grid grew with its content and clipped the workspace, so long views (branches, file lists) could not be scrolled. Regions now scroll on their own.
 - **M2** Loose equality in the Git toolbar flagged by the new lint rules.
 

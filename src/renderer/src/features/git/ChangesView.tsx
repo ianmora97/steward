@@ -175,41 +175,41 @@ export function ChangesView(): React.JSX.Element {
             </ul>
           )}
         </section>
-
-        <section className="commitbox">
-          <label className="field__label" htmlFor="commit-message">
-            Commit message
-          </label>
-          <textarea
-            id="commit-message"
-            className="field__input commitbox__input"
-            rows={3}
-            value={message}
-            onChange={(event) => setMessage(event.target.value)}
-            onKeyDown={(event) => {
-              if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') void submit();
-            }}
-            placeholder={status.mergeInProgress ? 'Merge commit message' : 'Summarize what changed and why'}
-          />
-          <div className="row">
-            <button
-              type="button"
-              className="button button--primary"
-              disabled={busy || !canCommit}
-              onClick={() => void submit()}
-            >
-              Commit {staged.length > 0 ? `${staged.length} file${staged.length === 1 ? '' : 's'}` : ''}
-            </button>
-            <span className="commitbox__hint">
-              {conflicted.length > 0
-                ? 'Resolve conflicts first'
-                : staged.length === 0 && !status.mergeInProgress
-                  ? 'Stage changes to commit'
-                  : 'Ctrl+Enter'}
-            </span>
-          </div>
-        </section>
       </div>
+
+      <section className="commitbox">
+        <label className="field__label" htmlFor="commit-message">
+          Commit message
+        </label>
+        <textarea
+          id="commit-message"
+          className="field__input commitbox__input"
+          rows={3}
+          value={message}
+          onChange={(event) => setMessage(event.target.value)}
+          onKeyDown={(event) => {
+            if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') void submit();
+          }}
+          placeholder={status.mergeInProgress ? 'Merge commit message' : 'Summarize what changed and why'}
+        />
+        <div className="row">
+          <button
+            type="button"
+            className="button button--primary"
+            disabled={busy || !canCommit}
+            onClick={() => void submit()}
+          >
+            Commit {staged.length > 0 ? `${staged.length} file${staged.length === 1 ? '' : 's'}` : ''}
+          </button>
+          <span className="commitbox__hint">
+            {conflicted.length > 0
+              ? 'Resolve conflicts first'
+              : staged.length === 0 && !status.mergeInProgress
+                ? 'Stage changes to commit'
+                : 'Ctrl+Enter'}
+          </span>
+        </div>
+      </section>
 
       {pendingDiscard !== null && (
         <ConfirmDialog
