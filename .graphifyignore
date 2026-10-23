@@ -1,0 +1,6 @@
+vault/
+out/
+release/
+node_modules/
+*.tsbuildinfo
+package-lock.json
