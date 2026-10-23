@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { EmptyState } from './components/EmptyState';
 import { ErrorBanner } from './components/ErrorBanner';
 import { ProjectSidebar } from './features/projects/ProjectSidebar';
-import { RepositoryPanel } from './features/repositories/RepositoryPanel';
+import { GitPanel } from './features/git/GitPanel';
 import { PendingPanel } from './features/workspace/PendingPanel';
 import { TabBar } from './features/workspace/TabBar';
 import { WorkspaceSettings } from './features/workspace/WorkspaceSettings';
@@ -13,7 +13,7 @@ function ActivePanel(): React.JSX.Element {
 
   switch (activeTabKey) {
     case 'git':
-      return <RepositoryPanel />;
+      return <GitPanel />;
     case 'settings':
       return <WorkspaceSettings />;
     case 'terminal':

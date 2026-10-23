@@ -86,6 +86,41 @@ const m001: Migration = {
   `
 };
 
-export const MIGRATIONS: readonly Migration[] = [m001];
+/**
+ * One uniform history for everything Steward runs. Milestone 2 writes `git_op`
+ * rows; later milestones add kinds without a schema change, which is why `kind`
+ * carries no CHECK constraint. `context` stays explicit so a local command can
+ * never be mistaken for a remote one.
+ */
+const m002: Migration = {
+  version: 2,
+  name: 'executions',
+  sql: `
+    CREATE TABLE executions (
+      id                 TEXT NOT NULL PRIMARY KEY,
+      project_id         TEXT NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+      repository_id      TEXT REFERENCES repositories (id) ON DELETE SET NULL,
+      kind               TEXT NOT NULL,
+      context            TEXT NOT NULL DEFAULT 'local' CHECK (context IN ('local', 'remote')),
+      command            TEXT NOT NULL,
+      args_json          TEXT NOT NULL,
+      cwd                TEXT,
+      status             TEXT NOT NULL
+                           CHECK (status IN ('pending', 'running', 'succeeded', 'failed', 'cancelled', 'timed_out')),
+      exit_code          INTEGER,
+      confirmed_by_user  INTEGER NOT NULL DEFAULT 0 CHECK (confirmed_by_user IN (0, 1)),
+      started_at         TEXT NOT NULL,
+      finished_at        TEXT,
+      duration_ms        INTEGER,
+      error_code         TEXT,
+      error_message      TEXT
+    );
+
+    CREATE INDEX idx_executions_project ON executions (project_id, started_at);
+    CREATE INDEX idx_executions_repository ON executions (repository_id, started_at);
+  `
+};
+
+export const MIGRATIONS: readonly Migration[] = [m001, m002];
 
 export const LATEST_SCHEMA_VERSION = MIGRATIONS.reduce((max, m) => Math.max(max, m.version), 0);

@@ -141,7 +141,7 @@ async function run() {
   check(
     'bridge exposes only the declared namespaces',
     await cdp.evaluate('Object.keys(window.steward).sort()'),
-    ['app', 'projects', 'repositories', 'tabs']
+    ['app', 'git', 'projects', 'repositories', 'tabs']
   );
   check(
     'bridge exposes no generic passthrough',
@@ -197,6 +197,35 @@ async function run() {
     `window.steward.repositories.validatePath({ localPath: ${JSON.stringify(projectRoot)} })`
   );
   check('a real work tree is recognised', thisRepository.data.isGitRepository, true);
+
+  // ---- Milestone 2: Git operations through the real bridge ---------------
+  const added = await cdp.evaluate(
+    `window.steward.repositories.add({ projectId: ${JSON.stringify(created.data.id)}, localPath: ${JSON.stringify(projectRoot)} })`
+  );
+  check('a repository can be added to the project', added.success, true);
+  const repositoryId = JSON.stringify(added.data.id);
+
+  const gitStatus = await cdp.evaluate(`window.steward.git.status({ repositoryId: ${repositoryId} })`);
+  check('git status succeeds on the real repository', gitStatus.success, true);
+  check('git status reports a branch name', typeof gitStatus.data.branch, 'string');
+
+  const branches = await cdp.evaluate(`window.steward.git.listBranches({ repositoryId: ${repositoryId} })`);
+  check('branch list includes the current branch', branches.data.branches.some((b) => b.current), true);
+
+  const traversal = await cdp.evaluate(
+    `window.steward.git.stage({ repositoryId: ${repositoryId}, paths: ["../outside.txt"] })`
+  );
+  check('a path leaving the repository is rejected', traversal.error.code, 'VALIDATION_FAILED');
+
+  const unconfirmedDiscard = await cdp.evaluate(
+    `window.steward.git.discard({ repositoryId: ${repositoryId}, paths: ["README.md"] })`
+  );
+  check('discard without confirmation is rejected', unconfirmedDiscard.error.code, 'VALIDATION_FAILED');
+
+  const unknownRepository = await cdp.evaluate(
+    'window.steward.git.status({ repositoryId: "0192f0c0-dead-7000-8000-000000000000" })'
+  );
+  check('an unknown repository id is NOT_FOUND', unknownRepository.error.code, 'NOT_FOUND');
 
   cdp.close();
   app.child.kill();

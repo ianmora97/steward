@@ -41,6 +41,23 @@ const api: StewardApi = {
     reorder: (input) => invoke(IPC_CHANNELS.tabsReorder, input),
     setVisibility: (input) => invoke(IPC_CHANNELS.tabsSetVisibility, input),
     restoreDefaults: (input) => invoke(IPC_CHANNELS.tabsRestoreDefaults, input)
+  },
+  git: {
+    status: (input) => invoke(IPC_CHANNELS.gitStatus, input),
+    diff: (input) => invoke(IPC_CHANNELS.gitDiff, input),
+    stage: (input) => invoke(IPC_CHANNELS.gitStage, input),
+    unstage: (input) => invoke(IPC_CHANNELS.gitUnstage, input),
+    discard: (input) => invoke(IPC_CHANNELS.gitDiscard, input),
+    commit: (input) => invoke(IPC_CHANNELS.gitCommit, input),
+    listBranches: (input) => invoke(IPC_CHANNELS.gitListBranches, input),
+    createBranch: (input) => invoke(IPC_CHANNELS.gitCreateBranch, input),
+    checkout: (input) => invoke(IPC_CHANNELS.gitCheckout, input),
+    deleteBranch: (input) => invoke(IPC_CHANNELS.gitDeleteBranch, input),
+    fetch: (input) => invoke(IPC_CHANNELS.gitFetch, input),
+    pull: (input) => invoke(IPC_CHANNELS.gitPull, input),
+    push: (input) => invoke(IPC_CHANNELS.gitPush, input),
+    abortMerge: (input) => invoke(IPC_CHANNELS.gitAbortMerge, input),
+    listExecutions: (input) => invoke(IPC_CHANNELS.gitListExecutions, input)
   }
 };
 

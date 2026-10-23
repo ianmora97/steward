@@ -7,6 +7,18 @@ import {
   updateProjectInputSchema
 } from '@shared/schemas/project';
 import {
+  gitCheckoutInputSchema,
+  gitCommitInputSchema,
+  gitCreateBranchInputSchema,
+  gitDeleteBranchInputSchema,
+  gitDiffInputSchema,
+  gitDiscardInputSchema,
+  gitPullInputSchema,
+  gitStageInputSchema,
+  gitStatusInputSchema,
+  listExecutionsInputSchema
+} from '@shared/schemas/git';
+import {
   addRepositoryInputSchema,
   listRepositoriesInputSchema,
   repositoryIdPayloadSchema,
@@ -28,6 +40,23 @@ import {
   setProjectArchived,
   updateProject
 } from '../services/project.service';
+import {
+  abortMerge,
+  checkoutBranch,
+  commit,
+  createBranch,
+  deleteBranch,
+  discardPaths,
+  fetchRemote,
+  getDiff,
+  getStatus,
+  listBranches,
+  listExecutions,
+  pull,
+  push,
+  stagePaths,
+  unstagePaths
+} from '../services/git-ops.service';
 import {
   addRepository,
   listRepositories,
@@ -189,6 +218,82 @@ export function buildHandlerDefinitions(context: IpcContext): IpcHandlerDefiniti
       channel: IPC_CHANNELS.tabsRestoreDefaults,
       schema: restoreTabsInputSchema,
       handle: (input) => restoreDefaultTabs(db, input.projectId)
+    }),
+
+    defineHandler({
+      channel: IPC_CHANNELS.gitStatus,
+      schema: gitStatusInputSchema,
+      handle: (input) => getStatus(db, input.repositoryId)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.gitDiff,
+      schema: gitDiffInputSchema,
+      handle: (input) => getDiff(db, input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.gitStage,
+      schema: gitStageInputSchema,
+      handle: (input) => stagePaths(db, input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.gitUnstage,
+      schema: gitStageInputSchema,
+      handle: (input) => unstagePaths(db, input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.gitDiscard,
+      schema: gitDiscardInputSchema,
+      handle: (input) => discardPaths(db, input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.gitCommit,
+      schema: gitCommitInputSchema,
+      handle: (input) => commit(db, input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.gitListBranches,
+      schema: gitStatusInputSchema,
+      handle: (input) => listBranches(db, input.repositoryId)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.gitCreateBranch,
+      schema: gitCreateBranchInputSchema,
+      handle: (input) => createBranch(db, input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.gitCheckout,
+      schema: gitCheckoutInputSchema,
+      handle: (input) => checkoutBranch(db, input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.gitDeleteBranch,
+      schema: gitDeleteBranchInputSchema,
+      handle: (input) => deleteBranch(db, input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.gitFetch,
+      schema: gitStatusInputSchema,
+      handle: (input) => fetchRemote(db, input.repositoryId)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.gitPull,
+      schema: gitPullInputSchema,
+      handle: (input) => pull(db, input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.gitPush,
+      schema: gitStatusInputSchema,
+      handle: (input) => push(db, input.repositoryId)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.gitAbortMerge,
+      schema: gitStatusInputSchema,
+      handle: (input) => abortMerge(db, input.repositoryId)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.gitListExecutions,
+      schema: listExecutionsInputSchema,
+      handle: (input) => listExecutions(db, input.repositoryId, input.limit)
     })
   ];
 }

@@ -12,6 +12,23 @@ import type {
   RepositoryProbe
 } from '../schemas/repository';
 import type {
+  Execution,
+  GitBranchList,
+  GitCheckoutInput,
+  GitCommitInput,
+  GitCommitResult,
+  GitCreateBranchInput,
+  GitDeleteBranchInput,
+  GitDiff,
+  GitDiffInput,
+  GitDiscardInput,
+  GitPullInput,
+  GitStageInput,
+  GitStatus,
+  GitSyncResult,
+  ListExecutionsInput
+} from '../schemas/git';
+import type {
   ReorderTabsInput,
   SetTabVisibilityInput,
   WorkspaceTab
@@ -44,7 +61,23 @@ export const IPC_CHANNELS = {
   tabsList: 'tabs:list',
   tabsReorder: 'tabs:reorder',
   tabsSetVisibility: 'tabs:setVisibility',
-  tabsRestoreDefaults: 'tabs:restoreDefaults'
+  tabsRestoreDefaults: 'tabs:restoreDefaults',
+
+  gitStatus: 'git:status',
+  gitDiff: 'git:diff',
+  gitStage: 'git:stage',
+  gitUnstage: 'git:unstage',
+  gitDiscard: 'git:discard',
+  gitCommit: 'git:commit',
+  gitListBranches: 'git:listBranches',
+  gitCreateBranch: 'git:createBranch',
+  gitCheckout: 'git:checkout',
+  gitDeleteBranch: 'git:deleteBranch',
+  gitFetch: 'git:fetch',
+  gitPull: 'git:pull',
+  gitPush: 'git:push',
+  gitAbortMerge: 'git:abortMerge',
+  gitListExecutions: 'git:listExecutions'
 } as const;
 
 export type IpcChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS];
@@ -98,5 +131,22 @@ export interface StewardApi {
     reorder: (input: ReorderTabsInput) => Promise<StewardResult<WorkspaceTab[]>>;
     setVisibility: (input: SetTabVisibilityInput) => Promise<StewardResult<WorkspaceTab[]>>;
     restoreDefaults: (input: { projectId: string }) => Promise<StewardResult<WorkspaceTab[]>>;
+  };
+  git: {
+    status: (input: { repositoryId: string }) => Promise<StewardResult<GitStatus>>;
+    diff: (input: GitDiffInput) => Promise<StewardResult<GitDiff>>;
+    stage: (input: GitStageInput) => Promise<StewardResult<GitStatus>>;
+    unstage: (input: GitStageInput) => Promise<StewardResult<GitStatus>>;
+    discard: (input: GitDiscardInput) => Promise<StewardResult<GitStatus>>;
+    commit: (input: GitCommitInput) => Promise<StewardResult<GitCommitResult>>;
+    listBranches: (input: { repositoryId: string }) => Promise<StewardResult<GitBranchList>>;
+    createBranch: (input: GitCreateBranchInput) => Promise<StewardResult<GitBranchList>>;
+    checkout: (input: GitCheckoutInput) => Promise<StewardResult<GitStatus>>;
+    deleteBranch: (input: GitDeleteBranchInput) => Promise<StewardResult<GitBranchList>>;
+    fetch: (input: { repositoryId: string }) => Promise<StewardResult<GitSyncResult>>;
+    pull: (input: GitPullInput) => Promise<StewardResult<GitSyncResult>>;
+    push: (input: { repositoryId: string }) => Promise<StewardResult<GitSyncResult>>;
+    abortMerge: (input: { repositoryId: string }) => Promise<StewardResult<GitStatus>>;
+    listExecutions: (input: ListExecutionsInput) => Promise<StewardResult<Execution[]>>;
   };
 }

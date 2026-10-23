@@ -4,12 +4,11 @@ import { EmptyState } from '../../components/EmptyState';
 import { useAppStore } from '../../stores/app.store';
 
 /**
- * The Git tab for Milestone 1: bind local repositories to the project and show
- * what Git actually reports about them.
+ * Binds local repositories to the project and shows what Git reports about a
+ * folder before it is added. It is the whole Git tab until the project has a
+ * repository, and the "Repositories" section afterwards.
  *
- * A folder is probed before it can be added, and the probe result is shown
- * as-is. Status, diff, branches and the commit graph arrive in Milestones 2
- * and 3; nothing here pretends to do that work yet.
+ * A folder is probed before it can be added, and the probe result is shown as-is.
  */
 export function RepositoryPanel(): React.JSX.Element {
   const repositories = useAppStore((state) => state.repositories);
@@ -155,8 +154,8 @@ export function RepositoryPanel(): React.JSX.Element {
       <section className="card card--muted">
         <h2 className="card__title">Coming next</h2>
         <p className="card__hint">
-          Working tree status, diffs, staging and commits arrive in Milestone 2; the commit graph in
-          Milestone 3. Steward will read all of it from the installed Git rather than caching its own copy.
+          The commit graph arrives in Milestone 3. Steward reads status, branches and history from the
+          installed Git each time rather than caching its own copy.
         </p>
       </section>
     </div>
