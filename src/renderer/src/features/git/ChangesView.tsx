@@ -47,7 +47,6 @@ function FileRow({
 export function ChangesView(): React.JSX.Element {
   const status = useGitStore((state) => state.status);
   const selected = useGitStore((state) => state.selected);
-  const diff = useGitStore((state) => state.diff);
   const busy = useGitStore((state) => state.busy);
   const selectFile = useGitStore((state) => state.selectFile);
   const stage = useGitStore((state) => state.stage);
@@ -212,11 +211,6 @@ export function ChangesView(): React.JSX.Element {
         </section>
       </div>
 
-      <div className="changes__diff">
-        {selected !== null && <p className="changes__diff-title">{selected.staged ? 'Staged' : 'Unstaged'} · {selected.path}</p>}
-        <DiffView diff={diff} loading={busy && selected !== null} />
-      </div>
-
       {pendingDiscard !== null && (
         <ConfirmDialog
           title="Discard changes?"
@@ -239,6 +233,24 @@ export function ChangesView(): React.JSX.Element {
           </ul>
         </ConfirmDialog>
       )}
+    </div>
+  );
+}
+
+/** The diff of the file selected in the working-tree lists; shown below the graph. */
+export function WorkingDiff(): React.JSX.Element {
+  const selected = useGitStore((state) => state.selected);
+  const diff = useGitStore((state) => state.diff);
+  const busy = useGitStore((state) => state.busy);
+
+  return (
+    <div className="diffpane">
+      {selected !== null && (
+        <p className="changes__diff-title">
+          {selected.staged ? 'Staged' : 'Unstaged'} · {selected.path}
+        </p>
+      )}
+      <DiffView diff={diff} loading={busy && selected !== null} />
     </div>
   );
 }

@@ -12,10 +12,9 @@ const STATUS_LETTER: Record<CommitFile['status'], string> = {
 };
 
 /** Metadata and changed files of the selected commit, with a per-file diff. */
-export function CommitDetail(): React.JSX.Element {
+export function CommitInfo(): React.JSX.Element {
   const detail = useGitStore((state) => state.commitDetail);
   const commitFile = useGitStore((state) => state.commitFile);
-  const commitDiff = useGitStore((state) => state.commitDiff);
   const selectCommit = useGitStore((state) => state.selectCommit);
   const selectCommitFile = useGitStore((state) => state.selectCommitFile);
 
@@ -122,10 +121,19 @@ export function CommitDetail(): React.JSX.Element {
       </ul>
       </div>
 
-      <div className="commitdetail__diff">
-        {commitFile !== null && <p className="changes__diff-title">{commitFile}</p>}
-        <DiffView diff={commitFile === null ? null : commitDiff} loading={commitFile !== null} />
-      </div>
     </aside>
+  );
+}
+
+/** Diff of the file picked in the commit's file list; shown below the graph. */
+export function CommitDiffPane(): React.JSX.Element {
+  const commitFile = useGitStore((state) => state.commitFile);
+  const commitDiff = useGitStore((state) => state.commitDiff);
+
+  return (
+    <div className="diffpane">
+      {commitFile !== null && <p className="changes__diff-title">{commitFile}</p>}
+      <DiffView diff={commitFile === null ? null : commitDiff} loading={commitFile !== null} />
+    </div>
   );
 }
