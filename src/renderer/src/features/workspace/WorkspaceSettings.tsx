@@ -1,5 +1,6 @@
 import { useAppStore } from '../../stores/app.store';
-import { tabLabel } from './TabBar';
+import { Icon } from '../../components/Icon';
+import { tabIcon, tabLabel } from './TabBar';
 
 /**
  * Tab layout is a stored preference, so reordering, hiding and restoring are
@@ -30,6 +31,7 @@ export function WorkspaceSettings(): React.JSX.Element {
             <li key={tab.id} className="tab-admin__row">
               <span className="tab-admin__position">{index + 1}</span>
               <span className="tab-admin__name">
+                <Icon name={tabIcon(tab.tabKey)} />
                 {tabLabel(tab.tabKey)}
                 {tab.pinned && <span className="chip chip--pinned">always on</span>}
               </span>

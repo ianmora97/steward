@@ -18,7 +18,11 @@ export default defineConfig({
   renderer: {
     root: resolve(__dirname, 'src/renderer'),
     plugins: [react()],
-    resolve: { alias: { '@shared': shared, '@renderer': resolve(__dirname, 'src/renderer/src') } },
+    resolve: { alias: {
+        '@shared': shared,
+        '@renderer': resolve(__dirname, 'src/renderer/src'),
+        '@assets': resolve(__dirname, 'src/assets')
+      } },
     build: {
       minify: true,
       rollupOptions: { input: { index: resolve(__dirname, 'src/renderer/index.html') } }

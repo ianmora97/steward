@@ -70,6 +70,48 @@ export function TerminalView({
       for (const event of queued.splice(0)) apply(event, result.data.offset);
     });
 
+    // Electron gives xterm no working clipboard shortcuts, and Ctrl+C must stay SIGINT
+    // unless text is selected. Copy and paste go through the async clipboard instead.
+    const copySelection = (): void => {
+      const text = term.getSelection();
+      if (text !== '') void navigator.clipboard.writeText(text);
+    };
+    const pasteClipboard = (): void => {
+      void navigator.clipboard
+        .readText()
+        .then((text) => {
+          if (text !== '') term.paste(text);
+        })
+        .catch(() => undefined);
+    };
+    term.attachCustomKeyEventHandler((event) => {
+      if (event.type !== 'keydown' || !(event.ctrlKey || event.metaKey)) return true;
+      const key = event.key.toLowerCase();
+      if (key === 'c' && (event.shiftKey || term.hasSelection())) {
+        event.preventDefault();
+        copySelection();
+        return false;
+      }
+      if (key === 'v') {
+        // preventDefault stops the browser's own paste event from pasting a second time.
+        event.preventDefault();
+        pasteClipboard();
+        return false;
+      }
+      return true;
+    });
+    // Right click behaves like Windows Terminal: copy the selection, otherwise paste.
+    const onContextMenu = (event: MouseEvent): void => {
+      event.preventDefault();
+      if (term.hasSelection()) {
+        copySelection();
+        term.clearSelection();
+      } else {
+        pasteClipboard();
+      }
+    };
+    container.addEventListener('contextmenu', onContextMenu);
+
     const input = term.onData((data) => {
       void window.steward.terminal.write({ sessionId, data });
     });
@@ -88,6 +130,7 @@ export function TerminalView({
     return () => {
       disposed = true;
       observer.disconnect();
+      container.removeEventListener('contextmenu', onContextMenu);
       input.dispose();
       unsubscribe();
       term.dispose();

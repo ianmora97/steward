@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useExitAnimation } from './useExitAnimation';
 
 /**
  * Confirmation for actions that cannot be undone. The caller states exactly what
@@ -18,16 +19,19 @@ export function ConfirmDialog({
   onConfirm: () => void;
   onCancel: () => void;
 }): React.JSX.Element {
+  const { closing, requestClose } = useExitAnimation();
+  const cancel = (): void => requestClose(onCancel);
+
   useEffect(() => {
     function onKey(event: KeyboardEvent): void {
-      if (event.key === 'Escape') onCancel();
+      if (event.key === 'Escape') requestClose(onCancel);
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onCancel]);
+  }, [onCancel, requestClose]);
 
   return (
-    <div className="dialog__backdrop" onClick={onCancel}>
+    <div className={`dialog__backdrop${closing ? ' is-closing' : ''}`} onClick={cancel}>
       <div
         className="dialog"
         role="alertdialog"
@@ -40,10 +44,14 @@ export function ConfirmDialog({
         </h3>
         <div className="dialog__body">{children}</div>
         <div className="dialog__actions">
-          <button type="button" className="button" onClick={onCancel} autoFocus>
+          <button type="button" className="button" onClick={cancel} autoFocus>
             Cancel
           </button>
-          <button type="button" className="button button--danger" onClick={onConfirm}>
+          <button
+            type="button"
+            className="button button--danger"
+            onClick={() => requestClose(onConfirm)}
+          >
             {confirmLabel}
           </button>
         </div>

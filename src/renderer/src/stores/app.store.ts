@@ -12,9 +12,14 @@ import type { StewardError, StewardResult } from '@shared/types/result';
  * cached as a system of record: later milestones re-read them from Git and the
  * provider APIs.
  */
+export type AppView = 'overview' | 'project';
+
 interface AppState {
   appInfo: AppInfo | null;
+  view: AppView;
   projects: Project[];
+  /** Repositories of every project, for the overview cards. */
+  repositoriesByProject: Record<string, Repository[]>;
   selectedProjectId: string | null;
   repositories: Repository[];
   tabs: WorkspaceTab[];
@@ -24,6 +29,7 @@ interface AppState {
 
   initialize: () => Promise<void>;
   dismissError: () => void;
+  showOverview: () => void;
   selectProject: (projectId: string) => Promise<void>;
   createProject: (input: { name: string; description?: string }) => Promise<boolean>;
   deleteProject: (projectId: string) => Promise<void>;
@@ -88,9 +94,22 @@ export const useAppStore = create<AppState>((set, get) => {
     });
   }
 
+  /** Repositories of every project in one pass, so the overview cards need no per-card request. */
+  async function loadOverviewRepositories(projects: Project[]): Promise<void> {
+    const lists = await Promise.all(projects.map((project) => api().repositories.list({ projectId: project.id })));
+    const byProject: Record<string, Repository[]> = {};
+    projects.forEach((project, index) => {
+      const list = lists[index];
+      byProject[project.id] = list?.success ? list.data : [];
+    });
+    set({ repositoriesByProject: byProject });
+  }
+
   return {
     appInfo: null,
+    view: 'overview',
     projects: [],
+    repositoriesByProject: {},
     selectedProjectId: null,
     repositories: [],
     tabs: [],
@@ -104,23 +123,25 @@ export const useAppStore = create<AppState>((set, get) => {
 
       const projects = await unwrap(api().projects.list({}));
       set({ projects: projects ?? [] });
+      await loadOverviewRepositories(projects ?? []);
+    },
 
-      const first = (projects ?? [])[0];
-      if (first !== undefined) {
-        set({ selectedProjectId: first.id });
-        await loadWorkspace(first.id);
-      }
+    showOverview: () => {
+      set({ view: 'overview' });
+      void loadOverviewRepositories(get().projects);
     },
 
     dismissError: () => set({ error: null }),
 
     refreshProjects: async () => {
       const projects = await unwrap(api().projects.list({}));
-      if (projects !== null) set({ projects });
+      if (projects === null) return;
+      set({ projects });
+      await loadOverviewRepositories(projects);
     },
 
     selectProject: async (projectId) => {
-      set({ selectedProjectId: projectId, activeTabKey: null });
+      set({ selectedProjectId: projectId, activeTabKey: null, view: 'project' });
       await loadWorkspace(projectId);
     },
 
@@ -138,12 +159,7 @@ export const useAppStore = create<AppState>((set, get) => {
 
       await get().refreshProjects();
       if (get().selectedProjectId === projectId) {
-        const next = get().projects[0];
-        if (next === undefined) {
-          set({ selectedProjectId: null, repositories: [], tabs: [], activeTabKey: null });
-        } else {
-          await get().selectProject(next.id);
-        }
+        set({ selectedProjectId: null, repositories: [], tabs: [], activeTabKey: null, view: 'overview' });
       }
     },
 

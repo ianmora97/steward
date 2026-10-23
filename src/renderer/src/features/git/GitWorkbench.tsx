@@ -12,6 +12,10 @@ import { GraphView } from './GraphView';
 export function GitWorkbench(): React.JSX.Element {
   const selectedCommit = useGitStore((state) => state.selectedCommit);
   const showingCommit = selectedCommit !== null;
+  // The diff area only exists once a file is picked, so the graph gets the whole height until then.
+  const hasFile = useGitStore((state) =>
+    state.selectedCommit !== null ? state.commitFile !== null : state.selected !== null
+  );
 
   return (
     <div className="workbench">
@@ -19,9 +23,11 @@ export function GitWorkbench(): React.JSX.Element {
         <section className="workbench__graph" aria-label="Commit graph">
           <GraphView />
         </section>
-        <section className="workbench__lower" aria-label="Code changes">
-          {showingCommit ? <CommitDiffPane /> : <WorkingDiff />}
-        </section>
+        {hasFile && (
+          <section className="workbench__lower" aria-label="Code changes">
+            {showingCommit ? <CommitDiffPane /> : <WorkingDiff />}
+          </section>
+        )}
       </div>
 
       <aside className="workbench__side" aria-label={showingCommit ? 'Commit' : 'Staging area'}>

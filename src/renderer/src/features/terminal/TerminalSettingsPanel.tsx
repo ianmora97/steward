@@ -71,8 +71,7 @@ export function TerminalSettingsPanel({
   }
 
   return (
-    <section className="card termsettings">
-      <h2 className="card__title">Shells</h2>
+    <section className="termsettings">
       {error !== null && <ErrorBanner error={error} onDismiss={() => setError(null)} />}
 
       <label className="field">

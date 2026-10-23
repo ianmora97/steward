@@ -10,12 +10,18 @@ import type { StewardError } from '@shared/types/result';
 interface TerminalState {
   sessionsByProject: Record<string, TerminalSession[]>;
   activeByProject: Record<string, string | null>;
+  /** User-chosen tab names. Display only: the main process knows sessions by id. */
+  titles: Record<string, string>;
+  /** Projects whose terminals are shown side by side instead of one at a time. */
+  splitByProject: Record<string, boolean>;
   error: StewardError | null;
 
   load: (projectId: string) => Promise<void>;
   create: (projectId: string, repositoryId: string, profileId?: string) => Promise<void>;
   close: (projectId: string, sessionId: string) => Promise<void>;
   setActive: (projectId: string, sessionId: string) => void;
+  rename: (sessionId: string, title: string) => void;
+  toggleSplit: (projectId: string) => void;
   applyExit: (sessionId: string, exitCode: number | null) => void;
   dismissError: () => void;
 }
@@ -23,6 +29,8 @@ interface TerminalState {
 export const useTerminalStore = create<TerminalState>((set, get) => ({
   sessionsByProject: {},
   activeByProject: {},
+  titles: {},
+  splitByProject: {},
   error: null,
 
   load: async (projectId) => {
@@ -88,6 +96,20 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
 
   setActive: (projectId, sessionId) =>
     set((state) => ({ activeByProject: { ...state.activeByProject, [projectId]: sessionId } })),
+
+  rename: (sessionId, title) =>
+    set((state) => {
+      const titles = { ...state.titles };
+      const trimmed = title.trim();
+      if (trimmed === '') delete titles[sessionId];
+      else titles[sessionId] = trimmed;
+      return { titles };
+    }),
+
+  toggleSplit: (projectId) =>
+    set((state) => ({
+      splitByProject: { ...state.splitByProject, [projectId]: !(state.splitByProject[projectId] ?? false) }
+    })),
 
   applyExit: (sessionId, exitCode) => {
     const next: Record<string, TerminalSession[]> = {};

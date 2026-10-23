@@ -1,6 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { TerminalProfile, TerminalSession } from '@shared/schemas/terminal';
 import { ErrorBanner } from '../../components/ErrorBanner';
+import { Icon } from '../../components/Icon';
+import { Modal } from '../../components/Modal';
+import { useExitAnimation } from '../../components/useExitAnimation';
 import { useAppStore } from '../../stores/app.store';
 import { useTerminalStore } from '../../stores/terminal.store';
 import { TerminalSettingsPanel } from './TerminalSettingsPanel';
@@ -23,6 +26,60 @@ async function fetchProfiles(
   };
 }
 
+function gcd(a: number, b: number): number {
+  return b === 0 ? a : gcd(b, a % b);
+}
+
+/**
+ * Grid for `count` terminals: as square as possible, filling rows top to bottom
+ * (2 → side by side, 3 → two above and one below, 5 → three above and two below).
+ * Columns are the common multiple of both row widths so a short last row stretches evenly.
+ */
+function splitLayout(count: number): { columns: number; rows: number; spanOf: (index: number) => number } {
+  const perRow = Math.max(1, Math.ceil(Math.sqrt(count)));
+  const rows = Math.max(1, Math.ceil(count / perRow));
+  const lastRow = Math.max(1, count - perRow * (rows - 1));
+  const columns = (perRow * lastRow) / gcd(perRow, lastRow);
+  return {
+    columns,
+    rows,
+    spanOf: (index) => (Math.floor(index / perRow) === rows - 1 ? columns / lastRow : columns / perRow)
+  };
+}
+
+function RenameInput({
+  initial,
+  onDone
+}: {
+  initial: string;
+  onDone: (title: string | null) => void;
+}): React.JSX.Element {
+  const [draft, setDraft] = useState(initial);
+  const finished = useRef(false);
+  const finish = (title: string | null): void => {
+    if (finished.current) return;
+    finished.current = true;
+    onDone(title);
+  };
+
+  return (
+    <input
+      className="termbar__rename"
+      value={draft}
+      autoFocus
+      maxLength={60}
+      aria-label="Terminal name"
+      onFocus={(event) => event.currentTarget.select()}
+      onChange={(event) => setDraft(event.target.value)}
+      onBlur={() => finish(draft)}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter') finish(draft);
+        if (event.key === 'Escape') finish(null);
+      }}
+    />
+  );
+}
+
 export function TerminalPanel(): React.JSX.Element {
   const projectId = useAppStore((state) => state.selectedProjectId);
   const repositories = useAppStore((state) => state.repositories);
@@ -32,19 +89,28 @@ export function TerminalPanel(): React.JSX.Element {
   const activeId = useTerminalStore((state) =>
     projectId === null ? null : (state.activeByProject[projectId] ?? null)
   );
+  const split = useTerminalStore((state) =>
+    projectId === null ? false : (state.splitByProject[projectId] ?? false)
+  );
+  const titles = useTerminalStore((state) => state.titles);
   const error = useTerminalStore((state) => state.error);
   const load = useTerminalStore((state) => state.load);
   const create = useTerminalStore((state) => state.create);
   const close = useTerminalStore((state) => state.close);
   const setActive = useTerminalStore((state) => state.setActive);
+  const rename = useTerminalStore((state) => state.rename);
+  const toggleSplit = useTerminalStore((state) => state.toggleSplit);
   const applyExit = useTerminalStore((state) => state.applyExit);
   const dismissError = useTerminalStore((state) => state.dismissError);
 
   const [chosenRepositoryId, setRepositoryId] = useState('');
   const [showSettings, setShowSettings] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
   const [profiles, setProfiles] = useState<TerminalProfile[]>([]);
   const [defaultProfileId, setDefaultProfileId] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const { closing: menuClosing, requestClose: requestMenuClose } = useExitAnimation();
 
   const reloadProfiles = useCallback(async (): Promise<void> => {
     if (projectId === null) return;
@@ -83,11 +149,37 @@ export function TerminalPanel(): React.JSX.Element {
     };
   }, [projectId, load, applyExit]);
 
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onPointerDown(event: MouseEvent): void {
+      if (menuRef.current !== null && !menuRef.current.contains(event.target as Node)) {
+        requestMenuClose(() => setMenuOpen(false));
+      }
+    }
+    document.addEventListener('mousedown', onPointerDown);
+    return () => document.removeEventListener('mousedown', onPointerDown);
+  }, [menuOpen, requestMenuClose]);
+
+  // Opening the tab always leaves a terminal to type in. Once per visit, so closing the last
+  // one on purpose does not bring it back.
+  const loaded = useTerminalStore((state) => projectId !== null && state.sessionsByProject[projectId] !== undefined);
+  const autoOpenedFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (projectId === null || !loaded || autoOpenedFor.current === projectId) return;
+    autoOpenedFor.current = projectId;
+    if (sessions.length === 0 && repositoryId !== '') void create(projectId, repositoryId);
+  }, [projectId, loaded, sessions.length, repositoryId, create]);
+
   if (projectId === null) return <div className="panel" />;
 
   const nameOf = (id: string): string =>
     repositories.find((repository) => repository.id === id)?.name ?? 'repository';
+  const titleOf = (session: TerminalSession, index: number): string =>
+    titles[session.id] ?? `${session.profileName} · ${nameOf(session.repositoryId)} #${index + 1}`;
   const active = sessions.find((session) => session.id === activeId) ?? null;
+  const showSplit = split && sessions.length > 1;
+  const layout = splitLayout(sessions.length);
+  const closeMenu = (): void => requestMenuClose(() => setMenuOpen(false));
 
   return (
     <div className="termpanel">
@@ -96,22 +188,40 @@ export function TerminalPanel(): React.JSX.Element {
       <div className="termbar">
         <nav className="subtabs termbar__tabs" aria-label="Terminal sessions">
           {sessions.map((session, index) => (
-            <span key={session.id} className="termbar__item">
+            <span
+              key={session.id}
+              className={`termbar__item${session.id === activeId ? ' termbar__item--active' : ''}`}
+            >
+              {renamingId === session.id ? (
+                <RenameInput
+                  initial={titleOf(session, index)}
+                  onDone={(title) => {
+                    setRenamingId(null);
+                    if (title !== null) rename(session.id, title);
+                  }}
+                />
+              ) : (
+                <button
+                  type="button"
+                  className="termbar__tab"
+                  title="Double-click to rename"
+                  onClick={() => setActive(projectId, session.id)}
+                  onDoubleClick={() => setRenamingId(session.id)}
+                >
+                  <Icon name="terminal" size={14} />
+                  <span className="termbar__title">{titleOf(session, index)}</span>
+                  {session.status === 'exited' && (
+                    <span className="termbar__exit">exit {session.exitCode ?? '?'}</span>
+                  )}
+                </button>
+              )}
               <button
                 type="button"
-                className={`subtabs__tab${session.id === activeId ? ' subtabs__tab--active' : ''}`}
-                onClick={() => setActive(projectId, session.id)}
-              >
-                {session.profileName} · {nameOf(session.repositoryId)} #{index + 1}
-                {session.status === 'exited' && ` (exit ${session.exitCode ?? '?'})`}
-              </button>
-              <button
-                type="button"
-                className="button button--ghost button--small"
+                className="iconbutton termbar__close"
                 aria-label="Close terminal"
                 onClick={() => void close(projectId, session.id)}
               >
-                ×
+                <Icon name="x" size={14} />
               </button>
             </span>
           ))}
@@ -129,7 +239,18 @@ export function TerminalPanel(): React.JSX.Element {
               </option>
             ))}
           </select>
-          <div className="termmenu">
+          <button
+            type="button"
+            className={`button${showSplit ? ' button--toggled' : ''}`}
+            aria-pressed={split}
+            disabled={sessions.length < 2}
+            title="Show all terminals at once"
+            onClick={() => toggleSplit(projectId)}
+          >
+            <Icon name="split" />
+            Split
+          </button>
+          <div className="termmenu" ref={menuRef}>
             <button
               type="button"
               className="button button--primary"
@@ -144,12 +265,12 @@ export function TerminalPanel(): React.JSX.Element {
               disabled={repositoryId === ''}
               aria-label="Choose a shell"
               aria-expanded={menuOpen}
-              onClick={() => setMenuOpen((value) => !value)}
+              onClick={() => (menuOpen ? closeMenu() : setMenuOpen(true))}
             >
-              ▾
+              <Icon name="chevronDown" />
             </button>
             {menuOpen && (
-              <div className="termmenu__list" role="menu">
+              <div className={`termmenu__list${menuClosing ? ' is-closing' : ''}`} role="menu">
                 {profiles.map((profile) => (
                   <button
                     key={profile.id}
@@ -157,7 +278,7 @@ export function TerminalPanel(): React.JSX.Element {
                     role="menuitem"
                     className="termmenu__item"
                     onClick={() => {
-                      setMenuOpen(false);
+                      closeMenu();
                       void create(projectId, repositoryId, profile.id);
                     }}
                   >
@@ -170,7 +291,7 @@ export function TerminalPanel(): React.JSX.Element {
                   role="menuitem"
                   className="termmenu__item termmenu__item--settings"
                   onClick={() => {
-                    setMenuOpen(false);
+                    closeMenu();
                     setShowSettings(true);
                   }}
                 >
@@ -179,19 +300,27 @@ export function TerminalPanel(): React.JSX.Element {
               </div>
             )}
           </div>
-          <button type="button" className="button" onClick={() => setShowSettings((value) => !value)}>
-            Shells
+          <button
+            type="button"
+            className="iconbutton iconbutton--bordered"
+            onClick={() => setShowSettings(true)}
+            aria-label="Shell settings"
+            title="Shell settings"
+          >
+            <Icon name="gear" />
           </button>
         </div>
       </div>
 
       {showSettings && (
-        <TerminalSettingsPanel
-          projectId={projectId}
-          profiles={profiles}
-          defaultProfileId={defaultProfileId}
-          onChanged={reloadProfiles}
-        />
+        <Modal title="Shell settings" className="dialog--settings" onClose={() => setShowSettings(false)}>
+          <TerminalSettingsPanel
+            projectId={projectId}
+            profiles={profiles}
+            defaultProfileId={defaultProfileId}
+            onChanged={reloadProfiles}
+          />
+        </Modal>
       )}
 
       {repositories.length === 0 && (
@@ -211,15 +340,45 @@ export function TerminalPanel(): React.JSX.Element {
         </p>
       )}
 
-      <div className="termstack">
-        {sessions.map((session) => (
-          <div
-            key={session.id}
-            className={`termstack__item${session.id === activeId ? ' termstack__item--active' : ''}`}
-          >
-            <TerminalView session={session} active={session.id === activeId} />
-          </div>
-        ))}
+      <div
+        className="termstack"
+        style={
+          showSplit
+            ? {
+                gridTemplateColumns: `repeat(${layout.columns}, minmax(0, 1fr))`,
+                gridTemplateRows: `repeat(${layout.rows}, minmax(0, 1fr))`
+              }
+            : undefined
+        }
+      >
+        {sessions.map((session, index) => {
+          const isActive = session.id === activeId;
+          const modifier = showSplit
+            ? ' termstack__item--split'
+            : isActive
+              ? ''
+              : ' termstack__item--hidden';
+          return (
+            <div
+              key={session.id}
+              className={`termstack__item${isActive ? ' termstack__item--active' : ''}${modifier}`}
+              style={showSplit ? { gridColumn: `span ${layout.spanOf(index)}` } : undefined}
+              onMouseDown={() => setActive(projectId, session.id)}
+            >
+              {showSplit && (
+                <div className="termstack__title">
+                  <span>{titleOf(session, index)}</span>
+                  {session.status === 'exited' && (
+                    <span className="termbar__exit">exit {session.exitCode ?? '?'}</span>
+                  )}
+                </div>
+              )}
+              <div className="termstack__view">
+                <TerminalView session={session} active={isActive} />
+              </div>
+            </div>
+          );
+        })}
         {sessions.length === 0 && repositories.length > 0 && (
           <p className="card__hint">No terminals yet. Choose a repository and open one.</p>
         )}
