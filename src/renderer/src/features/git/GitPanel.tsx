@@ -73,7 +73,7 @@ function GitToolbar(): React.JSX.Element {
 
   const [confirmAbort, setConfirmAbort] = useState(false);
 
-  const hasUpstream = status?.upstream != null;
+  const hasUpstream = status?.upstream !== undefined && status.upstream !== null;
 
   return (
     <header className="gitbar">

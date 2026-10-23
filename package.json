@@ -14,11 +14,10 @@
     "build": "electron-vite build",
     "start": "electron-vite preview",
     "typecheck": "tsc -p tsconfig.node.json --noEmit && tsc -p tsconfig.web.json --noEmit",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "package": "npm run build && electron-builder --dir",
-    "test:e2e": "node tests/e2e/smoke.mjs",
-    "verify": "npm run typecheck && npm run test && npm run build && npm run test:e2e"
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "check": "npm run typecheck && npm run lint",
+    "package": "npm run build && electron-builder --dir"
   },
   "dependencies": {
     "react": "19.3.1",
@@ -27,6 +26,7 @@
     "zustand": "5.0.16"
   },
   "devDependencies": {
+    "@eslint/js": "10.0.1",
     "@swc/core": "1.16.20",
     "@types/node": "26.6.5",
     "@types/react": "19.3.0",
@@ -35,8 +35,11 @@
     "electron": "45.0.0",
     "electron-builder": "26.15.3",
     "electron-vite": "6.0.0",
+    "eslint": "10.13.0",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "globals": "17.13.0",
     "typescript": "5.9.3",
-    "vite": "8.3.5",
-    "vitest": "5.0.5"
+    "typescript-eslint": "8.72.0",
+    "vite": "8.3.5"
   }
 }

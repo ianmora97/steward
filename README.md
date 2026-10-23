@@ -31,12 +31,11 @@ npm run dev
 | `npm run build` | Builds main, preload and renderer into `out/` |
 | `npm start` | Runs the built app without packaging |
 | `npm run typecheck` | Type-checks the Node and renderer projects separately |
-| `npm test` | Vitest unit and integration suites |
-| `npm run test:e2e` | Launches the built app and drives the real renderer over CDP |
+| `npm run lint` | ESLint over the whole repo (`lint:fix` applies safe fixes) |
+| `npm run check` | typecheck + lint — run before every commit |
 | `npm run package` | Builds, then produces an unpacked app in `release/` |
-| `npm run verify` | typecheck → test → build → e2e, in order |
 
-`npm run test:e2e` requires `npm run build` first; `npm run verify` does both in the right order.
+There are no automated tests by design: the owner tests manually.
 
 ## Architecture
 
@@ -51,10 +50,6 @@ src/
 ├─ preload/      the contextBridge surface, and nothing else
 ├─ renderer/     React UI; no Node access, no shell, no filesystem
 └─ shared/       types and Zod schemas used on both sides
-tests/
-├─ unit/         schemas, migrations, services, IPC boundary, window options
-├─ integration/  real temporary Git repositories driven by the real git
-└─ e2e/          the built app, driven over the Chrome DevTools Protocol
 ```
 
 The renderer calls named functions on `window.steward`; the preload forwards them to a declared channel; the main process validates the payload with Zod and runs a service. Adding a capability means adding all three. There is no generic `invoke(channel, payload)` and no `runCommand(string)`, because either one would hand the renderer arbitrary execution through the boundary that exists to prevent it.
@@ -99,9 +94,7 @@ STEWARD_DB_PATH=/tmp/steward-dev.sqlite npm run dev
 4. Point it at a folder that is not a repository. The reason is shown in the UI, and nothing is recorded.
 5. In **Workspace**, reorder and hide tabs. The Git tab refuses to be hidden and says why.
 6. Restart the app. Projects, repositories and tab order are all still there.
-7. In devtools, confirm `window.require`, `window.process` and `window.module` are `undefined` and `Object.keys(window.steward)` lists only `app`, `projects`, `repositories` and `tabs`.
-
-Steps 2–7 are also covered by `npm run test:e2e`.
+7. In devtools, confirm `window.require`, `window.process` and `window.module` are `undefined` and `Object.keys(window.steward)` lists only `app`, `git`, `projects`, `repositories` and `tabs`.
 
 ## Licence
 

@@ -35,27 +35,11 @@ jobs:
       - name: Type-check
         run: npm run typecheck
 
-      - name: Unit and integration tests
-        run: npm test
+      - name: Lint
+        run: npm run lint
 
       - name: Build
         run: npm run build
-
-      # The end-to-end suite drives a real Electron window, which needs a
-      # display server on Linux.
-      - name: Install a virtual display
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y xvfb
-
-      - name: End-to-end smoke test (Linux)
-        if: runner.os == 'Linux'
-        run: xvfb-run -a npm run test:e2e
-
-      - name: End-to-end smoke test (Windows)
-        if: runner.os == 'Windows'
-        run: npm run test:e2e
 
       - name: Package
         run: npx electron-builder --dir

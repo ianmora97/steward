@@ -29,3 +29,10 @@ npm-debug.log*
 .idea/
 .DS_Store
 Thumbs.db
+
+# graphify: keep graph.json/report/html, ignore cache and temp files
+graphify-out/cache/
+graphify-out/.graphify_*
+
+# Obsidian per-user state
+vault/**/.obsidian/workspace.json
