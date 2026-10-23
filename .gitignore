@@ -30,13 +30,11 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 
-# graphify: keep graph.json/report/html, ignore cache and temp files
-graphify-out/cache/
-graphify-out/.graphify_*
+# graphify output is local only: rebuilt by the post-commit hook / `graphify update .`
+graphify-out/
 
 # Obsidian per-user state
 vault/**/.obsidian/workspace.json
 
 # Local Obsidian vault: notes stay on this machine only
 vault/
-graphify-out/20*/

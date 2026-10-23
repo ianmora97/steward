@@ -4,6 +4,24 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  height: 100%;
+  min-height: 0;
+}
+
+.gitpanel__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.gitpanel__body--fill {
+  overflow: hidden;
+}
+
+/* The Git tab lays itself out to the window and scrolls inside its own regions. */
+.workspace__body:has(> .gitpanel) {
+  overflow: hidden;
+  padding-bottom: 14px;
 }
 
 .gitbar {
@@ -114,20 +132,25 @@
 
 .changes {
   display: grid;
-  grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
+  grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
   gap: 14px;
-  align-items: start;
+  height: 100%;
+  min-height: 0;
 }
 
 .changes__lists {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  min-height: 0;
+  padding-right: 4px;
+  overflow-y: auto;
 }
 
 .changes__diff {
   min-width: 0;
-  min-height: 240px;
+  min-height: 0;
+  overflow: auto;
   background: var(--bg-sunken);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -270,7 +293,6 @@
 
 .diff {
   overflow: auto;
-  max-height: 68vh;
 }
 
 .diff__code {
@@ -316,8 +338,7 @@
 .branches {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  max-width: 820px;
+  gap: 12px;
 }
 
 .branches__hint {
@@ -465,3 +486,396 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Commit graph ------------------------------------------------------------- */
+
+:root {
+  --lane-0: #4f8cf7;
+  --lane-1: #3fb67f;
+  --lane-2: #e8c26a;
+  --lane-3: #c678dd;
+  --lane-4: #f2555a;
+  --lane-5: #2cc4cb;
+  --lane-6: #f29c4f;
+  --lane-7: #9aa7bd;
+}
+
+.graphview,
+.graphview__main {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+.graphview__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.graphview__count {
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.segmented__option {
+  padding: 5px 11px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.segmented__option--active {
+  background: #1a212c;
+  color: var(--text);
+}
+
+.graph {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.graph__spacer {
+  position: relative;
+  min-width: 720px;
+}
+
+.graph__row {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px 0 4px;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12.5px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.graph__row:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.graph__row--selected {
+  background: #16202e;
+  outline: 1px solid #27405f;
+  outline-offset: -1px;
+}
+
+.graph__lanes {
+  flex-shrink: 0;
+}
+
+.graph__line {
+  fill: none;
+  stroke-width: 2;
+}
+
+.graph__node {
+  stroke-width: 2;
+}
+
+.graph__refs {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.ref {
+  padding: 0 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+.ref--local {
+  border-color: #27405f;
+  color: var(--accent);
+}
+
+.ref--remote {
+  border-color: #1e3d2f;
+  color: var(--ok);
+}
+
+.ref--tag {
+  border-color: #4a3a16;
+  color: #e8c26a;
+}
+
+.ref--head,
+.ref--current {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+.graph__subject {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.graph__author,
+.graph__date {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.graph__author {
+  width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.graph__sha {
+  flex-shrink: 0;
+  color: var(--text-dim);
+  font-size: 11.5px;
+}
+
+.commitdetail {
+  display: grid;
+  grid-template-columns: minmax(280px, 400px) minmax(0, 1fr);
+  gap: 14px;
+  height: 100%;
+  min-height: 0;
+}
+
+.commitdetail__info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  padding: 12px 14px;
+  overflow-y: auto;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.commitdetail__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.commitdetail__subject {
+  margin: 0;
+  font-size: 14px;
+}
+
+.commitdetail__body {
+  margin: 0;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 12.5px;
+  white-space: pre-wrap;
+}
+
+.commitdetail__meta {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.commitdetail__meta dt {
+  color: var(--text-dim);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.commitdetail__meta dd {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+  word-break: break-all;
+}
+
+.commitdetail__diff {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.linkbutton {
+  margin-right: 8px;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.stat--add {
+  color: var(--ok);
+}
+
+.stat--del {
+  color: var(--danger);
+}
+
+.stat--dim {
+  color: var(--text-dim);
+}
+
+/* Workbench: graph + changes/commit + branches sidebar ---------------------- */
+
+.workbench {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 12px;
+  height: 100%;
+  min-height: 0;
+}
+
+.workbench--collapsed {
+  grid-template-columns: minmax(0, 1fr) 38px;
+}
+
+.workbench__main {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  min-height: 0;
+}
+
+.workbench__graph {
+  flex: 1 1 46%;
+  min-height: 180px;
+}
+
+.workbench__lower {
+  flex: 1 1 54%;
+  min-height: 200px;
+}
+
+.workbench__side {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.workbench__side-scroll {
+  flex: 1;
+  min-height: 0;
+  padding: 10px;
+  overflow-y: auto;
+}
+
+.workbench__toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.workbench__toggle:hover {
+  background: #1a212c;
+}
+
+.workbench--collapsed .workbench__toggle {
+  flex-direction: column;
+  padding: 10px 0;
+  border-bottom: none;
+}
+
+.workbench--collapsed .workbench__toggle-label {
+  writing-mode: vertical-rl;
+  margin-top: 6px;
+}
+
+.workbench__side .branch {
+  flex-wrap: wrap;
+}
+
+.workbench__side .card {
+  padding: 10px 12px;
+}
+
+.workbench__side .field__input--grow {
+  min-width: 0;
+}
+
+.graph__wip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 6px;
+  padding: 5px 10px;
+  background: var(--bg-sunken);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 12.5px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.graph__wip--selected {
+  border-style: solid;
+  border-color: #27405f;
+  background: #16202e;
+  color: var(--text);
+}
+
+.graph__wip-dot {
+  width: 9px;
+  height: 9px;
+  border: 2px dashed var(--accent);
+  border-radius: 50%;
+}
+

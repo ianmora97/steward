@@ -42,6 +42,8 @@ body {
 .app {
   display: grid;
   grid-template-columns: 272px 1fr;
+  /* An auto row grows with its content, which clips the workspace instead of letting its body scroll. */
+  grid-template-rows: minmax(0, 1fr);
   height: 100%;
   overflow: hidden;
 }

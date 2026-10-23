@@ -4,7 +4,7 @@ Steward brings CI/CD, deployments, infrastructure, and observability together in
 
 A project-centric desktop workspace: one project owns many repositories, environments and integrations, each with its own tabs. Git is the first tab of every project; terminal, SSH, GitHub Actions and deployments arrive in later milestones.
 
-**Status: Milestone 2 — everyday Git.** Projects, repositories and the tab system persist, and the Git tab does status, diffs, stage/unstage, commit, branches (create, check out, delete) and fetch/pull/push against the installed `git`. Destructive actions (discard, force-delete a branch, abort a merge) ask for confirmation, and every action is recorded in the Activity list. Everything else is scaffolding with a clearly labelled panel, not a simulated feature.
+**Status: Milestone 3 — commit graph.** The Graph section draws the history with lanes, merges, branches and tags, loads it a page at a time, and shows each commit's metadata, changed files and diffs. Before that, Milestone 2 — everyday Git: Projects, repositories and the tab system persist, and the Git tab does status, diffs, stage/unstage, commit, branches (create, check out, delete) and fetch/pull/push against the installed `git`. Destructive actions (discard, force-delete a branch, abort a merge) ask for confirmation, and every action is recorded in the Activity list. Everything else is scaffolding with a clearly labelled panel, not a simulated feature.
 
 ## Prerequisites
 

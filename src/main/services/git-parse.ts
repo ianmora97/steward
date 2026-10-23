@@ -1,4 +1,5 @@
 import type { GitBranch, GitFileChangeKind, GitFileEntry, GitStatus } from '@shared/schemas/git';
+import type { CommitFile, GraphCommit, GraphRef } from '@shared/schemas/graph';
 
 /**
  * Pure parsers for Git's machine-readable output. No process, no I/O: they are
@@ -149,4 +150,121 @@ export function parseBranches(output: string): GitBranch[] {
   }
 
   return branches;
+}
+
+/* History ----------------------------------------------------------------- */
+
+/** `git log -z` record layout; the separator cannot appear in these fields. */
+export const LOG_FORMAT = ['%H', '%P', '%an', '%ae', '%aI', '%D', '%s'].join('%x1f');
+
+/**
+ * Parses the `%D` decoration list produced with `--decorate=full`, e.g.
+ * `HEAD -> refs/heads/main, tag: refs/tags/v1, refs/remotes/origin/main`.
+ * Full names are what let `feature/x` (local) be told apart from `origin/x`.
+ */
+export function parseRefs(decoration: string): GraphRef[] {
+  const refs: GraphRef[] = [];
+
+  for (const raw of decoration.split(', ')) {
+    const token = raw.trim();
+    if (token === '') continue;
+
+    if (token === 'HEAD') {
+      refs.push({ name: 'HEAD', kind: 'head', current: true });
+    } else if (token.startsWith('HEAD -> refs/heads/')) {
+      refs.push({ name: token.slice('HEAD -> refs/heads/'.length), kind: 'local', current: true });
+    } else if (token.startsWith('tag: refs/tags/')) {
+      refs.push({ name: token.slice('tag: refs/tags/'.length), kind: 'tag', current: false });
+    } else if (token.startsWith('refs/heads/')) {
+      refs.push({ name: token.slice('refs/heads/'.length), kind: 'local', current: false });
+    } else if (token.startsWith('refs/remotes/')) {
+      const name = token.slice('refs/remotes/'.length);
+      // `origin/HEAD` is a pointer, not a branch.
+      if (!name.endsWith('/HEAD')) refs.push({ name, kind: 'remote', current: false });
+    }
+  }
+
+  return refs;
+}
+
+export function parseLog(output: string): GraphCommit[] {
+  const commits: GraphCommit[] = [];
+
+  for (const record of output.split('\0')) {
+    if (record.trim() === '') continue;
+    const [sha = '', parents = '', author = '', email = '', date = '', decoration = '', subject = ''] =
+      record.replace(/^\n+/, '').split('\x1f');
+    if (sha === '') continue;
+
+    commits.push({
+      sha,
+      parents: parents === '' ? [] : parents.split(' '),
+      author,
+      email,
+      date,
+      subject,
+      refs: parseRefs(decoration)
+    });
+  }
+
+  return commits;
+}
+
+const STATUS_KIND: Record<string, CommitFile['status']> = {
+  A: 'added',
+  M: 'modified',
+  D: 'deleted',
+  R: 'renamed',
+  C: 'copied',
+  T: 'typechange'
+};
+
+/**
+ * Combines `diff-tree --name-status -z` and `--numstat -z` into one file list.
+ * Rename/copy records carry two paths in both outputs.
+ */
+export function parseCommitFiles(nameStatus: string, numstat: string): CommitFile[] {
+  const stats = new Map<string, { additions: number | null; deletions: number | null; binary: boolean }>();
+
+  const numTokens = numstat.split('\0');
+  for (let i = 0; i < numTokens.length; i += 1) {
+    const token = numTokens[i] ?? '';
+    if (token === '') continue;
+    const match = /^(\d+|-)\t(\d+|-)\t(.*)$/s.exec(token);
+    if (match === null) continue;
+    const binary = match[1] === '-';
+    const entry = {
+      additions: binary ? null : Number(match[1]),
+      deletions: binary ? null : Number(match[2]),
+      binary
+    };
+    if (match[3] === '') {
+      // Rename: the next two tokens are the old and new path.
+      const newPath = numTokens[i + 2] ?? '';
+      stats.set(newPath, entry);
+      i += 2;
+    } else {
+      stats.set(match[3] ?? '', entry);
+    }
+  }
+
+  const files: CommitFile[] = [];
+  const tokens = nameStatus.split('\0');
+  for (let i = 0; i < tokens.length; i += 1) {
+    const code = tokens[i] ?? '';
+    if (code === '') continue;
+    const kind = STATUS_KIND[code[0] ?? ''];
+    if (kind === undefined) continue;
+
+    const twoPaths = code[0] === 'R' || code[0] === 'C';
+    const first = tokens[i + 1] ?? '';
+    const second = twoPaths ? (tokens[i + 2] ?? '') : null;
+    i += twoPaths ? 2 : 1;
+
+    const path = second ?? first;
+    const stat = stats.get(path) ?? { additions: null, deletions: null, binary: false };
+    files.push({ path, originalPath: twoPaths ? first : null, status: kind, ...stat });
+  }
+
+  return files;
 }

@@ -4,14 +4,12 @@ import { useAppStore } from '../../stores/app.store';
 import { useGitStore } from '../../stores/git.store';
 import { RepositoryPanel } from '../repositories/RepositoryPanel';
 import { ActivityView } from './ActivityView';
-import { BranchesView } from './BranchesView';
-import { ChangesView } from './ChangesView';
+import { GitWorkbench } from './GitWorkbench';
 
-type SubTab = 'changes' | 'branches' | 'activity' | 'repositories';
+type SubTab = 'changes' | 'activity' | 'repositories';
 
 const SUB_TABS: Array<{ key: SubTab; label: string }> = [
   { key: 'changes', label: 'Changes' },
-  { key: 'branches', label: 'Branches' },
   { key: 'activity', label: 'Activity' },
   { key: 'repositories', label: 'Repositories' }
 ];
@@ -51,9 +49,8 @@ export function GitPanel(): React.JSX.Element {
         ))}
       </nav>
       <GitMessages />
-      <div className="gitpanel__body">
-        {subTab === 'changes' && <ChangesView />}
-        {subTab === 'branches' && <BranchesView />}
+      <div className={`gitpanel__body${subTab === 'changes' ? ' gitpanel__body--fill' : ''}`}>
+        {subTab === 'changes' && <GitWorkbench />}
         {subTab === 'activity' && <ActivityView />}
         {subTab === 'repositories' && <RepositoryPanel />}
       </div>

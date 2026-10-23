@@ -16,8 +16,7 @@ Steward es un workspace de escritorio centrado en proyectos para DevOps: un proy
 ### 3. Mantener graphify actualizado
 - Después de cualquier cambio de código o documentación, actualiza el grafo: `graphify update .` (solo código, AST, sin coste de LLM). Si cambiaste docs/imágenes, `/graphify . --update`.
 - El hook post-commit (`graphify hook install`) reconstruye el grafo tras cada commit, pero no lo uses como excusa: actualiza al terminar la tarea.
-- `graphify-out/` está versionado salvo caché y temporales; ver `.gitignore`.
-- Si `graphify-out/.graph.tmp.json` queda suelto tras un rebuild, bórralo.
+- `graphify-out/` es solo local: está en `.gitignore`, nunca se trackea ni se commitea. El hook post-commit y `graphify update .` lo regeneran en cada máquina.
 
 ### 4. Mantener el Obsidian vault actualizado
 - El vault vive en `vault/steward/`. La exportación de graphify va en `vault/steward/graphify/` (se regenera con `graphify export obsidian --dir vault/steward/graphify`).
@@ -55,7 +54,7 @@ Flujo: el renderer llama funciones con nombre de `window.steward` → el preload
 - TypeScript estricto (`noUncheckedIndexedAccess`). Imports de tipos con `import { type X }`.
 - Comentarios solo para el *por qué* no obvio; el código existente es el modelo de estilo.
 - Migraciones SQLite: solo hacia adelante, nunca editar una ya publicada; añadir una nueva en `src/main/db/migrations/index.ts`.
-- Commits: Conventional Commits (`feat:`, `fix:`, `chore:`…). Solo commitear cuando el usuario lo pida. `vault/` es solo local: está en `.gitignore`, nunca se trackea ni se commitea.
+- Commits: Conventional Commits (`feat:`, `fix:`, `chore:`…). Solo commitear cuando el usuario lo pida. `vault/` y `graphify-out/` son solo locales (en `.gitignore`): nunca se trackean ni se commitean.
 - Responde en español, tono directo.
 
 ## Entorno (Windows)

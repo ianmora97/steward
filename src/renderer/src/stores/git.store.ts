@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { Execution, GitBranchList, GitDiff, GitStatus } from '@shared/schemas/git';
+import type { GitCommitDetail, GraphCommit } from '@shared/schemas/graph';
 import type { StewardError, StewardResult } from '@shared/types/result';
 
 /**
@@ -15,6 +16,10 @@ export interface SelectedFile {
   untracked: boolean;
 }
 
+export type HistoryScope = 'all' | 'head';
+
+const HISTORY_PAGE = 400;
+
 interface GitState {
   repositoryId: string | null;
   status: GitStatus | null;
@@ -26,6 +31,17 @@ interface GitState {
   error: StewardError | null;
   /** Git's own output from the last fetch/pull/push, shown verbatim. */
   notice: string | null;
+
+  /** Commit graph: pages appended in `git log --topo-order`; reloaded after every mutation once opened. */
+  commits: GraphCommit[];
+  historyLoaded: boolean;
+  historyLoading: boolean;
+  hasMoreHistory: boolean;
+  historyScope: HistoryScope;
+  selectedCommit: string | null;
+  commitDetail: GitCommitDetail | null;
+  commitFile: string | null;
+  commitDiff: GitDiff | null;
 
   selectRepository: (repositoryId: string | null) => Promise<void>;
   refresh: () => Promise<void>;
@@ -45,6 +61,11 @@ interface GitState {
   pull: (mode: 'ff-only' | 'merge') => Promise<void>;
   push: () => Promise<void>;
   abortMerge: () => Promise<void>;
+
+  loadHistory: (reset: boolean) => Promise<void>;
+  setHistoryScope: (scope: HistoryScope) => Promise<void>;
+  selectCommit: (sha: string | null) => Promise<void>;
+  selectCommitFile: (path: string) => Promise<void>;
 }
 
 const api = () => window.steward.git;
@@ -104,6 +125,7 @@ export const useGitStore = create<GitState>((set, get) => {
     });
 
     await reloadDiff();
+    if (get().historyLoaded) await get().loadHistory(true);
   }
 
   async function reloadDiff(): Promise<void> {
@@ -154,6 +176,15 @@ export const useGitStore = create<GitState>((set, get) => {
     busy: false,
     error: null,
     notice: null,
+    commits: [],
+    historyLoaded: false,
+    historyLoading: false,
+    hasMoreHistory: false,
+    historyScope: 'all',
+    selectedCommit: null,
+    commitDetail: null,
+    commitFile: null,
+    commitDiff: null,
 
     selectRepository: async (repositoryId) => {
       set({
@@ -164,7 +195,14 @@ export const useGitStore = create<GitState>((set, get) => {
         selected: null,
         diff: null,
         error: null,
-        notice: null
+        notice: null,
+        commits: [],
+        historyLoaded: false,
+        hasMoreHistory: false,
+        selectedCommit: null,
+        commitDetail: null,
+        commitFile: null,
+        commitDiff: null
       });
       if (repositoryId === null) return;
       set({ busy: true });
@@ -250,6 +288,72 @@ export const useGitStore = create<GitState>((set, get) => {
 
     abortMerge: async () => {
       await mutate((repositoryId) => api().abortMerge({ repositoryId }));
+    },
+
+    loadHistory: async (reset) => {
+      const { repositoryId, historyScope, commits, historyLoading } = get();
+      if (repositoryId === null || (historyLoading && !reset)) return;
+
+      set({ historyLoading: true, historyLoaded: true });
+      try {
+        const result = await api().history({
+          repositoryId,
+          skip: reset ? 0 : commits.length,
+          limit: HISTORY_PAGE,
+          scope: historyScope
+        });
+        if (get().repositoryId !== repositoryId || get().historyScope !== historyScope) return;
+        if (!result.success) {
+          set({ error: result.error });
+          return;
+        }
+        set({
+          commits: reset ? result.data.commits : [...commits, ...result.data.commits],
+          hasMoreHistory: result.data.hasMore,
+          error: null
+        });
+
+        // Keep the open commit if it survived (a new commit does not drop it); otherwise close the panel.
+        const selected = get().selectedCommit;
+        if (reset && selected !== null && !result.data.commits.some((c) => c.sha === selected)) {
+          set({ selectedCommit: null, commitDetail: null, commitFile: null, commitDiff: null });
+        }
+      } catch (cause) {
+        set({
+          error: {
+            code: 'UNKNOWN',
+            message: 'Steward could not reach its main process',
+            details: cause instanceof Error ? cause.message : undefined
+          }
+        });
+      } finally {
+        set({ historyLoading: false });
+      }
+    },
+
+    setHistoryScope: async (scope) => {
+      set({ historyScope: scope, commits: [], hasMoreHistory: false });
+      await get().loadHistory(true);
+    },
+
+    selectCommit: async (sha) => {
+      set({ selectedCommit: sha, commitDetail: null, commitFile: null, commitDiff: null });
+      const repositoryId = get().repositoryId;
+      if (sha === null || repositoryId === null) return;
+
+      const result = await api().commitDetail({ repositoryId, sha });
+      if (get().selectedCommit !== sha) return;
+      set(result.success ? { commitDetail: result.data, error: null } : { error: result.error });
+    },
+
+    selectCommitFile: async (path) => {
+      const { repositoryId, selectedCommit } = get();
+      if (repositoryId === null || selectedCommit === null) return;
+
+      set({ commitFile: path, commitDiff: null });
+      const result = await api().commitDiff({ repositoryId, sha: selectedCommit, path });
+      if (get().selectedCommit !== selectedCommit || get().commitFile !== path) return;
+      set(result.success ? { commitDiff: result.data, error: null } : { error: result.error });
     }
   };
 });

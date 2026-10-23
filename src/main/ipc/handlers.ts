@@ -19,6 +19,11 @@ import {
   listExecutionsInputSchema
 } from '@shared/schemas/git';
 import {
+  gitCommitDetailInputSchema,
+  gitCommitDiffInputSchema,
+  gitHistoryInputSchema
+} from '@shared/schemas/graph';
+import {
   addRepositoryInputSchema,
   listRepositoriesInputSchema,
   repositoryIdPayloadSchema,
@@ -40,6 +45,7 @@ import {
   setProjectArchived,
   updateProject
 } from '../services/project.service';
+import { getCommitDetail, getCommitDiff, getHistory } from '../services/git-history.service';
 import {
   abortMerge,
   checkoutBranch,
@@ -294,6 +300,21 @@ export function buildHandlerDefinitions(context: IpcContext): IpcHandlerDefiniti
       channel: IPC_CHANNELS.gitListExecutions,
       schema: listExecutionsInputSchema,
       handle: (input) => listExecutions(db, input.repositoryId, input.limit)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.gitHistory,
+      schema: gitHistoryInputSchema,
+      handle: (input) => getHistory(db, input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.gitCommitDetail,
+      schema: gitCommitDetailInputSchema,
+      handle: (input) => getCommitDetail(db, input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.gitCommitDiff,
+      schema: gitCommitDiffInputSchema,
+      handle: (input) => getCommitDiff(db, input)
     })
   ];
 }

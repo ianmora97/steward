@@ -35,7 +35,7 @@ import { BRANCH_FORMAT, parseBranches, parseStatusV2 } from './git-parse';
  * elements of the argument array, after the options that could be confused with
  * them, so a branch called `$(touch_pwned)` or a file called `-rf` is data.
  */
-function session(db: SqlDatabase, repositoryId: string): GitSession {
+export function session(db: SqlDatabase, repositoryId: string): GitSession {
   const repository = findRepositoryById(db, repositoryId);
   if (repository === null) {
     throw new StewardServiceError('NOT_FOUND', 'that repository is no longer part of this project');

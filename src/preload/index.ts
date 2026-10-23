@@ -57,7 +57,10 @@ const api: StewardApi = {
     pull: (input) => invoke(IPC_CHANNELS.gitPull, input),
     push: (input) => invoke(IPC_CHANNELS.gitPush, input),
     abortMerge: (input) => invoke(IPC_CHANNELS.gitAbortMerge, input),
-    listExecutions: (input) => invoke(IPC_CHANNELS.gitListExecutions, input)
+    listExecutions: (input) => invoke(IPC_CHANNELS.gitListExecutions, input),
+    history: (input) => invoke(IPC_CHANNELS.gitHistory, input),
+    commitDetail: (input) => invoke(IPC_CHANNELS.gitCommitDetail, input),
+    commitDiff: (input) => invoke(IPC_CHANNELS.gitCommitDiff, input)
   }
 };
 

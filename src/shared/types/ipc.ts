@@ -12,6 +12,13 @@ import type {
   RepositoryProbe
 } from '../schemas/repository';
 import type {
+  GitCommitDetail,
+  GitCommitDetailInput,
+  GitCommitDiffInput,
+  GitHistory,
+  GitHistoryInput
+} from '../schemas/graph';
+import type {
   Execution,
   GitBranchList,
   GitCheckoutInput,
@@ -77,7 +84,10 @@ export const IPC_CHANNELS = {
   gitPull: 'git:pull',
   gitPush: 'git:push',
   gitAbortMerge: 'git:abortMerge',
-  gitListExecutions: 'git:listExecutions'
+  gitListExecutions: 'git:listExecutions',
+  gitHistory: 'git:history',
+  gitCommitDetail: 'git:commitDetail',
+  gitCommitDiff: 'git:commitDiff'
 } as const;
 
 export type IpcChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS];
@@ -148,5 +158,8 @@ export interface StewardApi {
     push: (input: { repositoryId: string }) => Promise<StewardResult<GitSyncResult>>;
     abortMerge: (input: { repositoryId: string }) => Promise<StewardResult<GitStatus>>;
     listExecutions: (input: ListExecutionsInput) => Promise<StewardResult<Execution[]>>;
+    history: (input: GitHistoryInput) => Promise<StewardResult<GitHistory>>;
+    commitDetail: (input: GitCommitDetailInput) => Promise<StewardResult<GitCommitDetail>>;
+    commitDiff: (input: GitCommitDiffInput) => Promise<StewardResult<GitDiff>>;
   };
 }
