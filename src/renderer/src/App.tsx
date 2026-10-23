@@ -3,6 +3,7 @@ import { EmptyState } from './components/EmptyState';
 import { ErrorBanner } from './components/ErrorBanner';
 import { ProjectSidebar } from './features/projects/ProjectSidebar';
 import { GitPanel } from './features/git/GitPanel';
+import { TerminalPanel } from './features/terminal/TerminalPanel';
 import { PendingPanel } from './features/workspace/PendingPanel';
 import { TabBar } from './features/workspace/TabBar';
 import { WorkspaceSettings } from './features/workspace/WorkspaceSettings';
@@ -17,13 +18,7 @@ function ActivePanel(): React.JSX.Element {
     case 'settings':
       return <WorkspaceSettings />;
     case 'terminal':
-      return (
-        <PendingPanel
-          title="Integrated terminal"
-          milestone="Milestone 4"
-          description="A real PTY session rooted at the project's repository, with session lifecycle and captured output. Not started yet, so there is nothing to show here."
-        />
-      );
+      return <TerminalPanel />;
     case 'ssh':
       return (
         <PendingPanel

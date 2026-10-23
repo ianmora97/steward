@@ -36,6 +36,23 @@ import type {
   ListExecutionsInput
 } from '../schemas/git';
 import type {
+  TerminalAttachResult,
+  TerminalCreateInput,
+  TerminalDeleteProfileInput,
+  TerminalDataEvent,
+  TerminalExitEvent,
+  TerminalGetSettingsInput,
+  TerminalListInput,
+  TerminalProfile,
+  TerminalResizeInput,
+  TerminalSaveProfileInput,
+  TerminalSession,
+  TerminalSessionIdInput,
+  TerminalSetSettingsInput,
+  TerminalSettings,
+  TerminalWriteInput
+} from '../schemas/terminal';
+import type {
   ReorderTabsInput,
   SetTabVisibilityInput,
   WorkspaceTab
@@ -87,7 +104,29 @@ export const IPC_CHANNELS = {
   gitListExecutions: 'git:listExecutions',
   gitHistory: 'git:history',
   gitCommitDetail: 'git:commitDetail',
-  gitCommitDiff: 'git:commitDiff'
+  gitCommitDiff: 'git:commitDiff',
+
+  terminalCreate: 'terminal:create',
+  terminalWrite: 'terminal:write',
+  terminalResize: 'terminal:resize',
+  terminalClose: 'terminal:close',
+  terminalList: 'terminal:list',
+  terminalAttach: 'terminal:attach',
+  terminalGetSettings: 'terminal:getSettings',
+  terminalSetSettings: 'terminal:setSettings',
+  terminalListProfiles: 'terminal:listProfiles',
+  terminalSaveProfile: 'terminal:saveProfile',
+  terminalDeleteProfile: 'terminal:deleteProfile'
+} as const;
+
+/**
+ * Push channels (main → renderer). Kept out of IPC_CHANNELS, which require a
+ * request handler. They live here, not in the Zod schema modules, because the
+ * sandboxed preload can only bundle this file: importing zod there breaks it.
+ */
+export const TERMINAL_EVENTS = {
+  data: 'terminal:data',
+  exit: 'terminal:exit'
 } as const;
 
 export type IpcChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS];
@@ -161,5 +200,21 @@ export interface StewardApi {
     history: (input: GitHistoryInput) => Promise<StewardResult<GitHistory>>;
     commitDetail: (input: GitCommitDetailInput) => Promise<StewardResult<GitCommitDetail>>;
     commitDiff: (input: GitCommitDiffInput) => Promise<StewardResult<GitDiff>>;
+  };
+  terminal: {
+    create: (input: TerminalCreateInput) => Promise<StewardResult<TerminalSession>>;
+    write: (input: TerminalWriteInput) => Promise<StewardResult<null>>;
+    resize: (input: TerminalResizeInput) => Promise<StewardResult<null>>;
+    close: (input: TerminalSessionIdInput) => Promise<StewardResult<null>>;
+    list: (input: TerminalListInput) => Promise<StewardResult<TerminalSession[]>>;
+    attach: (input: TerminalSessionIdInput) => Promise<StewardResult<TerminalAttachResult>>;
+    getSettings: (input: TerminalGetSettingsInput) => Promise<StewardResult<TerminalSettings>>;
+    setSettings: (input: TerminalSetSettingsInput) => Promise<StewardResult<TerminalSettings>>;
+    listProfiles: () => Promise<StewardResult<TerminalProfile[]>>;
+    saveProfile: (input: TerminalSaveProfileInput) => Promise<StewardResult<TerminalProfile>>;
+    deleteProfile: (input: TerminalDeleteProfileInput) => Promise<StewardResult<null>>;
+    /** Returns an unsubscribe function. The Electron event object never reaches the renderer. */
+    onData: (listener: (event: TerminalDataEvent) => void) => () => void;
+    onExit: (listener: (event: TerminalExitEvent) => void) => () => void;
   };
 }

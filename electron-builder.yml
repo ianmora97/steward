@@ -6,6 +6,8 @@ directories:
 files:
   - out/**
   - package.json
+asarUnpack:
+  - "**/node_modules/node-pty/**"
 win:
   target: dir
 linux:

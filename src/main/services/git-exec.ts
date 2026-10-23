@@ -184,7 +184,8 @@ function record(
       finishedAt: nowIso(),
       durationMs: outcome.durationMs,
       errorCode: outcome.errorCode,
-      errorMessage: outcome.errorMessage
+      errorMessage: outcome.errorMessage,
+      logPath: null
     });
   } catch (error) {
     // History is an audit aid. Failing to write it must not turn a Git

@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import { IPC_CHANNELS, type StewardApi } from '@shared/types/ipc';
+import type { TerminalDataEvent, TerminalExitEvent } from '@shared/schemas/terminal';
+import { IPC_CHANNELS, TERMINAL_EVENTS, type StewardApi } from '@shared/types/ipc';
 
 /**
  * The entire bridge between the renderer and the main process.
@@ -15,6 +16,19 @@ import { IPC_CHANNELS, type StewardApi } from '@shared/types/ipc';
  */
 function invoke<T>(channel: string, payload?: unknown): Promise<T> {
   return ipcRenderer.invoke(channel, payload ?? {}) as Promise<T>;
+}
+
+/**
+ * Subscribes to a push channel. The Electron event object is dropped so the
+ * renderer never holds a reference into ipcRenderer, and the returned function
+ * removes exactly this listener.
+ */
+function subscribe<T>(channel: string, listener: (payload: T) => void): () => void {
+  const wrapped = (_event: unknown, payload: T): void => listener(payload);
+  ipcRenderer.on(channel, wrapped);
+  return () => {
+    ipcRenderer.removeListener(channel, wrapped);
+  };
 }
 
 const api: StewardApi = {
@@ -61,6 +75,21 @@ const api: StewardApi = {
     history: (input) => invoke(IPC_CHANNELS.gitHistory, input),
     commitDetail: (input) => invoke(IPC_CHANNELS.gitCommitDetail, input),
     commitDiff: (input) => invoke(IPC_CHANNELS.gitCommitDiff, input)
+  },
+  terminal: {
+    create: (input) => invoke(IPC_CHANNELS.terminalCreate, input),
+    write: (input) => invoke(IPC_CHANNELS.terminalWrite, input),
+    resize: (input) => invoke(IPC_CHANNELS.terminalResize, input),
+    close: (input) => invoke(IPC_CHANNELS.terminalClose, input),
+    list: (input) => invoke(IPC_CHANNELS.terminalList, input),
+    attach: (input) => invoke(IPC_CHANNELS.terminalAttach, input),
+    getSettings: (input) => invoke(IPC_CHANNELS.terminalGetSettings, input),
+    setSettings: (input) => invoke(IPC_CHANNELS.terminalSetSettings, input),
+    listProfiles: () => invoke(IPC_CHANNELS.terminalListProfiles),
+    saveProfile: (input) => invoke(IPC_CHANNELS.terminalSaveProfile, input),
+    deleteProfile: (input) => invoke(IPC_CHANNELS.terminalDeleteProfile, input),
+    onData: (listener) => subscribe<TerminalDataEvent>(TERMINAL_EVENTS.data, listener),
+    onExit: (listener) => subscribe<TerminalExitEvent>(TERMINAL_EVENTS.exit, listener)
   }
 };
 
