@@ -35,7 +35,7 @@ observability_services(id PK, project_id FK, environment_id FK NULL,
                        log_selector,            -- LogQL, p. ej. {app="api",env="prod"}
                        metric_matcher,          -- PromQL matcher, p. ej. job="api"
                        ssh_host_id FK→ssh_hosts NULL ON DELETE SET NULL,
-                       docker_container NULL, pm2_process NULL,
+                       docker_container NULL,
                        created_at, updated_at)
                        UNIQUE(project_id, environment_id, name)
 
@@ -113,7 +113,7 @@ Subvistas de la pestaña **Monitoring**:
   - Controles: servicio, entorno, ventana (15 m / 1 h / 6 h / 24 h / **desde el último deploy**).
   - Arriba, una **línea de tiempo común** con los deploys de M7 (marca, ref, estado) y alertas; debajo, las gráficas de cada señal con esas marcas, el panel de **logs de error** del servicio (`|~ "(?i)error|exception|panic|fatal"` por defecto, editable) y el estado actual de su container (M8) o proceso (M9) si está mapeado.
   - Tabla **antes / después de un deploy**: para cada señal, media de la ventana previa y posterior (misma duración, p. ej. 15 min) y variación porcentual. Es un cálculo simple y explicable, sin modelos.
-  - Acciones de salto: abrir el deploy en Deployments, los logs del container en Docker, los procesos en PM2.
+  - Acciones de salto: abrir el deploy en Deployments, los logs del container en Docker.
 - Errores y estados vacíos explicados (sin fuentes, token caducado, rango demasiado grande, sin datos).
 
 ## 4. Fases

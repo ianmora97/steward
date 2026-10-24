@@ -457,17 +457,17 @@ The detailed design and the decisions taken while implementing it are in `docs/s
 
 ## Roadmap after M7 — Milestones 8 to 13 (2026-10-23)
 
-§7 listed Docker, database administration and observability as "deferred past the initial release". They are now scheduled, one milestone, branch and PR each, in the order chosen by the user (cheap ones first: Docker and PM2 reuse `run.ts` and the SSH that already exists). Each milestone has its own spec; the task-level plan (`writing-plans`) is written when the milestone starts, because it depends on the code the previous ones leave. Shared foundations (streams, network clients, `data_connections`, read-only rule, secrets, audit) are in the roadmap spec.
+§7 listed Docker, database administration and observability as "deferred past the initial release". They are now scheduled, one milestone, branch and PR each, in the order chosen by the user (cheap ones first: Docker reuses `run.ts` and the SSH that already exists). Each milestone has its own spec; the task-level plan (`writing-plans`) is written when the milestone starts, because it depends on the code the previous ones leave. Shared foundations (streams, network clients, `data_connections`, read-only rule, secrets, audit) are in the roadmap spec.
 
 | Milestone | Branch | Spec | Delivers |
 | --- | --- | --- | --- |
 | M8 | `milestone-8-docker` | `docs/superpowers/specs/2026-10-23-m8-docker-design.md` | Containers, images, volumes, networks and Compose, local or over SSH (Docker CLI with `--format json`, no `dockerode`) |
-| M9 | `milestone-9-pm2` | `docs/superpowers/specs/2026-10-23-m9-pm2-design.md` | PM2 processes, local or remote over SSH (`pm2 jlist`), live logs, actions. PM2 has no network API; PM2 Plus and server agents were rejected |
+| M9 | — | — | **Cancelled (2026-10-24).** PM2 monitoring was designed (SSH + `pm2 jlist`) and built, then dropped: the dashboard the user relies on, PM2 Plus, has no free plan, and the user wants no paid services. Numbering of the later milestones is unchanged |
 | M10 | `milestone-10-mongodb` | `docs/superpowers/specs/2026-10-23-m10-mongodb-design.md` | Compass-style MongoDB client: direct, Atlas, TLS, List/JSON/Table, CRUD, aggregations, indexes, schema, import/export. EJSON on the wire |
 | M11 | `milestone-11-redis` | `docs/superpowers/specs/2026-10-23-m11-redis-design.md` | Redis Insight-style client: `SCAN`-based browser, all types, workbench, pub/sub, insights, memory analysis |
 | M12 | `milestone-12-observability` | `docs/superpowers/specs/2026-10-23-m12-observability-design.md` | Grafana, Loki, Prometheus (Sentry later) behind an `ObservabilityProvider` contract, and an Investigate view with M7 deploy markers |
 | M13 | `milestone-13-cloud` | `docs/superpowers/specs/2026-10-23-m13-cloud-design.md` | Domains and DNS/TLS/HTTP checks, AWS and Cloudflare read-only inventory, topology, then guarded DNS edits |
 
-Decisions that fix the scope: no SSH tunnel for MongoDB and Redis (direct connections only; Docker and PM2 go over the project's existing SSH servers because they have no other route); AWS and Cloudflare as the only cloud providers; Grafana, Loki and Prometheus first, Sentry and others later. Production-environment connections open **read-only by default**, enforced in main.
+Decisions that fix the scope: no SSH tunnel for MongoDB and Redis (direct connections only; Docker remote goes over the project's existing SSH servers because it has no other route); AWS and Cloudflare as the only cloud providers; Grafana, Loki and Prometheus first, Sentry and others later. Production-environment connections open **read-only by default**, enforced in main.
 
 Order of work: close M7 (PR to `master`) first, then branch for M8.

@@ -131,4 +131,4 @@ Categories: **Added** · **Changed** · **Fixed** · **Removed** · **Security**
 - **M1** The only route to a child process is a single runner that never uses a shell and caps output and runtime.
 
 ### Docs
-- **M8–M13** Roadmap and one design spec per upcoming milestone: Docker, PM2, a MongoDB client, a Redis client, monitoring and troubleshooting (Grafana, Loki, Prometheus), and cloud/domain monitoring (AWS, Cloudflare). Nothing is implemented yet; each milestone gets its own branch and pull request, in that order.
+- **M8–M13** Roadmap and one design spec per upcoming milestone: Docker, a MongoDB client, a Redis client, monitoring and troubleshooting (Grafana, Loki, Prometheus), and cloud/domain monitoring (AWS, Cloudflare). Nothing is implemented yet; each milestone gets its own branch and pull request, in that order.

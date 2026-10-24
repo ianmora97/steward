@@ -7,19 +7,19 @@ Estado: diseño aprobado en conversación (2026-10-23); specs escritas, pendient
 | Milestone | Rama | Spec | Qué entrega |
 | --- | --- | --- | --- |
 | M8 | `milestone-8-docker` | [m8-docker](2026-10-23-m8-docker-design.md) | Containers, imágenes, volúmenes, redes y Compose, local y remoto por SSH |
-| M9 | `milestone-9-pm2` | [m9-pm2](2026-10-23-m9-pm2-design.md) | Procesos PM2 locales y remotos (SSH), logs y acciones |
+| M9 | — | — | **Cancelado (2026-10-24).** PM2 se descartó: su dashboard (PM2 Plus) es de pago y no se quieren servicios de pago. La numeración de M10–M13 no cambia |
 | M10 | `milestone-10-mongodb` | [m10-mongodb](2026-10-23-m10-mongodb-design.md) | Cliente MongoDB tipo Compass |
 | M11 | `milestone-11-redis` | [m11-redis](2026-10-23-m11-redis-design.md) | Cliente Redis tipo Redis Insight |
 | M12 | `milestone-12-observability` | [m12-observability](2026-10-23-m12-observability-design.md) | Grafana, Loki, Prometheus, Sentry y vista de troubleshooting |
 | M13 | `milestone-13-cloud` | [m13-cloud](2026-10-23-m13-cloud-design.md) | Dominios, checks, AWS, Cloudflare, topología de producción |
 
-Orden elegido por el usuario: los baratos primero (Docker y PM2 reusan `run.ts` y el SSH existente), luego los dos clientes de datos, luego lo que depende de todo lo demás.
+Orden elegido por el usuario: los baratos primero (Docker reusa `run.ts` y el SSH existente), luego los dos clientes de datos, luego lo que depende de todo lo demás.
 
 Regla del repo: un milestone termina con `npm run check`, README y CHANGELOG al día, push y PR hacia `master` **antes** de crear la rama del siguiente. M7 (`milestone-7-deployments`) sigue sin PR: se cierra primero.
 
 ## Decisiones del usuario que fijan el alcance
 
-- Sin túnel SSH para las conexiones de Mongo y Redis: solo conexión directa (IP, host, Atlas). Docker y PM2 remotos van por los servidores SSH que ya existen en el proyecto, porque no tienen otra vía.
+- Sin túnel SSH para las conexiones de Mongo y Redis: solo conexión directa (IP, host, Atlas). Docker remoto va por los servidores SSH que ya existen en el proyecto, porque no tiene otra vía.
 - Cloud: AWS y Cloudflare. Monitoreo: Grafana, Loki, Prometheus y, después, Sentry y otros.
 - Sin pruebas automatizadas (regla del repo). Cada spec termina con pasos manuales para el usuario.
 
@@ -27,7 +27,7 @@ Regla del repo: un milestone termina con `npm run check`, README y CHANGELOG al 
 
 ### Pestañas
 
-`tabKeySchema` (`src/shared/schemas/tabs.ts`) gana una clave por milestone: `docker`, `pm2`, `mongodb`, `redis`, `monitoring`, `cloud`. Cada milestone añade una migración que inserta la pestaña en los proyectos existentes y `tab.service` la siembra en los nuevos (mismo patrón que m006, m011 y m014). `settings` sigue fijada al final solo en el renderer.
+`tabKeySchema` (`src/shared/schemas/tabs.ts`) gana una clave por milestone: `docker`, `mongodb`, `redis`, `monitoring`, `cloud`. Cada milestone añade una migración que inserta la pestaña en los proyectos existentes y `tab.service` la siembra en los nuevos (mismo patrón que m006, m011 y m014). `settings` sigue fijada al final solo en el renderer.
 
 ### Migraciones
 
@@ -45,7 +45,7 @@ Hasta M7, main solo habla con el exterior por procesos hijos (`git`, `ssh`) y po
 
 ### Streams de proceso: `src/main/exec/stream.ts` (M8)
 
-`run.ts` devuelve la salida entera y con tope; no sirve para `docker logs -f` ni `pm2 logs`. M8 añade `streamCommand(file, args, { onChunk, onExit, … })`: mismo contrato que `run.ts` (ejecutable + array de argumentos, nunca `shell: true`, nulos prohibidos, timeout opcional) y devuelve un handle con `kill()`. Lo usan M8 y M9. Los eventos main→renderer siguen el patrón de `terminal:data`: fuera de `IPC_CHANNELS`, nombres en `ipc.ts` (el preload sandbox no carga zod), con `offset` para no duplicar, agrupados cada ~100 ms y con un máximo de suscripciones vivas por tipo.
+`run.ts` devuelve la salida entera y con tope; no sirve para `docker logs -f`. M8 añade `streamCommand(file, args, { onChunk, onExit, … })`: mismo contrato que `run.ts` (ejecutable + array de argumentos, nunca `shell: true`, nulos prohibidos, timeout opcional) y devuelve un handle con `kill()`. Lo usa M8 y lo reutilizarán los siguientes milestones que necesiten salida continua. Los eventos main→renderer siguen el patrón de `terminal:data`: fuera de `IPC_CHANNELS`, nombres en `ipc.ts` (el preload sandbox no carga zod), con `offset` para no duplicar, agrupados cada ~100 ms y con un máximo de suscripciones vivas por tipo.
 
 ### Conexiones de datos (M10, reutilizado por M11)
 
@@ -66,7 +66,7 @@ Mismo criterio que M5: la conexión (alcanzable/autenticada) y el estado operati
 
 ### Códigos de error nuevos
 
-Se añaden a `StewardServiceError`, con un mensaje accionable cada uno: `DOCKER_NOT_FOUND`, `DOCKER_DAEMON_DOWN`, `DOCKER_FAILED`, `PM2_NOT_FOUND`, `PM2_PARSE_FAILED`, `MONGO_*`, `REDIS_*`, `OBS_*`, `CLOUD_*`, `CONNECTION_READ_ONLY`. El detalle va en cada spec. Lo inesperado se registra en main y se devuelve genérico.
+Se añaden a `StewardServiceError`, con un mensaje accionable cada uno: `DOCKER_NOT_FOUND`, `DOCKER_DAEMON_DOWN`, `DOCKER_FAILED`, `MONGO_*`, `REDIS_*`, `OBS_*`, `CLOUD_*`, `CONNECTION_READ_ONLY`. El detalle va en cada spec. Lo inesperado se registra en main y se devuelve genérico.
 
 ### Dependencias nuevas (versiones exactas, como en `package.json`)
 

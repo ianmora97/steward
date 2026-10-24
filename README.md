@@ -34,7 +34,7 @@ Steward is a desktop app organised around **projects**, not repositories. A proj
 | ✅ | **Deployments**: environments (protected ones make you type their name before a deploy), deploy targets that run a fixed command over SSH or start a GitHub Actions workflow with its own inputs, and a history that says what confirmed each result (exit code or GitHub) and shows the output; when Steward cannot be sure how a deploy ended it says *unknown* instead of guessing |
 | ✅ | **Docker**: containers, images, volumes, networks and Compose projects of a project, on this machine or on one of its SSH servers. Start / stop / restart, live logs, CPU and memory, a shell inside a container (opens in the Terminal tab), pull and prune; secrets in a container's environment never reach the screen, and destructive actions on a protected server make you type the name |
 
-Next on the roadmap (designed, not built yet): PM2, a MongoDB client, a Redis client, monitoring with Grafana / Loki / Prometheus, and cloud / domain checks for AWS and Cloudflare. See `docs/superpowers/specs/2026-10-23-m8-m13-roadmap-design.md`.
+Next on the roadmap (designed, not built yet): a MongoDB client, a Redis client, monitoring with Grafana / Loki / Prometheus, and cloud / domain checks for AWS and Cloudflare. See `docs/superpowers/specs/2026-10-23-m8-m13-roadmap-design.md`.
 
 Destructive actions (discard, force-delete a branch, abort a merge) always ask first and say exactly what is lost. Push never forces.
 
