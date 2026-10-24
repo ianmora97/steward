@@ -30,6 +30,14 @@ import {
   validateRepositoryPathInputSchema
 } from '@shared/schemas/repository';
 import {
+  githubConnectInputSchema,
+  githubCreatePullInputSchema,
+  githubListBranchesInputSchema,
+  githubListPullsInputSchema,
+  githubOpenUrlInputSchema,
+  githubProjectInputSchema
+} from '@shared/schemas/github';
+import {
   sshCreateInputSchema,
   sshHostIdInputSchema,
   sshListExecutionsInputSchema,
@@ -96,6 +104,8 @@ import {
   saveProfile,
   setSettings
 } from '../services/terminal-settings.service';
+import type { GithubIntegrationService } from '../services/github-integration.service';
+import type { GithubPullsService } from '../services/github-pulls.service';
 import type { SshService } from '../services/ssh.service';
 import type { TerminalService } from '../services/terminal.service';
 import { listTabs, reorderTabs, restoreDefaultTabs, setTabVisibility } from '../services/tab.service';
@@ -119,6 +129,8 @@ export interface IpcContext {
   database: StewardDatabase;
   terminal: TerminalService;
   ssh: SshService;
+  github: GithubIntegrationService;
+  githubPulls: GithubPullsService;
   /** Supplied by the Electron layer; see src/main/index.ts. */
   readAppInfo: () => Promise<AppInfo>;
   /** Opens the OS folder picker. Cancelling is a normal outcome, not an error. */
@@ -211,6 +223,8 @@ export function buildHandlerDefinitions(context: IpcContext): IpcHandlerDefiniti
       schema: projectIdPayloadSchema,
       handle: (input) => {
         context.terminal.closeByProject(input.id);
+        // The row would cascade away, but the encrypted token file would stay behind.
+        context.github.purgeProject(input.id);
         return deleteProject(db, input.id);
       }
     }),
@@ -473,6 +487,47 @@ export function buildHandlerDefinitions(context: IpcContext): IpcHandlerDefiniti
       channel: IPC_CHANNELS.sshPickKeyFile,
       schema: emptyPayloadSchema,
       handle: () => context.pickKeyFile()
+    }),
+
+    defineHandler({
+      channel: IPC_CHANNELS.githubConnect,
+      schema: githubConnectInputSchema,
+      handle: (input) => context.github.connect(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.githubImportFromGh,
+      schema: githubProjectInputSchema,
+      handle: (input) => context.github.importFromGh(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.githubDisconnect,
+      schema: githubProjectInputSchema,
+      handle: (input) => context.github.disconnect(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.githubStatus,
+      schema: githubProjectInputSchema,
+      handle: (input) => context.github.status(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.githubListPulls,
+      schema: githubListPullsInputSchema,
+      handle: (input) => context.githubPulls.listPulls(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.githubListBranches,
+      schema: githubListBranchesInputSchema,
+      handle: (input) => context.githubPulls.listBranches(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.githubCreatePull,
+      schema: githubCreatePullInputSchema,
+      handle: (input) => context.githubPulls.createPull(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.githubOpenUrl,
+      schema: githubOpenUrlInputSchema,
+      handle: (input) => context.githubPulls.openUrl(input)
     })
   ];
 }

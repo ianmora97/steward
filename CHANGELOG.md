@@ -11,6 +11,12 @@ Categories: **Added** · **Changed** · **Fixed** · **Removed** · **Security**
 ## [Unreleased]
 
 ### Added
+- **M6** GitHub tab: connect a project to GitHub with a personal access token. Steward checks it with GitHub before saving anything and shows who you are connected as and the token's scopes. Each project has its own connection.
+- **M6** *Import from gh CLI* connects with the token your `gh` is logged in with. It only runs when you click it; without `gh`, or without a login, Steward says so.
+- **M6** Pull requests: pick one of the project's repositories that has a `github.com` remote and see its pull requests (open, closed or all) with branches, author, draft / merged badges and a link to open each on GitHub. Long lists load 30 at a time.
+- **M6** Create a pull request: choose base and head from the branches already on GitHub, add a title and description, optionally as a draft, review exactly what will be published, and confirm. Cancelling at any step sends nothing; each created pull request is recorded in the Activity history.
+- **M6** If GitHub rejects the token, the tab says so and offers to reconnect; if GitHub cannot be reached it offers *Retry*; if the rate limit is hit it shows when it resets. Repositories without a `github.com` remote are shown as "not on GitHub" instead of failing.
+- **M6** Every project now has a GitHub tab (existing projects get it too). Disconnecting deletes the stored token from your computer and leaves the tab ready to connect again; deleting a project deletes its token as well.
 - **M5** Connections are grouped by environment (Production, Staging, Dev… in your own words; known names keep a prod → stage → dev order, ungrouped last).
 - **M5** Each connection records its VPC (name, id, CIDR), and optionally its provider (AWS, DigitalOcean, Google Cloud, Azure, Hetzner, Linode, Vultr, on-premises, other), region, domain, IP address and a description. They are informational and shown on its card.
 - **M5** SSH tab: save hosts per project (name, host or `~/.ssh/config` alias, optional user and port) and use them through your system `ssh`, so your agent, keys and config apply. Steward never stores keys or passwords.
@@ -58,6 +64,7 @@ Categories: **Added** · **Changed** · **Fixed** · **Removed** · **Security**
 - **M4** Tooling: `node-pty` (pseudo-terminals) and `@xterm/xterm` added; the native module is unpacked from the app archive when packaging.
 
 ### Changed
+- **M6** The Actions tab placeholder now points to Milestone 6.5; Milestone 6 delivers the GitHub connection and pull requests.
 - **M5** The SSH tab is labelled **VPC** in the project tab bar.
 - **M5** Project cards in the Overview show counts instead of one pill per repository: *GitHub (n)*, *Repositories (n)* for non-GitHub ones (hover for the names), and *VPC (n)* for the project's saved connections.
 - **M5** SSH tab redesigned as **VPC connections**: a *Saved connections* list on the left (search, environment filter, collapsible groups with Production highlighted, per-connection status) and a detail editor on the right with *Configuration* and *Session history* tabs, a connection route (this machine → VPC → server), SSH session status, sessions active on other connections, and *Save changes* / *Connect via SSH* in the footer.
@@ -85,6 +92,8 @@ Categories: **Added** · **Changed** · **Fixed** · **Removed** · **Security**
 - **Tooling** `graphify-out/` and the Obsidian `vault/` are no longer tracked; they stay local and are ignored by Git.
 
 ### Security
+- **M6** The GitHub token is encrypted with the OS keyring (`safeStorage`) in a file under Steward's data folder, readable only by the main process. It is never stored in the database, logs, activity history or the UI, and it is not sent anywhere except `api.github.com`. If the system cannot encrypt secrets, Steward refuses to store the token.
+- **M6** Links opened from Steward must be plain `https://github.com/…`; repository owner and name are taken from the stored remote, never from the UI.
 - **M4** The renderer can only send keystrokes and resize requests to terminals that already exist; folder and shell are resolved in the main process, and there is still no channel that runs a command string. Terminal logs mask URL credentials and GitHub tokens.
 - **M3** Commit hashes and file paths are validated in the schema before they reach `git`.
 - **M2** Git runs with `GIT_TERMINAL_PROMPT=0`, `GIT_LITERAL_PATHSPECS=1` and `LC_ALL=C`; arguments are always arrays, so a branch or file named like shell syntax is plain data.

@@ -53,6 +53,18 @@ import type {
   TerminalWriteInput
 } from '../schemas/terminal';
 import type {
+  GithubBranchList,
+  GithubConnectInput,
+  GithubCreatePullInput,
+  GithubCreatedPull,
+  GithubIntegration,
+  GithubListBranchesInput,
+  GithubListPullsInput,
+  GithubOpenUrlInput,
+  GithubProjectInput,
+  GithubPullPage
+} from '../schemas/github';
+import type {
   SshCommandResult,
   SshCreateInput,
   SshHost,
@@ -139,7 +151,16 @@ export const IPC_CHANNELS = {
   sshTrustHostKey: 'ssh:trustHostKey',
   sshRunCommand: 'ssh:runCommand',
   sshListExecutions: 'ssh:listExecutions',
-  sshPickKeyFile: 'ssh:pickKeyFile'
+  sshPickKeyFile: 'ssh:pickKeyFile',
+
+  githubConnect: 'github:connect',
+  githubImportFromGh: 'github:importFromGh',
+  githubDisconnect: 'github:disconnect',
+  githubStatus: 'github:status',
+  githubListPulls: 'github:listPulls',
+  githubListBranches: 'github:listBranches',
+  githubCreatePull: 'github:createPull',
+  githubOpenUrl: 'github:openUrl'
 } as const;
 
 /**
@@ -253,5 +274,20 @@ export interface StewardApi {
     listExecutions: (input: SshListExecutionsInput) => Promise<StewardResult<Execution[]>>;
     /** Opens the OS file picker for a private key. Only the chosen path comes back, never the file's content. */
     pickKeyFile: () => Promise<StewardResult<DirectoryPick>>;
+  };
+  github: {
+    /** The token goes in once and never comes back: the result describes the connection only. */
+    connect: (input: GithubConnectInput) => Promise<StewardResult<GithubIntegration>>;
+    /** Reads the token from `gh auth token`. Only ever called from an explicit user action. */
+    importFromGh: (input: GithubProjectInput) => Promise<StewardResult<GithubIntegration>>;
+    disconnect: (input: GithubProjectInput) => Promise<StewardResult<GithubIntegration>>;
+    /** Re-validates the stored token against GitHub and reports the connection state. */
+    status: (input: GithubProjectInput) => Promise<StewardResult<GithubIntegration>>;
+    listPulls: (input: GithubListPullsInput) => Promise<StewardResult<GithubPullPage>>;
+    listBranches: (input: GithubListBranchesInput) => Promise<StewardResult<GithubBranchList>>;
+    /** Publishes to GitHub, so the input must carry `confirmed: true`. */
+    createPull: (input: GithubCreatePullInput) => Promise<StewardResult<GithubCreatedPull>>;
+    /** Opens a github.com link in the browser; main rejects any other host. */
+    openUrl: (input: GithubOpenUrlInput) => Promise<StewardResult<null>>;
   };
 }

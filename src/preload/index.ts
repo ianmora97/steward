@@ -102,6 +102,16 @@ const api: StewardApi = {
     runCommand: (input) => invoke(IPC_CHANNELS.sshRunCommand, input),
     listExecutions: (input) => invoke(IPC_CHANNELS.sshListExecutions, input),
     pickKeyFile: () => invoke(IPC_CHANNELS.sshPickKeyFile)
+  },
+  github: {
+    connect: (input) => invoke(IPC_CHANNELS.githubConnect, input),
+    importFromGh: (input) => invoke(IPC_CHANNELS.githubImportFromGh, input),
+    disconnect: (input) => invoke(IPC_CHANNELS.githubDisconnect, input),
+    status: (input) => invoke(IPC_CHANNELS.githubStatus, input),
+    listPulls: (input) => invoke(IPC_CHANNELS.githubListPulls, input),
+    listBranches: (input) => invoke(IPC_CHANNELS.githubListBranches, input),
+    createPull: (input) => invoke(IPC_CHANNELS.githubCreatePull, input),
+    openUrl: (input) => invoke(IPC_CHANNELS.githubOpenUrl, input)
   }
 };
 

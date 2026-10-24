@@ -1,10 +1,14 @@
 import { join } from 'node:path';
-import { BrowserWindow, app, dialog, shell } from 'electron';
+import { BrowserWindow, app, dialog, safeStorage, shell } from 'electron';
 import { TERMINAL_EVENTS, type AppInfo, type DirectoryPick } from '@shared/types/ipc';
 import { openStewardDatabase, type StewardDatabase } from './db/connection';
 import { registerIpcHandlers } from './ipc/register';
 import { validateExistingDirectory, validateExistingFile } from './security/paths';
 import { getGitVersion } from './services/git.service';
+import { createGithubApi } from './services/github-api';
+import { createGithubIntegrationService } from './services/github-integration.service';
+import { createGithubPullsService } from './services/github-pulls.service';
+import { createSecretStore } from './security/secret-store';
 import { createSshService } from './services/ssh.service';
 import { createTerminalService, type TerminalService } from './services/terminal.service';
 
@@ -234,10 +238,25 @@ function startup(): void {
     emitExit: (event) => sendToWindow(TERMINAL_EVENTS.exit, event)
   });
 
+  const githubApi = createGithubApi();
+  const github = createGithubIntegrationService({
+    db: database.db,
+    secrets: createSecretStore({ directory: join(app.getPath('userData'), 'secrets'), safeStorage }),
+    api: githubApi
+  });
+  const githubPulls = createGithubPullsService({
+    db: database.db,
+    github,
+    api: githubApi,
+    openExternal: (url) => shell.openExternal(url)
+  });
+
   registerIpcHandlers({
     database,
     terminal,
     ssh,
+    github,
+    githubPulls,
     readAppInfo,
     pickDirectory,
     pickKeyFile
