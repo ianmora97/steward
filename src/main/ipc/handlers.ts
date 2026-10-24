@@ -58,6 +58,38 @@ import {
   dockerVolumeRemoveInputSchema
 } from '@shared/schemas/docker';
 import {
+  mongoAggregateExplainInputSchema,
+  mongoAggregateInputSchema,
+  mongoConnectionCreateInputSchema,
+  mongoConnectionDraftInputSchema,
+  mongoConnectionIdInputSchema,
+  mongoConnectionListInputSchema,
+  mongoConnectionUpdateInputSchema,
+  mongoCountInputSchema,
+  mongoCreateCollectionInputSchema,
+  mongoDatabaseInputSchema,
+  mongoDeleteManyInputSchema,
+  mongoDeleteOneInputSchema,
+  mongoDropCollectionInputSchema,
+  mongoDropDatabaseInputSchema,
+  mongoExplainInputSchema,
+  mongoExportInputSchema,
+  mongoFindInputSchema,
+  mongoImportInputSchema,
+  mongoIndexCreateInputSchema,
+  mongoIndexDropInputSchema,
+  mongoInsertInputSchema,
+  mongoNamespaceInputSchema,
+  mongoPickFileInputSchema,
+  mongoReplaceInputSchema,
+  mongoSavedQueryDeleteInputSchema,
+  mongoSavedQueryListInputSchema,
+  mongoSavedQuerySaveInputSchema,
+  mongoSchemaInputSchema,
+  mongoUpdateManyInputSchema,
+  mongoValidationSetInputSchema
+} from '@shared/schemas/mongodb';
+import {
   environmentCreateInputSchema,
   environmentIdInputSchema,
   environmentListInputSchema,
@@ -158,6 +190,7 @@ import {
 } from '../services/environment.service';
 import type { DeploymentService } from '../services/deployment.service';
 import type { DockerService } from '../services/docker.service';
+import type { MongoService } from '../services/mongo.service';
 import type { GithubIntegrationService } from '../services/github-integration.service';
 import type { GithubActionsService } from '../services/github-actions.service';
 import type { GithubPullsService } from '../services/github-pulls.service';
@@ -189,6 +222,7 @@ export interface IpcContext {
   githubActions: GithubActionsService;
   deployments: DeploymentService;
   docker: DockerService;
+  mongo: MongoService;
   /** Supplied by the Electron layer; see src/main/index.ts. */
   readAppInfo: () => Promise<AppInfo>;
   /** Opens the OS folder picker. Cancelling is a normal outcome, not an error. */
@@ -279,9 +313,11 @@ export function buildHandlerDefinitions(context: IpcContext): IpcHandlerDefiniti
     defineHandler({
       channel: IPC_CHANNELS.projectsDelete,
       schema: projectIdPayloadSchema,
-      handle: (input) => {
+      handle: async (input) => {
         context.terminal.closeByProject(input.id);
         context.docker.closeByProject(input.id);
+        // Connections cascade away with the project, but their encrypted secrets and open clients would stay.
+        await context.mongo.purgeProject(input.id);
         // The row would cascade away, but the encrypted token file would stay behind.
         context.github.purgeProject(input.id);
         return deleteProject(db, input.id);
@@ -787,6 +823,177 @@ export function buildHandlerDefinitions(context: IpcContext): IpcHandlerDefiniti
       channel: IPC_CHANNELS.dockerComposeAction,
       schema: dockerComposeActionInputSchema,
       handle: (input) => context.docker.composeAction(input)
+    }),
+
+    defineHandler({
+      channel: IPC_CHANNELS.mongoConnectionsList,
+      schema: mongoConnectionListInputSchema,
+      handle: (input) => context.mongo.listConnections(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.mongoConnectionsCreate,
+      schema: mongoConnectionCreateInputSchema,
+      handle: (input) => context.mongo.createConnection(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.mongoConnectionsUpdate,
+      schema: mongoConnectionUpdateInputSchema,
+      handle: (input) => context.mongo.updateConnection(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.mongoConnectionsDelete,
+      schema: mongoConnectionIdInputSchema,
+      handle: (input) => context.mongo.removeConnection(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.mongoConnectionsTest,
+      schema: mongoConnectionIdInputSchema,
+      handle: (input) => context.mongo.testConnection(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.mongoConnectionsTestDraft,
+      schema: mongoConnectionDraftInputSchema,
+      handle: (input) => context.mongo.testDraft(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.mongoPickFile,
+      schema: mongoPickFileInputSchema,
+      handle: (input) => context.mongo.pickFile(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.mongoDatabasesList,
+      schema: mongoConnectionIdInputSchema,
+      handle: (input) => context.mongo.listDatabases(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.mongoCollectionsList,
+      schema: mongoDatabaseInputSchema,
+      handle: (input) => context.mongo.listCollections(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.mongoCollectionStats,
+      schema: mongoNamespaceInputSchema,
+      handle: (input) => context.mongo.collectionStats(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.mongoFind,
+      schema: mongoFindInputSchema,
+      handle: (input) => context.mongo.find(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.mongoCount,
+      schema: mongoCountInputSchema,
+      handle: (input) => context.mongo.count(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.mongoExplain,
+      schema: mongoExplainInputSchema,
+      handle: (input) => context.mongo.explain(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.mongoInsert,
+      schema: mongoInsertInputSchema,
+      handle: (input) => context.mongo.insert(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.mongoReplace,
+      schema: mongoReplaceInputSchema,
+      handle: (input) => context.mongo.replace(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.mongoDeleteOne,
+      schema: mongoDeleteOneInputSchema,
+      handle: (input) => context.mongo.deleteOne(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.mongoDeleteMany,
+      schema: mongoDeleteManyInputSchema,
+      handle: (input) => context.mongo.deleteMany(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.mongoUpdateMany,
+      schema: mongoUpdateManyInputSchema,
+      handle: (input) => context.mongo.updateMany(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.mongoCreateCollection,
+      schema: mongoCreateCollectionInputSchema,
+      handle: (input) => context.mongo.createCollection(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.mongoDropCollection,
+      schema: mongoDropCollectionInputSchema,
+      handle: (input) => context.mongo.dropCollection(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.mongoDropDatabase,
+      schema: mongoDropDatabaseInputSchema,
+      handle: (input) => context.mongo.dropDatabase(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.mongoAggregate,
+      schema: mongoAggregateInputSchema,
+      handle: (input) => context.mongo.aggregate(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.mongoAggregateExplain,
+      schema: mongoAggregateExplainInputSchema,
+      handle: (input) => context.mongo.explainAggregate(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.mongoIndexesList,
+      schema: mongoNamespaceInputSchema,
+      handle: (input) => context.mongo.listIndexes(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.mongoIndexCreate,
+      schema: mongoIndexCreateInputSchema,
+      handle: (input) => context.mongo.createIndex(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.mongoIndexDrop,
+      schema: mongoIndexDropInputSchema,
+      handle: (input) => context.mongo.dropIndex(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.mongoSchemaAnalyze,
+      schema: mongoSchemaInputSchema,
+      handle: (input) => context.mongo.analyzeSchema(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.mongoValidationGet,
+      schema: mongoNamespaceInputSchema,
+      handle: (input) => context.mongo.getValidation(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.mongoValidationSet,
+      schema: mongoValidationSetInputSchema,
+      handle: (input) => context.mongo.setValidation(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.mongoExport,
+      schema: mongoExportInputSchema,
+      handle: (input) => context.mongo.exportQuery(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.mongoImport,
+      schema: mongoImportInputSchema,
+      handle: (input) => context.mongo.importFile(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.mongoSavedList,
+      schema: mongoSavedQueryListInputSchema,
+      handle: (input) => context.mongo.listSavedQueries(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.mongoSavedSave,
+      schema: mongoSavedQuerySaveInputSchema,
+      handle: (input) => context.mongo.saveQuery(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.mongoSavedDelete,
+      schema: mongoSavedQueryDeleteInputSchema,
+      handle: (input) => context.mongo.deleteSavedQuery(input)
     })
   ];
 }

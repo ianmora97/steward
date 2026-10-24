@@ -144,6 +144,56 @@ import type {
   DockerVolume,
   DockerVolumeRemoveInput
 } from '../schemas/docker';
+import type {
+  MongoAggregateExplainInput,
+  MongoAggregateInput,
+  MongoAggregateResult,
+  MongoCollectionInfo,
+  MongoCollectionStats,
+  MongoConnection,
+  MongoConnectionCreateInput,
+  MongoConnectionDraftInput,
+  MongoConnectionIdInput,
+  MongoConnectionListInput,
+  MongoConnectionUpdateInput,
+  MongoCountInput,
+  MongoCountResult,
+  MongoCreateCollectionInput,
+  MongoDatabaseInfo,
+  MongoDatabaseInput,
+  MongoDeleteManyInput,
+  MongoDeleteOneInput,
+  MongoDropCollectionInput,
+  MongoDropDatabaseInput,
+  MongoExplainInput,
+  MongoExplainSummary,
+  MongoExportInput,
+  MongoExportResult,
+  MongoFindInput,
+  MongoFindResult,
+  MongoImportInput,
+  MongoImportResult,
+  MongoIndex,
+  MongoIndexCreateInput,
+  MongoIndexDropInput,
+  MongoInsertInput,
+  MongoInsertResult,
+  MongoNamespaceInput,
+  MongoPickedFile,
+  MongoPickFileInput,
+  MongoReplaceInput,
+  MongoSavedQuery,
+  MongoSavedQueryDeleteInput,
+  MongoSavedQueryListInput,
+  MongoSavedQuerySaveInput,
+  MongoSchemaInput,
+  MongoSchemaResult,
+  MongoTestResult,
+  MongoUpdateManyInput,
+  MongoValidation,
+  MongoValidationSetInput,
+  MongoWriteResult
+} from '../schemas/mongodb';
 
 /**
  * Every channel Steward exposes, enumerated.
@@ -266,7 +316,42 @@ export const IPC_CHANNELS = {
   dockerLogsStop: 'docker:logs:stop',
   dockerComposeList: 'docker:compose:list',
   dockerComposeServices: 'docker:compose:services',
-  dockerComposeAction: 'docker:compose:action'
+  dockerComposeAction: 'docker:compose:action',
+
+  mongoConnectionsList: 'mongo:connections:list',
+  mongoConnectionsCreate: 'mongo:connections:create',
+  mongoConnectionsUpdate: 'mongo:connections:update',
+  mongoConnectionsDelete: 'mongo:connections:delete',
+  mongoConnectionsTest: 'mongo:connections:test',
+  mongoConnectionsTestDraft: 'mongo:connections:testDraft',
+  mongoPickFile: 'mongo:pickFile',
+  mongoDatabasesList: 'mongo:databases:list',
+  mongoCollectionsList: 'mongo:collections:list',
+  mongoCollectionStats: 'mongo:collections:stats',
+  mongoFind: 'mongo:find',
+  mongoCount: 'mongo:count',
+  mongoExplain: 'mongo:explain',
+  mongoInsert: 'mongo:insert',
+  mongoReplace: 'mongo:replace',
+  mongoDeleteOne: 'mongo:deleteOne',
+  mongoDeleteMany: 'mongo:deleteMany',
+  mongoUpdateMany: 'mongo:updateMany',
+  mongoCreateCollection: 'mongo:createCollection',
+  mongoDropCollection: 'mongo:dropCollection',
+  mongoDropDatabase: 'mongo:dropDatabase',
+  mongoAggregate: 'mongo:aggregate',
+  mongoAggregateExplain: 'mongo:aggregateExplain',
+  mongoIndexesList: 'mongo:indexes:list',
+  mongoIndexCreate: 'mongo:indexes:create',
+  mongoIndexDrop: 'mongo:indexes:drop',
+  mongoSchemaAnalyze: 'mongo:schema:analyze',
+  mongoValidationGet: 'mongo:validation:get',
+  mongoValidationSet: 'mongo:validation:set',
+  mongoExport: 'mongo:export',
+  mongoImport: 'mongo:import',
+  mongoSavedList: 'mongo:saved:list',
+  mongoSavedSave: 'mongo:saved:save',
+  mongoSavedDelete: 'mongo:saved:delete'
 } as const;
 
 /**
@@ -469,5 +554,47 @@ export interface StewardApi {
     composeAction: (input: DockerComposeActionInput) => Promise<StewardResult<DockerCommandOutput>>;
     onLog: (listener: (event: DockerLogEvent) => void) => () => void;
     onLogEnd: (listener: (event: DockerLogEndEvent) => void) => () => void;
+  };
+  mongo: {
+    list: (input: MongoConnectionListInput) => Promise<StewardResult<MongoConnection[]>>;
+    /** The URI and credentials go in once, are stored encrypted and never come back. */
+    create: (input: MongoConnectionCreateInput) => Promise<StewardResult<MongoConnection>>;
+    update: (input: MongoConnectionUpdateInput) => Promise<StewardResult<MongoConnection>>;
+    remove: (input: MongoConnectionIdInput) => Promise<StewardResult<{ id: string }>>;
+    test: (input: MongoConnectionIdInput) => Promise<StewardResult<MongoTestResult>>;
+    /** Tries a connection that is not saved yet. */
+    testDraft: (input: MongoConnectionDraftInput) => Promise<StewardResult<MongoTestResult>>;
+    /** Opens the OS file picker. Only the chosen path (or, for an import, an opaque token) comes back. */
+    pickFile: (input: MongoPickFileInput) => Promise<StewardResult<MongoPickedFile>>;
+    listDatabases: (input: MongoConnectionIdInput) => Promise<StewardResult<MongoDatabaseInfo[]>>;
+    listCollections: (input: MongoDatabaseInput) => Promise<StewardResult<MongoCollectionInfo[]>>;
+    collectionStats: (input: MongoNamespaceInput) => Promise<StewardResult<MongoCollectionStats>>;
+    /** Documents come back as canonical Extended JSON text; see shared/mongo/shell-format. */
+    find: (input: MongoFindInput) => Promise<StewardResult<MongoFindResult>>;
+    count: (input: MongoCountInput) => Promise<StewardResult<MongoCountResult>>;
+    explain: (input: MongoExplainInput) => Promise<StewardResult<MongoExplainSummary>>;
+    /** Every write below fails with CONNECTION_READ_ONLY on a read-only connection. */
+    insert: (input: MongoInsertInput) => Promise<StewardResult<MongoInsertResult>>;
+    replace: (input: MongoReplaceInput) => Promise<StewardResult<MongoWriteResult>>;
+    deleteOne: (input: MongoDeleteOneInput) => Promise<StewardResult<MongoWriteResult>>;
+    deleteMany: (input: MongoDeleteManyInput) => Promise<StewardResult<MongoWriteResult>>;
+    updateMany: (input: MongoUpdateManyInput) => Promise<StewardResult<MongoWriteResult>>;
+    createCollection: (input: MongoCreateCollectionInput) => Promise<StewardResult<{ collection: string }>>;
+    dropCollection: (input: MongoDropCollectionInput) => Promise<StewardResult<{ collection: string }>>;
+    dropDatabase: (input: MongoDropDatabaseInput) => Promise<StewardResult<{ db: string }>>;
+    aggregate: (input: MongoAggregateInput) => Promise<StewardResult<MongoAggregateResult>>;
+    explainAggregate: (input: MongoAggregateExplainInput) => Promise<StewardResult<MongoExplainSummary>>;
+    listIndexes: (input: MongoNamespaceInput) => Promise<StewardResult<MongoIndex[]>>;
+    createIndex: (input: MongoIndexCreateInput) => Promise<StewardResult<{ name: string }>>;
+    dropIndex: (input: MongoIndexDropInput) => Promise<StewardResult<{ name: string }>>;
+    analyzeSchema: (input: MongoSchemaInput) => Promise<StewardResult<MongoSchemaResult>>;
+    getValidation: (input: MongoNamespaceInput) => Promise<StewardResult<MongoValidation>>;
+    setValidation: (input: MongoValidationSetInput) => Promise<StewardResult<MongoValidation>>;
+    /** Asks where to save in a native dialog, then writes the file from the main process. */
+    exportQuery: (input: MongoExportInput) => Promise<StewardResult<MongoExportResult>>;
+    importFile: (input: MongoImportInput) => Promise<StewardResult<MongoImportResult>>;
+    listSavedQueries: (input: MongoSavedQueryListInput) => Promise<StewardResult<MongoSavedQuery[]>>;
+    saveQuery: (input: MongoSavedQuerySaveInput) => Promise<StewardResult<MongoSavedQuery>>;
+    deleteSavedQuery: (input: MongoSavedQueryDeleteInput) => Promise<StewardResult<{ id: string }>>;
   };
 }

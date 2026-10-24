@@ -463,7 +463,7 @@ The detailed design and the decisions taken while implementing it are in `docs/s
 | --- | --- | --- | --- |
 | M8 | `milestone-8-docker` | `docs/superpowers/specs/2026-10-23-m8-docker-design.md` | Containers, images, volumes, networks and Compose, local or over SSH (Docker CLI with `--format json`, no `dockerode`) |
 | M9 | — | — | **Cancelled (2026-10-24).** PM2 monitoring was designed (SSH + `pm2 jlist`) and built, then dropped: the dashboard the user relies on, PM2 Plus, has no free plan, and the user wants no paid services. Numbering of the later milestones is unchanged |
-| M10 | `milestone-10-mongodb` | `docs/superpowers/specs/2026-10-23-m10-mongodb-design.md` | Compass-style MongoDB client: direct, Atlas, TLS, List/JSON/Table, CRUD, aggregations, indexes, schema, import/export. EJSON on the wire |
+| M10 | `milestone-10-mongodb` | `docs/superpowers/specs/2026-10-23-m10-mongodb-design.md` | **Implemented (2026-10-24), without the optional 10.4 shell.** Compass-style MongoDB client: direct, Atlas, TLS, List/JSON/Table, CRUD, aggregations, indexes, schema, import/export. EJSON on the wire |
 | M11 | `milestone-11-redis` | `docs/superpowers/specs/2026-10-23-m11-redis-design.md` | Redis Insight-style client: `SCAN`-based browser, all types, workbench, pub/sub, insights, memory analysis |
 | M12 | `milestone-12-observability` | `docs/superpowers/specs/2026-10-23-m12-observability-design.md` | Grafana, Loki, Prometheus (Sentry later) behind an `ObservabilityProvider` contract, and an Investigate view with M7 deploy markers |
 | M13 | `milestone-13-cloud` | `docs/superpowers/specs/2026-10-23-m13-cloud-design.md` | Domains and DNS/TLS/HTTP checks, AWS and Cloudflare read-only inventory, topology, then guarded DNS edits |

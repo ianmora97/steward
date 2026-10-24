@@ -7,6 +7,7 @@ import { ProjectSidebar } from './features/projects/ProjectSidebar';
 import { DeploymentsPanel } from './features/deployments/DeploymentsPanel';
 import { DockerPanel } from './features/docker/DockerPanel';
 import { GitPanel } from './features/git/GitPanel';
+import { MongoPanel } from './features/mongodb/MongoPanel';
 import { GithubPanel } from './features/github/GithubPanel';
 import { SshPanel } from './features/ssh/SshPanel';
 import { TerminalPanel } from './features/terminal/TerminalPanel';
@@ -39,6 +40,8 @@ function PanelFor({ tabKey }: { tabKey: TabKey | null }): React.JSX.Element {
       return <GithubPanel />;
     case 'deployments':
       return <DeploymentsPanel />;
+    case 'mongodb':
+      return <MongoPanel />;
     case 'docker':
       return <DockerPanel />;
     default:

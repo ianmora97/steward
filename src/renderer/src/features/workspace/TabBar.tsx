@@ -9,6 +9,7 @@ const TAB_LABELS: Record<TabKey, string> = {
   github: 'GitHub',
   deployments: 'Deployments',
   docker: 'Docker',
+  mongodb: 'MongoDB',
   settings: 'Settings'
 };
 
@@ -19,6 +20,7 @@ const TAB_ICONS: Record<TabKey, IconName> = {
   github: 'pullRequest',
   deployments: 'deployments',
   docker: 'docker',
+  mongodb: 'database',
   settings: 'settings'
 };
 
