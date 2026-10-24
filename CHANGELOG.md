@@ -11,6 +11,9 @@ Categories: **Added** · **Changed** · **Fixed** · **Removed** · **Security**
 ## [Unreleased]
 
 ### Added
+- **M6.6** Every status in the GitHub tab is now a coloured pill with an icon (success, failure, in progress, skipped, open, merged, closed, draft), so state reads at a glance and never depends on colour alone.
+- **M6.6** *Pull requests* and *Actions* are now buttons with their own status: open pull request count on one, workflow health (healthy, degraded, failing) on the other.
+- **M6.6** The commit graph has a labelled header and a branch column: branch and tag names sit on the left in the colour of their lane (a local branch and its remote collapse into one label, extra ones show as +N) and the commit message on the right.
 - **M6.5** Actions view inside the GitHub tab (switch between *Pull requests* and *Actions*): the repository's workflow runs with status and conclusion, branch, event, commit, author and duration, filterable by workflow and loaded 30 at a time.
 - **M6.5** Open a run to see its jobs and steps with their results, and *View log* on a job to read the end of its log (up to the last 200 KB) as plain text — colour codes and anything that looks like a token are removed. Very large logs and logs GitHub has already deleted (after 90 days) say so instead of failing.
 - **M6.5** Two separate signals at the top of Actions: *Connection* and *Workflows* (healthy, degraded, failing or unknown, from the latest 30 runs). A failing workflow shows as failing while the connection still reads connected. *Refresh* re-reads everything.
@@ -68,6 +71,8 @@ Categories: **Added** · **Changed** · **Fixed** · **Removed** · **Security**
 - **M4** Tooling: `node-pty` (pseudo-terminals) and `@xterm/xterm` added; the native module is unpacked from the app archive when packaging.
 
 ### Changed
+- **M6.6** GitHub tab reorganised: who you are connected as (with token scopes) sits in the header, and each view has a single toolbar with repository, filter, refresh and *New pull request*. Pull requests and runs show branch, author and relative time as light chips; run steps use status icons.
+- **M6.6** The *Workspace* tab is now *Settings*, always last and aligned to the right edge of the tab bar; the other tabs keep their left-to-right order, which can still be rearranged.
 - **M6** The Actions tab placeholder now points to Milestone 6.5; Milestone 6 delivers the GitHub connection and pull requests.
 - **M5** The SSH tab is labelled **VPC** in the project tab bar.
 - **M5** Project cards in the Overview show counts instead of one pill per repository: *GitHub (n)*, *Repositories (n)* for non-GitHub ones (hover for the names), and *VPC (n)* for the project's saved connections.
@@ -84,6 +89,8 @@ Categories: **Added** · **Changed** · **Fixed** · **Removed** · **Security**
 - **M1** Database uses Node's built-in `node:sqlite` instead of `better-sqlite3`, so there is no native module or C++ toolchain to install. It sits behind the `SqlDatabase` interface in `src/main/db/driver.ts`.
 
 ### Fixed
+- **M6.6** Dropdown lists (repository, workflow, filters) opened with a white background and unreadable text; they now follow the dark theme.
+- **M6.6** Status pills in the GitHub tab showed no colour because an older style with the same name overrode them; open is green, merged purple, closed red, and run results are green, red, amber or grey.
 - **M5** *Open shell* failed on Windows with "File not found"; Steward now starts `ssh` by its full path.
 - **M5** The SSH tab now appears: new projects get it, and existing projects get it added after their last tab on first launch.
 - **M4.5** Copy and paste in the terminal: Ctrl+C copies when text is selected (otherwise it still interrupts), Ctrl+Shift+C copies, Ctrl+V / Ctrl+Shift+V pastes, and right-click copies the selection or pastes.

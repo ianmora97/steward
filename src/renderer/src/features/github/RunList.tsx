@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import type { GithubJob, GithubRun } from '@shared/schemas/github';
+import { Icon } from '../../components/Icon';
+import { Pill } from '../../components/Pill';
 import { RunDetail } from './RunDetail';
-import { formatDuration, formatWhen, runChip, shortSha } from './run-format';
+import { formatDuration, formatWhen, runChip, shortSha, timeAgo } from './run-format';
 
 export function RunList({
   runs,
@@ -46,18 +48,36 @@ export function RunList({
           const duration = run.status === 'completed' ? formatDuration(run.startedAt ?? run.createdAt, run.updatedAt) : '';
           return (
             <li key={run.id} className="ghrun">
-              <button type="button" className="ghrun__row" aria-expanded={open} onClick={() => toggle(run.id)}>
-                <span className={`chip ghchip ghchip--${chip.tone}`}>{chip.label}</span>
-                <span className="ghrun__main">
-                  <span className="ghrun__title">
+              <button type="button" className="ghitem ghrun__row" aria-expanded={open} onClick={() => toggle(run.id)}>
+                <Pill tone={chip.tone} icon={chip.icon}>
+                  {chip.label}
+                </Pill>
+                <span className="ghitem__main">
+                  <span className="ghitem__title ghitem__title--static">
                     {run.title === '' ? run.workflowName : run.title}
-                    <span className="ghpull__number"> #{run.runNumber}</span>
+                    <span className="ghitem__number">#{run.runNumber}</span>
                   </span>
-                  <span className="ghpull__meta">
-                    {run.workflowName} · {run.branch ?? '—'} · {run.event} · {shortSha(run.sha)} ·{' '}
-                    {run.actor ?? 'unknown'} · {formatWhen(run.createdAt)}
-                    {duration === '' ? '' : ` · ${duration}`}
+                  <span className="ghmeta">
+                    <span className="ghmeta__item ghmeta__item--strong">{run.workflowName}</span>
+                    <span className="ghmeta__refs">
+                      <Icon name="git" size={12} />
+                      <code className="ghref">{run.branch ?? '—'}</code>
+                    </span>
+                    <span className="ghmeta__item">{run.event}</span>
+                    <code className="ghmeta__sha">{shortSha(run.sha)}</code>
+                    <span className="ghmeta__item">
+                      <Icon name="user" size={12} />
+                      {run.actor ?? 'unknown'}
+                    </span>
+                    <span className="ghmeta__item" title={formatWhen(run.createdAt)}>
+                      <Icon name="clock" size={12} />
+                      {timeAgo(run.createdAt)}
+                    </span>
                   </span>
+                </span>
+                {duration !== '' && <span className="ghrun__duration">{duration}</span>}
+                <span className={`ghrun__chevron${open ? ' is-open' : ''}`}>
+                  <Icon name="chevronRight" size={14} />
                 </span>
               </button>
               {open && (

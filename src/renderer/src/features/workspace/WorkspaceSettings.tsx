@@ -1,6 +1,6 @@
 import { useAppStore } from '../../stores/app.store';
 import { Icon } from '../../components/Icon';
-import { tabIcon, tabLabel } from './TabBar';
+import { FIXED_LAST_TAB, tabIcon, tabLabel } from './TabBar';
 
 /**
  * Tab layout is a stored preference, so reordering, hiding and restoring are
@@ -15,14 +15,17 @@ export function WorkspaceSettings(): React.JSX.Element {
   const restoreTabs = useAppStore((state) => state.restoreTabs);
   const appInfo = useAppStore((state) => state.appInfo);
 
-  const ordered = [...tabs].sort((a, b) => a.position - b.position);
+  const ordered = [...tabs]
+    .sort((a, b) => a.position - b.position)
+    .filter((tab) => tab.tabKey !== FIXED_LAST_TAB);
+  const fixedTab = tabs.find((tab) => tab.tabKey === FIXED_LAST_TAB);
 
   return (
     <div className="panel">
       <section className="card">
-        <h2 className="card__title">Workspace tabs</h2>
+        <h2 className="card__title">Tabs</h2>
         <p className="card__hint">
-          Reorder or hide the tabs of this project. Preferences are stored locally per project. Tabs for
+          Reorder or hide the tabs of this project; Settings always stays last, on the right. Preferences are stored locally per project. Tabs for
           GitHub, SSH, Actions and deployments appear here once those integrations are configured.
         </p>
 
@@ -67,6 +70,16 @@ export function WorkspaceSettings(): React.JSX.Element {
               </div>
             </li>
           ))}
+          {fixedTab !== undefined && (
+            <li className="tab-admin__row">
+              <span className="tab-admin__position">{ordered.length + 1}</span>
+              <span className="tab-admin__name">
+                <Icon name={tabIcon(fixedTab.tabKey)} />
+                {tabLabel(fixedTab.tabKey)}
+                <span className="chip chip--pinned">always last</span>
+              </span>
+            </li>
+          )}
         </ul>
 
         <button type="button" className="button" onClick={() => void restoreTabs()} disabled={busy}>

@@ -158,6 +158,11 @@ body {
   border-bottom-color: var(--accent);
 }
 
+/* Settings closes the bar, pushed to the far right. */
+.tabbar__tab--end {
+  margin-left: auto;
+}
+
 .tabbar__pin {
   color: var(--accent);
   font-size: 15px;
@@ -514,4 +519,89 @@ body {
   max-width: 56ch;
   color: var(--text-muted);
   font-size: 12.5px;
+}
+
+/* Status pills --------------------------------------------------------------- */
+
+:root {
+  --warn: #e0a93b;
+  --merged: #a371f7;
+}
+
+.status-pill {
+  --status-color: var(--text-muted);
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px 2px 6px;
+  border: 1px solid color-mix(in srgb, var(--status-color) 35%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--status-color) 14%, transparent);
+  color: var(--status-color);
+  font-size: 11.5px;
+  font-weight: 560;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.status-pill--success {
+  --status-color: var(--ok);
+}
+
+.status-pill--failure {
+  --status-color: var(--danger);
+}
+
+.status-pill--running,
+.status-pill--warning {
+  --status-color: var(--warn);
+}
+
+.status-pill--merged {
+  --status-color: var(--merged);
+}
+
+.status-pill--info {
+  --status-color: var(--accent);
+}
+
+.status-pill .icon {
+  flex: none;
+}
+
+.status-pill--running .icon {
+  animation: pill-spin 1.6s linear infinite;
+}
+
+@keyframes pill-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status-pill--running .icon {
+    animation: none;
+  }
+}
+
+/* Native dropdown popups ignore a transparent select background and fall back to white. */
+select {
+  color-scheme: dark;
+}
+
+select option,
+select optgroup {
+  background-color: var(--bg-raised);
+  color: var(--text);
+}
+
+select option:disabled {
+  color: var(--text-dim);
+}
+
+select option:checked {
+  background-color: var(--accent);
+  color: var(--accent-ink);
 }
