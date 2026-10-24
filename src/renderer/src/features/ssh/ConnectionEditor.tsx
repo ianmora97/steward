@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
+import type { Environment } from '@shared/schemas/environments';
 import type { Execution } from '@shared/schemas/git';
 import { SSH_PROVIDERS, type SshHost, type SshProvider } from '@shared/schemas/ssh';
 import type { TerminalSession } from '@shared/schemas/terminal';
 import type { StewardError } from '@shared/types/result';
 import { ErrorBanner } from '../../components/ErrorBanner';
 import { Icon } from '../../components/Icon';
+import { EnvironmentEditor } from '../deployments/EnvironmentEditor';
 import { CommandRunner, RemoteHistory } from './SshSession';
 import {
   AWS_REGIONS,
@@ -12,9 +14,11 @@ import {
   PROVIDER_LABELS,
   durationLabel,
   fileNameOf,
-  isProduction,
   sinceLabel
 } from './ssh-meta';
+
+/** The select option that opens the "new environment" dialog instead of choosing one. */
+const NEW_ENVIRONMENT = '__new__';
 
 export interface HostFields {
   name: string;
@@ -22,7 +26,7 @@ export interface HostFields {
   port: number | null;
   username: string | null;
   identityFile: string | null;
-  environment: string | null;
+  environmentId: string | null;
   provider: SshProvider | null;
   region: string | null;
   domain: string | null;
@@ -37,7 +41,8 @@ export interface HostFields {
 interface Draft {
   name: string;
   vpcName: string;
-  environment: string;
+  /** '' = no environment. */
+  environmentId: string;
   provider: SshProvider | '';
   region: string;
   vpcId: string;
@@ -56,7 +61,7 @@ function draftFromHost(host: SshHost | null): Draft {
   return {
     name: host?.name ?? '',
     vpcName: host?.vpcName ?? '',
-    environment: host?.environment ?? '',
+    environmentId: host?.environmentId ?? '',
     provider: host === null ? 'aws' : (host.provider ?? ''),
     region: host?.region ?? '',
     vpcId: host?.vpcId ?? '',
@@ -91,7 +96,7 @@ function fieldsFromDraft(draft: Draft, host: SshHost | null): HostFields | Stewa
     port,
     username: orNull(draft.username),
     identityFile: draft.identityFile,
-    environment: orNull(draft.environment),
+    environmentId: orNull(draft.environmentId),
     provider: draft.provider === '' ? null : draft.provider,
     region: orNull(draft.region),
     domain: orNull(draft.domain),
@@ -111,7 +116,9 @@ type Tab = 'configuration' | 'history';
 
 export function ConnectionEditor({
   host,
+  projectId,
   environments,
+  onEnvironmentCreated,
   history,
   sessions,
   hostsById,
@@ -127,7 +134,10 @@ export function ConnectionEditor({
 }: {
   /** null = a connection that has not been saved yet. */
   host: SshHost | null;
-  environments: string[];
+  projectId: string;
+  environments: Environment[];
+  /** A new environment was created from this form; the parent adds it to its list. */
+  onEnvironmentCreated: (environment: Environment) => void;
   history: Execution[];
   /** Running remote shells of the project, every connection included. */
   sessions: TerminalSession[];
@@ -147,6 +157,7 @@ export function ConnectionEditor({
   const [error, setError] = useState<StewardError | null>(null);
   const [saving, setSaving] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [creatingEnvironment, setCreatingEnvironment] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -160,7 +171,8 @@ export function ConnectionEditor({
 
   const set = <K extends keyof Draft>(key: K, value: Draft[K]): void => setDraft((current) => ({ ...current, [key]: value }));
   const dirty = JSON.stringify(draft) !== JSON.stringify(draftFromHost(host));
-  const prod = isProduction(draft.environment.trim() === '' ? null : draft.environment.trim());
+  const chosenEnvironment = environments.find((environment) => environment.id === draft.environmentId) ?? null;
+  const prod = chosenEnvironment?.kind === 'production';
   const awsRegion = draft.provider === 'aws';
 
   async function save(): Promise<void> {
@@ -197,6 +209,17 @@ export function ConnectionEditor({
 
   return (
     <section className="sshdetail">
+      {creatingEnvironment && (
+        <EnvironmentEditor
+          projectId={projectId}
+          environment={null}
+          onSaved={(created) => {
+            onEnvironmentCreated(created);
+            set('environmentId', created.id);
+          }}
+          onClose={() => setCreatingEnvironment(false)}
+        />
+      )}
       <header className="sshdetail__head">
         <span className="sshdetail__icon" aria-hidden="true">
           <Icon name="ssh" size={26} />
@@ -204,8 +227,8 @@ export function ConnectionEditor({
         <div className="sshdetail__titles">
           <h2 className="sshdetail__title">
             <span>{draft.name.trim() === '' ? 'New connection' : draft.name}</span>
-            {draft.environment.trim() !== '' && (
-              <span className={`sshenv${prod ? ' sshenv--prod' : ''}`}>{draft.environment.trim()}</span>
+            {chosenEnvironment !== null && (
+              <span className={`sshenv${prod ? ' sshenv--prod' : ''}`}>{chosenEnvironment.name}</span>
             )}
           </h2>
           {subtitle !== '' && <p className="sshdetail__subtitle">{subtitle}</p>}
@@ -296,18 +319,22 @@ export function ConnectionEditor({
               <div className="sshrow sshrow--three">
                 <label className="field">
                   <span className="field__label">Environment</span>
-                  <input
+                  <select
                     className="field__input"
-                    value={draft.environment}
-                    onChange={(e) => set('environment', e.target.value)}
-                    list="ssh-environments"
-                    placeholder="Production, Staging…"
-                  />
-                  <datalist id="ssh-environments">
-                    {environments.map((value) => (
-                      <option key={value} value={value} />
+                    value={draft.environmentId}
+                    onChange={(e) => {
+                      if (e.target.value === NEW_ENVIRONMENT) setCreatingEnvironment(true);
+                      else set('environmentId', e.target.value);
+                    }}
+                  >
+                    <option value="">No environment</option>
+                    {environments.map((environment) => (
+                      <option key={environment.id} value={environment.id}>
+                        {environment.name}
+                      </option>
                     ))}
-                  </datalist>
+                    <option value={NEW_ENVIRONMENT}>+ New environment…</option>
+                  </select>
                 </label>
                 <label className="field">
                   <span className="field__label">Provider</span>

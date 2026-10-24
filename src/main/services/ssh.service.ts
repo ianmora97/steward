@@ -15,7 +15,7 @@ import type {
   SshUpdateInput
 } from '@shared/schemas/ssh';
 import type { Execution } from '@shared/schemas/git';
-import { StewardServiceError } from '@shared/types/result';
+import { StewardServiceError, type StewardErrorCode } from '@shared/types/result';
 import type { SqlDatabase } from '../db/driver';
 import {
   findLastFinishedExecution,
@@ -37,6 +37,7 @@ import { runCommand, type RunResult } from '../exec/run';
 import { validateExistingFile } from '../security/paths';
 import { redactSecrets } from './git-errors';
 import { requireProject } from './project.service';
+import { findEnvironmentById } from '../db/environment.repo';
 import { SSH, sshDestination, sshOptionArgs } from './ssh-args';
 import { classifySshFailure, type ClassifiedSshFailure } from './ssh-errors';
 
@@ -44,12 +45,44 @@ const CHECK_TIMEOUT_MS = 15_000;
 const SCAN_TIMEOUT_MS = 20_000;
 const KIND_COMMAND = 'ssh_command';
 const KIND_CHECK = 'ssh_check';
+const KIND_DEPLOY = 'deploy';
 
 export interface SshServiceDeps {
   db: SqlDatabase;
   /** Steward's own known_hosts. Only an explicit trust decision writes to it. */
   knownHostsFile: string;
   logDirectory: string;
+}
+
+export interface SshDeployInput {
+  hostId: string;
+  /** The full remote command, already composed by the deploy runner. */
+  command: string;
+  timeoutSeconds: number;
+  /** Called as soon as the execution row exists, so a deployment can point at it while it runs. */
+  onExecutionStarted?: (executionId: string) => void;
+  /** A line the composed command prints to stderr the moment it begins; seeing it proves the command started. */
+  startMarker: string;
+}
+
+/**
+ * What a deploy needs to judge a remote run, kept apart from `SshCommandResult`
+ * because it must tell "the command failed" from "ssh could not tell us" and
+ * from "it did not finish in time", which `runCommand` folds into errors.
+ */
+export interface SshDeployOutcome {
+  executionId: string;
+  exitCode: number | null;
+  timedOut: boolean;
+  /**
+   * The start marker reached stderr, so the command began on the server. Without it a failure happened
+   * before that (connection, authentication, host key, a failed `cd`); with it, an ssh exit of 255 or no
+   * exit code at all can also mean the connection died while the command was running.
+   */
+  commandStarted: boolean;
+  /** Set when ssh itself failed (could not connect, authenticate or finish), not when the command exited non-zero. */
+  failureCode: StewardErrorCode | null;
+  failureMessage: string | null;
 }
 
 export interface SshService {
@@ -61,6 +94,8 @@ export interface SshService {
   scanHostKey: (input: SshHostIdInput) => Promise<SshScanResult>;
   trustHostKey: (input: SshTrustInput) => Promise<SshHost>;
   runCommand: (input: SshRunCommandInput) => Promise<SshCommandResult>;
+  /** Runs a deploy command and records it as a `deploy` execution. Throws only if nothing could be started. */
+  runDeploy: (input: SshDeployInput) => Promise<SshDeployOutcome>;
   listExecutions: (input: SshListExecutionsInput) => Execution[];
 }
 
@@ -111,7 +146,8 @@ export function createSshService(deps: SshServiceDeps): SshService {
       port: record.port,
       username: record.username,
       identityFile: record.identityFile,
-      environment: record.environment,
+      environmentId: record.environmentId,
+      environment: record.environmentName,
       provider: record.provider,
       region: record.region,
       domain: record.domain,
@@ -133,6 +169,16 @@ export function createSshService(deps: SshServiceDeps): SshService {
 
   function keyPath(path: string | null): string | null {
     return path === null ? null : validateExistingFile(path).path;
+  }
+
+  /** The environment's name, only if it belongs to the same project: a mismatch looks like "not found". */
+  function environmentNameFor(projectId: string, environmentId: string | null): string | null {
+    if (environmentId === null) return null;
+    const environment = findEnvironmentById(db, environmentId);
+    if (environment === null || environment.projectId !== projectId) {
+      throw new StewardServiceError('NOT_FOUND', 'that environment no longer exists');
+    }
+    return environment.name;
   }
 
   function assertNameFree(projectId: string, name: string, exceptId: string | null): void {
@@ -158,7 +204,8 @@ export function createSshService(deps: SshServiceDeps): SshService {
     host: SshHostRecord,
     kind: string,
     remoteCommand: string,
-    timeoutMs: number
+    timeoutMs: number,
+    onStarted?: (executionId: string) => void
   ): Promise<RemoteRun> {
     const executionId = uuidv7();
     const startedAt = nowIso();
@@ -185,6 +232,7 @@ export function createSshService(deps: SshServiceDeps): SshService {
       logPath: null,
       sshHostId: host.id
     });
+    onStarted?.(executionId);
 
     let run: RunResult;
     try {
@@ -352,7 +400,8 @@ export function createSshService(deps: SshServiceDeps): SshService {
         port: input.port,
         username: input.username,
         identityFile: keyPath(input.identityFile),
-        environment: input.environment,
+        environmentId: input.environmentId,
+        environmentName: environmentNameFor(input.projectId, input.environmentId),
         provider: input.provider,
         region: input.region,
         domain: input.domain,
@@ -378,7 +427,8 @@ export function createSshService(deps: SshServiceDeps): SshService {
         port: input.port,
         username: input.username,
         identityFile: keyPath(input.identityFile),
-        environment: input.environment,
+        environmentId: input.environmentId,
+        environmentName: environmentNameFor(existing.projectId, input.environmentId),
         provider: input.provider,
         region: input.region,
         domain: input.domain,
@@ -450,6 +500,19 @@ export function createSshService(deps: SshServiceDeps): SshService {
         stderr: remote.stderr,
         truncated: remote.run.truncated,
         durationMs: remote.run.durationMs
+      };
+    },
+
+    runDeploy: async (input) => {
+      const host = requireHost(input.hostId);
+      const remote = await runRemote(host, KIND_DEPLOY, input.command, input.timeoutSeconds * 1000, input.onExecutionStarted);
+      return {
+        executionId: remote.executionId,
+        exitCode: remote.run.exitCode,
+        timedOut: remote.run.timedOut,
+        commandStarted: remote.stderr.includes(input.startMarker),
+        failureCode: remote.failure?.code ?? null,
+        failureMessage: remote.failure?.message ?? null
       };
     },
 

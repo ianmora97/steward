@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { Environment } from '@shared/schemas/environments';
 import type { Execution } from '@shared/schemas/git';
 import type { SshHost } from '@shared/schemas/ssh';
 import type { TerminalSession } from '@shared/schemas/terminal';
@@ -11,7 +12,6 @@ import { useTerminalStore } from '../../stores/terminal.store';
 import { ConnectionEditor, type HostFields } from './ConnectionEditor';
 import { ConnectionList } from './ConnectionList';
 import { HostKeyReview } from './SshSession';
-import { groupByEnvironment } from './ssh-meta';
 import './ssh.css';
 
 const REFRESH_MS = 5000;
@@ -28,6 +28,7 @@ export function SshPanel(): React.JSX.Element {
   );
 
   const [hosts, setHosts] = useState<SshHost[]>([]);
+  const [environments, setEnvironments] = useState<Environment[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [selection, setSelection] = useState<string | 'new' | null>(null);
   const [history, setHistory] = useState<Execution[]>([]);
@@ -51,10 +52,15 @@ export function SshPanel(): React.JSX.Element {
   useEffect(() => {
     if (projectId === null) return;
     let cancelled = false;
-    void window.steward.ssh.list({ projectId }).then((result) => {
+    void Promise.all([
+      window.steward.ssh.list({ projectId }),
+      window.steward.environments.list({ projectId })
+    ]).then(([hostsResult, environmentsResult]) => {
       if (cancelled) return;
-      if (result.success) setHosts(result.data);
-      else setError(result.error);
+      if (hostsResult.success) setHosts(hostsResult.data);
+      else setError(hostsResult.error);
+      if (environmentsResult.success) setEnvironments(environmentsResult.data);
+      else setError(environmentsResult.error);
       setLoaded(true);
     });
     return () => {
@@ -168,10 +174,6 @@ export function SshPanel(): React.JSX.Element {
     await reload();
   }
 
-  const environments = groupByEnvironment(hosts).flatMap((group) =>
-    group.environment === null ? [] : [group.environment]
-  );
-
   return (
     <div className="panel sshpage">
       {error !== null && <ErrorBanner error={error} onDismiss={() => setError(null)} />}
@@ -197,7 +199,9 @@ export function SshPanel(): React.JSX.Element {
           <ConnectionEditor
             key={effective}
             host={selected}
+            projectId={projectId}
             environments={environments}
+            onEnvironmentCreated={(created) => setEnvironments((current) => [...current, created])}
             history={history}
             sessions={remoteSessions}
             hostsById={hostsById}

@@ -443,3 +443,14 @@ What this changes and what it does not:
 - Under Node 22 the module prints an `ExperimentalWarning`; Electron 45 bundles Node 24, so the application itself does not.
 
 The §9 decisions were resolved as: `electron-vite` as the scaffold base, `steward` as the product name everywhere, and `vault/` left untracked and untouched (deliberately not added to `.gitignore`, so the choice stays open).
+
+## Implementation note — Milestone 7 (2026-10-24)
+
+Where M7 differs from the plan above:
+
+- **No `workflow_runs` table.** The Actions view reads GitHub live and stores nothing, so `deployments` keeps `run_id`, `run_url` and `commit_sha` itself instead of a foreign key to a mirror.
+- **`environments` replaces the free-text environment of SSH servers.** The migration creates one environment per distinct text of each project (`key` is the lowercased, trimmed text) and points every server at it; production-like names become protected. The old text column stays, unread.
+- **`deployments` also stores `target_name`, `target_kind` and `repository_id`**, and its target reference is `ON DELETE SET NULL`, so deleting a target keeps its history. An SSH target's config includes `timeoutSeconds` (120 by default).
+- **`status_source` is `NULL` until there is evidence**, and `succeeded` cannot be recorded without it.
+
+The detailed design and the decisions taken while implementing it are in `docs/superpowers/specs/2026-10-24-m7-deployments-design.md` and `docs/superpowers/plans/2026-10-24-m7-deployments.md`.

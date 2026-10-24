@@ -5,6 +5,7 @@ import { openStewardDatabase, type StewardDatabase } from './db/connection';
 import { registerIpcHandlers } from './ipc/register';
 import { validateExistingDirectory, validateExistingFile } from './security/paths';
 import { getGitVersion } from './services/git.service';
+import { createDeploymentService } from './services/deployment.service';
 import { createGithubActionsService } from './services/github-actions.service';
 import { createGithubApi } from './services/github-api';
 import { createGithubIntegrationService } from './services/github-integration.service';
@@ -254,6 +255,10 @@ function startup(): void {
 
   const githubActions = createGithubActionsService({ db: database.db, github, api: githubApi });
 
+  const deployments = createDeploymentService({ db: database.db, ssh, github, api: githubApi });
+  // Deployments a previous run of the app left open cannot be trusted to have finished.
+  deployments.resumeOnStartup();
+
   registerIpcHandlers({
     database,
     terminal,
@@ -261,6 +266,7 @@ function startup(): void {
     github,
     githubPulls,
     githubActions,
+    deployments,
     readAppInfo,
     pickDirectory,
     pickKeyFile

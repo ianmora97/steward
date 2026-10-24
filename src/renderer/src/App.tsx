@@ -4,11 +4,11 @@ import { ErrorBanner } from './components/ErrorBanner';
 import { Overview } from './features/overview/Overview';
 import { NewProjectModal } from './features/projects/NewProjectModal';
 import { ProjectSidebar } from './features/projects/ProjectSidebar';
+import { DeploymentsPanel } from './features/deployments/DeploymentsPanel';
 import { GitPanel } from './features/git/GitPanel';
 import { GithubPanel } from './features/github/GithubPanel';
 import { SshPanel } from './features/ssh/SshPanel';
 import { TerminalPanel } from './features/terminal/TerminalPanel';
-import { PendingPanel } from './features/workspace/PendingPanel';
 import { TabBar } from './features/workspace/TabBar';
 import { WorkspaceSettings } from './features/workspace/WorkspaceSettings';
 import type { TabKey } from '@shared/schemas/tabs';
@@ -37,13 +37,7 @@ function PanelFor({ tabKey }: { tabKey: TabKey | null }): React.JSX.Element {
     case 'github':
       return <GithubPanel />;
     case 'deployments':
-      return (
-        <PendingPanel
-          title="Deployments"
-          milestone="Milestone 7"
-          description="Deploy targets that invoke an existing workflow or deploy command. Steward reports a deployment as succeeded only when the provider or exit code says so."
-        />
-      );
+      return <DeploymentsPanel />;
     default:
       return <EmptyState title="No tab selected" description="Every project keeps its Git tab." />;
   }

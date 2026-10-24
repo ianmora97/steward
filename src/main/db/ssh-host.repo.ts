@@ -10,7 +10,9 @@ export interface SshHostRecord {
   port: number | null;
   username: string | null;
   identityFile: string | null;
-  environment: string | null;
+  environmentId: string | null;
+  /** Read-only: resolved from `environments` when the record is loaded, never written back. */
+  environmentName: string | null;
   provider: SshProvider | null;
   region: string | null;
   domain: string | null;
@@ -31,7 +33,8 @@ interface SshHostRow {
   port: number | null;
   username: string | null;
   identity_file: string | null;
-  environment: string | null;
+  environment_id: string | null;
+  environment_name: string | null;
   provider: SshProvider | null;
   region: string | null;
   domain: string | null;
@@ -53,7 +56,8 @@ function toRecord(row: SshHostRow): SshHostRecord {
     port: row.port,
     username: row.username,
     identityFile: row.identity_file,
-    environment: row.environment,
+    environmentId: row.environment_id,
+    environmentName: row.environment_name,
     provider: row.provider,
     region: row.region,
     domain: row.domain,
@@ -75,7 +79,7 @@ function toParams(host: SshHostRecord): Record<string, string | number | null> {
     port: host.port,
     username: host.username,
     identity_file: host.identityFile,
-    environment: host.environment,
+    environment_id: host.environmentId,
     provider: host.provider,
     region: host.region,
     domain: host.domain,
@@ -88,31 +92,34 @@ function toParams(host: SshHostRecord): Record<string, string | number | null> {
   };
 }
 
+const SELECT_HOST = `SELECT h.*, e.name AS environment_name
+                        FROM ssh_hosts h LEFT JOIN environments e ON e.id = h.environment_id`;
+
 export function listSshHosts(db: SqlDatabase, projectId: string): SshHostRecord[] {
   return db
-    .prepare('SELECT * FROM ssh_hosts WHERE project_id = :project_id ORDER BY name COLLATE NOCASE, id')
+    .prepare(`${SELECT_HOST} WHERE h.project_id = :project_id ORDER BY h.name COLLATE NOCASE, h.id`)
     .all<SshHostRow>({ project_id: projectId })
     .map(toRecord);
 }
 
 export function findSshHost(db: SqlDatabase, id: string): SshHostRecord | null {
-  const row = db.prepare('SELECT * FROM ssh_hosts WHERE id = :id').get<SshHostRow>({ id });
+  const row = db.prepare(`${SELECT_HOST} WHERE h.id = :id`).get<SshHostRow>({ id });
   return row === undefined ? null : toRecord(row);
 }
 
 export function findSshHostByName(db: SqlDatabase, projectId: string, name: string): SshHostRecord | null {
   const row = db
-    .prepare('SELECT * FROM ssh_hosts WHERE project_id = :project_id AND name = :name COLLATE NOCASE')
+    .prepare(`${SELECT_HOST} WHERE h.project_id = :project_id AND h.name = :name COLLATE NOCASE`)
     .get<SshHostRow>({ project_id: projectId, name });
   return row === undefined ? null : toRecord(row);
 }
 
 export function insertSshHost(db: SqlDatabase, host: SshHostRecord): void {
   db.prepare(
-    `INSERT INTO ssh_hosts (id, project_id, name, host, port, username, identity_file, environment, provider,
+    `INSERT INTO ssh_hosts (id, project_id, name, host, port, username, identity_file, environment_id, provider,
                             region, domain, ip_address, description, vpc_name, vpc_id, vpc_cidr,
                             created_at, updated_at)
-     VALUES (:id, :project_id, :name, :host, :port, :username, :identity_file, :environment, :provider,
+     VALUES (:id, :project_id, :name, :host, :port, :username, :identity_file, :environment_id, :provider,
              :region, :domain, :ip_address, :description, :vpc_name, :vpc_id, :vpc_cidr,
              :created_at, :updated_at)`
   ).run({ ...toParams(host), project_id: host.projectId, created_at: host.createdAt });
@@ -122,7 +129,7 @@ export function updateSshHost(db: SqlDatabase, host: SshHostRecord): void {
   db.prepare(
     `UPDATE ssh_hosts
         SET name = :name, host = :host, port = :port, username = :username, identity_file = :identity_file,
-            environment = :environment, provider = :provider, region = :region, domain = :domain,
+            environment_id = :environment_id, provider = :provider, region = :region, domain = :domain,
             ip_address = :ip_address, description = :description, vpc_name = :vpc_name, vpc_id = :vpc_id,
             vpc_cidr = :vpc_cidr, updated_at = :updated_at
       WHERE id = :id`

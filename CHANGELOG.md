@@ -11,6 +11,12 @@ Categories: **Added** · **Changed** · **Fixed** · **Removed** · **Security**
 ## [Unreleased]
 
 ### Added
+- **M7** Deployments tab with three views: *Targets*, *History* and *Environments*. A project now has environments (Production, Staging…) you can create, reorder and delete; deleting is refused while targets or deployment history still depend on one.
+- **M7** Protected environments: a deploy to one makes you type its name exactly before anything runs, and Steward checks it again itself. Production-like environments are protected automatically when your existing servers are migrated; removing the protection from an environment asks for confirmation.
+- **M7** Deploy targets run a fixed command on one of your servers over SSH (with an optional directory and a timeout, 120 s by default) or start a GitHub Actions workflow you pick, on a branch or tag you choose. Targets that point at a server or repository you later delete are marked *Broken* and cannot be deployed until you fix them.
+- **M7** When you deploy a workflow, Steward reads the workflow file and shows the inputs it asks for (text, number, checkbox, choice), with the workflow's own defaults. It refuses a workflow that cannot be started by hand and values the workflow does not accept.
+- **M7** The deploy history shows what confirmed each result: *confirmed by exit code* for a command, *confirmed by GitHub* for a workflow. A command deploy shows its output; a workflow deploy shows its jobs, steps and logs. If a command times out, the connection drops while it runs, GitHub cannot confirm a dispatch, a run never appears or Steward is closed in the middle of a deploy, the result is *Unknown* and says what to check, never a guess. A workflow deploy still running when you close Steward is followed again when you reopen it.
+- **M7** One deploy at a time per target, and every deploy is also recorded in the activity log.
 - **M6.6** Every status in the GitHub tab is now a coloured pill with an icon (success, failure, in progress, skipped, open, merged, closed, draft), so state reads at a glance and never depends on colour alone.
 - **M6.6** *Pull requests* and *Actions* are now buttons with their own status: open pull request count on one, workflow health (healthy, degraded, failing) on the other.
 - **M6.6** The commit graph has a labelled header and a branch column: branch and tag names sit on the left in the colour of their lane (a local branch and its remote collapse into one label, extra ones show as +N) and the commit message on the right.
@@ -71,6 +77,7 @@ Categories: **Added** · **Changed** · **Fixed** · **Removed** · **Security**
 - **M4** Tooling: `node-pty` (pseudo-terminals) and `@xterm/xterm` added; the native module is unpacked from the app archive when packaging.
 
 ### Changed
+- **M7** A server's environment is now picked from the project's environments instead of typed as free text (with *New environment…* in the same list). Servers already grouped as "Prod", "prod " or "Stage" keep their grouping: each distinct name became an environment.
 - **M6.6** GitHub tab reorganised: who you are connected as (with token scopes) sits in the header, and each view has a single toolbar with repository, filter, refresh and *New pull request*. Pull requests and runs show branch, author and relative time as light chips; run steps use status icons.
 - **M6.6** The *Workspace* tab is now *Settings*, always last and aligned to the right edge of the tab bar; the other tabs keep their left-to-right order, which can still be rearranged.
 - **M6** The Actions tab placeholder now points to Milestone 6.5; Milestone 6 delivers the GitHub connection and pull requests.

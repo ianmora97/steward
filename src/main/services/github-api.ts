@@ -4,6 +4,7 @@ import type {
   GithubJobLog,
   GithubPullPage,
   GithubPullState,
+  GithubRun,
   GithubRunPage,
   GithubWorkflow
 } from '@shared/schemas/github';
@@ -22,6 +23,8 @@ const PAGE_SIZE = 30;
 const MAX_ERROR_CHARS = 300;
 const RUNS_PER_PAGE = 30;
 const LOG_TIMEOUT_MS = 60_000;
+/** A workflow file is read to find its inputs; anything bigger than this is not a workflow Steward should parse. */
+const MAX_WORKFLOW_FILE_BYTES = 256 * 1024;
 /** Beyond this the log is not downloaded at all; the user opens it on GitHub. */
 const MAX_LOG_DOWNLOAD_BYTES = 20 * 1024 * 1024;
 const MAX_LOG_TAIL_BYTES = 200 * 1024;
@@ -47,8 +50,18 @@ export interface GithubApi {
     token: string,
     owner: string,
     name: string,
-    query: { workflowId: number | null; page: number }
+    query: { workflowId: number | null; page: number; event?: string; branch?: string }
   ): Promise<GithubRunPage>;
+  getRun(token: string, owner: string, name: string, runId: number): Promise<GithubRun>;
+  /** Starts a workflow run. GitHub answers 204 with no run id, so the run has to be found afterwards. */
+  dispatchWorkflow(
+    token: string,
+    owner: string,
+    name: string,
+    body: { workflowId: number; ref: string; inputs: Record<string, string> }
+  ): Promise<void>;
+  /** The text of a file at a ref. Refuses anything larger than 256 KB. */
+  getWorkflowFile(token: string, owner: string, name: string, path: string, ref: string): Promise<string>;
   listJobs(token: string, owner: string, name: string, runId: number): Promise<GithubJob[]>;
   /** The raw end of the job log; the caller cleans it before it leaves main. */
   getJobLog(token: string, owner: string, name: string, jobId: number): Promise<GithubJobLog>;
@@ -91,6 +104,32 @@ const runSchema = z.object({
   updated_at: z.string()
 });
 const runsSchema = z.object({ workflow_runs: z.array(runSchema) });
+const fileContentSchema = z.object({
+  type: z.literal('file'),
+  size: z.number().int(),
+  encoding: z.literal('base64'),
+  content: z.string()
+});
+
+function toRun(run: z.infer<typeof runSchema>): GithubRun {
+  return {
+    id: run.id,
+    runNumber: run.run_number,
+    title: run.display_title ?? run.name ?? '',
+    workflowId: run.workflow_id,
+    workflowName: run.name ?? '',
+    status: run.status ?? 'unknown',
+    conclusion: run.conclusion ?? null,
+    event: run.event ?? '',
+    branch: run.head_branch ?? null,
+    sha: run.head_sha,
+    actor: run.actor?.login ?? null,
+    url: run.html_url,
+    createdAt: run.created_at,
+    startedAt: run.run_started_at ?? null,
+    updatedAt: run.updated_at
+  };
+}
 const jobsSchema = z.object({
   jobs: z.array(
     z.object({
@@ -177,7 +216,9 @@ function mapStatus(status: number, headers: Headers, json: unknown): StewardServ
   const detail = describeFailure(json);
   return new StewardServiceError(
     'GITHUB_FAILED',
-    detail === '' ? `GitHub returned an error (${status})` : detail
+    detail === '' ? `GitHub returned an error (${status})` : detail,
+    // A server error says nothing about whether the request was acted on; callers that start things need to know.
+    status >= 500 ? `HTTP ${status}` : undefined
   );
 }
 
@@ -244,12 +285,16 @@ export function createGithubApi(deps: { fetchImpl?: typeof fetch } = {}): Github
     body?: Record<string, unknown>
   ): Promise<ApiResponse> {
     const { response, done } = await send(token, method, path, { body });
-    done();
     let json: unknown;
     try {
       json = await response.json();
-    } catch {
+    } catch (error) {
+      // The timer keeps running while the body is read: a stalled body must fail, not hang the caller forever.
+      if (error instanceof Error && error.name === 'AbortError') throw unreachable(error);
+      // An empty body (a 204, for instance) is not an error.
       json = null;
+    } finally {
+      done();
     }
     return { headers: response.headers, json };
   }
@@ -313,25 +358,43 @@ export function createGithubApi(deps: { fetchImpl?: typeof fetch } = {}): Github
           ? `${repoPath(owner, name)}/actions/runs`
           : `${repoPath(owner, name)}/actions/workflows/${encodeURIComponent(String(query.workflowId))}/runs`;
       const params = new URLSearchParams({ per_page: String(RUNS_PER_PAGE), page: String(query.page) });
+      if (query.event !== undefined) params.set('event', query.event);
+      if (query.branch !== undefined) params.set('branch', query.branch);
       const { headers, json } = await request(token, 'GET', `${base}?${params.toString()}`);
-      const items = parseBody(runsSchema, json).workflow_runs.map((run) => ({
-        id: run.id,
-        runNumber: run.run_number,
-        title: run.display_title ?? run.name ?? '',
-        workflowId: run.workflow_id,
-        workflowName: run.name ?? '',
-        status: run.status ?? 'unknown',
-        conclusion: run.conclusion ?? null,
-        event: run.event ?? '',
-        branch: run.head_branch ?? null,
-        sha: run.head_sha,
-        actor: run.actor?.login ?? null,
-        url: run.html_url,
-        createdAt: run.created_at,
-        startedAt: run.run_started_at ?? null,
-        updatedAt: run.updated_at
-      }));
+      const items = parseBody(runsSchema, json).workflow_runs.map(toRun);
       return { items, page: query.page, hasNext: hasNextPage(headers) };
+    },
+
+    async getRun(token, owner, name, runId) {
+      const { json } = await request(
+        token,
+        'GET',
+        `${repoPath(owner, name)}/actions/runs/${encodeURIComponent(String(runId))}`
+      );
+      return toRun(parseBody(runSchema, json));
+    },
+
+    async dispatchWorkflow(token, owner, name, body) {
+      await request(
+        token,
+        'POST',
+        `${repoPath(owner, name)}/actions/workflows/${encodeURIComponent(String(body.workflowId))}/dispatches`,
+        { ref: body.ref, inputs: body.inputs }
+      );
+    },
+
+    async getWorkflowFile(token, owner, name, path, ref) {
+      const encodedPath = path.split('/').map(encodeURIComponent).join('/');
+      const { json } = await request(
+        token,
+        'GET',
+        `${repoPath(owner, name)}/contents/${encodedPath}?ref=${encodeURIComponent(ref)}`
+      );
+      const file = parseBody(fileContentSchema, json);
+      if (file.size > MAX_WORKFLOW_FILE_BYTES) {
+        throw new StewardServiceError('GITHUB_FAILED', 'that workflow file is too large to read');
+      }
+      return Buffer.from(file.content, 'base64').toString('utf8');
     },
 
     async listJobs(token, owner, name, runId) {
