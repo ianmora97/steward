@@ -5,6 +5,7 @@ import { Overview } from './features/overview/Overview';
 import { NewProjectModal } from './features/projects/NewProjectModal';
 import { ProjectSidebar } from './features/projects/ProjectSidebar';
 import { GitPanel } from './features/git/GitPanel';
+import { SshPanel } from './features/ssh/SshPanel';
 import { TerminalPanel } from './features/terminal/TerminalPanel';
 import { PendingPanel } from './features/workspace/PendingPanel';
 import { TabBar } from './features/workspace/TabBar';
@@ -31,13 +32,7 @@ function PanelFor({ tabKey }: { tabKey: TabKey | null }): React.JSX.Element {
     case 'terminal':
       return <TerminalPanel />;
     case 'ssh':
-      return (
-        <PendingPanel
-          title="SSH connections"
-          milestone="Milestone 5"
-          description="Remote hosts connected through the system OpenSSH client, so your agent, ~/.ssh/config and keys are reused and Steward never stores private keys."
-        />
-      );
+      return <SshPanel />;
     case 'actions':
       return (
         <PendingPanel

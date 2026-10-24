@@ -179,7 +179,9 @@ export const executionSchema = z.object({
   errorCode: z.string().nullable(),
   errorMessage: z.string().nullable(),
   /** Where long output spilled to disk (terminal sessions). Null for runs that keep everything inline. */
-  logPath: z.string().nullable()
+  logPath: z.string().nullable(),
+  /** The SSH host a remote run targeted; null for local runs. */
+  sshHostId: idSchema.nullable()
 });
 
 export type GitFileEntry = z.infer<typeof gitFileEntrySchema>;

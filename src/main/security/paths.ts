@@ -43,3 +43,21 @@ export function validateExistingDirectory(input: string): ValidatedDirectory {
 
   return { path };
 }
+
+/** An existing regular file. Only its path is kept: Steward never opens or reads it (used for SSH key files). */
+export function validateExistingFile(input: string): ValidatedDirectory {
+  const path = normalizeAbsolutePath(input);
+
+  let stats;
+  try {
+    stats = statSync(path);
+  } catch {
+    throw new StewardServiceError('PATH_NOT_FOUND', 'that file does not exist or is not readable');
+  }
+
+  if (!stats.isFile()) {
+    throw new StewardServiceError('PATH_INVALID', 'that path is not a file');
+  }
+
+  return { path };
+}

@@ -172,10 +172,13 @@ export function TerminalPanel(): React.JSX.Element {
 
   if (projectId === null) return <div className="panel" />;
 
-  const nameOf = (id: string): string =>
+  const nameOf = (id: string | null): string =>
     repositories.find((repository) => repository.id === id)?.name ?? 'repository';
   const titleOf = (session: TerminalSession, index: number): string =>
-    titles[session.id] ?? `${session.profileName} · ${nameOf(session.repositoryId)} #${index + 1}`;
+    titles[session.id] ??
+    (session.sshHostId === null
+      ? `${session.profileName} · ${nameOf(session.repositoryId)} #${index + 1}`
+      : `${session.profileName} #${index + 1}`);
   const active = sessions.find((session) => session.id === activeId) ?? null;
   const showSplit = split && sessions.length > 1;
   const layout = splitLayout(sessions.length);
@@ -190,7 +193,7 @@ export function TerminalPanel(): React.JSX.Element {
           {sessions.map((session, index) => (
             <span
               key={session.id}
-              className={`termbar__item${session.id === activeId ? ' termbar__item--active' : ''}`}
+              className={`termbar__item${session.id === activeId ? ' termbar__item--active' : ''}${session.sshHostId === null ? '' : ' termbar__item--remote'}`}
             >
               {renamingId === session.id ? (
                 <RenameInput
@@ -208,7 +211,7 @@ export function TerminalPanel(): React.JSX.Element {
                   onClick={() => setActive(projectId, session.id)}
                   onDoubleClick={() => setRenamingId(session.id)}
                 >
-                  <Icon name="terminal" size={14} />
+                  <Icon name={session.sshHostId === null ? 'terminal' : 'ssh'} size={14} />
                   <span className="termbar__title">{titleOf(session, index)}</span>
                   {session.status === 'exited' && (
                     <span className="termbar__exit">exit {session.exitCode ?? '?'}</span>
@@ -329,6 +332,12 @@ export function TerminalPanel(): React.JSX.Element {
         </p>
       )}
 
+      {active?.sshHostId !== undefined && active.sshHostId !== null && (
+        <p className="termnotice termnotice--remote">
+          <Icon name="ssh" size={13} /> Remote session on <strong>{active.cwd}</strong> — everything you type here runs
+          on that machine, not on this one.
+        </p>
+      )}
       {active?.truncated === true && (
         <p className="termnotice">
           Output passed the 5 MB log limit: the rest is shown here but is no longer saved to the log.

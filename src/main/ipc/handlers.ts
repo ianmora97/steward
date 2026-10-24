@@ -30,6 +30,15 @@ import {
   validateRepositoryPathInputSchema
 } from '@shared/schemas/repository';
 import {
+  sshCreateInputSchema,
+  sshHostIdInputSchema,
+  sshListExecutionsInputSchema,
+  sshListInputSchema,
+  sshRunCommandInputSchema,
+  sshTrustInputSchema,
+  sshUpdateInputSchema
+} from '@shared/schemas/ssh';
+import {
   terminalCreateInputSchema,
   terminalGetSettingsInputSchema,
   terminalDeleteProfileInputSchema,
@@ -87,6 +96,7 @@ import {
   saveProfile,
   setSettings
 } from '../services/terminal-settings.service';
+import type { SshService } from '../services/ssh.service';
 import type { TerminalService } from '../services/terminal.service';
 import { listTabs, reorderTabs, restoreDefaultTabs, setTabVisibility } from '../services/tab.service';
 
@@ -108,10 +118,13 @@ export interface IpcHandlerDefinition<Input = unknown, Output = unknown> {
 export interface IpcContext {
   database: StewardDatabase;
   terminal: TerminalService;
+  ssh: SshService;
   /** Supplied by the Electron layer; see src/main/index.ts. */
   readAppInfo: () => Promise<AppInfo>;
   /** Opens the OS folder picker. Cancelling is a normal outcome, not an error. */
   pickDirectory: () => Promise<DirectoryPick>;
+  /** Opens the OS file picker for an SSH private key. */
+  pickKeyFile: () => Promise<DirectoryPick>;
 }
 
 export function formatIssues(error: z.ZodError): string {
@@ -406,6 +419,60 @@ export function buildHandlerDefinitions(context: IpcContext): IpcHandlerDefiniti
       channel: IPC_CHANNELS.terminalDeleteProfile,
       schema: terminalDeleteProfileInputSchema,
       handle: (input) => deleteProfile(db, input)
+    }),
+
+    defineHandler({
+      channel: IPC_CHANNELS.sshList,
+      schema: sshListInputSchema,
+      handle: (input) => context.ssh.list(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.sshCreate,
+      schema: sshCreateInputSchema,
+      handle: (input) => context.ssh.create(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.sshUpdate,
+      schema: sshUpdateInputSchema,
+      handle: (input) => context.ssh.update(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.sshRemove,
+      schema: sshHostIdInputSchema,
+      handle: (input) => {
+        context.terminal.closeBySshHost(input.id);
+        return context.ssh.remove(input);
+      }
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.sshTest,
+      schema: sshHostIdInputSchema,
+      handle: (input) => context.ssh.test(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.sshScanHostKey,
+      schema: sshHostIdInputSchema,
+      handle: (input) => context.ssh.scanHostKey(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.sshTrustHostKey,
+      schema: sshTrustInputSchema,
+      handle: (input) => context.ssh.trustHostKey(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.sshRunCommand,
+      schema: sshRunCommandInputSchema,
+      handle: (input) => context.ssh.runCommand(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.sshListExecutions,
+      schema: sshListExecutionsInputSchema,
+      handle: (input) => context.ssh.listExecutions(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.sshPickKeyFile,
+      schema: emptyPayloadSchema,
+      handle: () => context.pickKeyFile()
     })
   ];
 }

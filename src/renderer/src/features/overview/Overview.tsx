@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Project } from '@shared/schemas/project';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { EmptyState } from '../../components/EmptyState';
@@ -43,6 +43,20 @@ function ProjectCard({
 }): React.JSX.Element {
   const repositories = useAppStore((state) => state.repositoriesByProject[project.id]);
   const selectProject = useAppStore((state) => state.selectProject);
+  const [vpcCount, setVpcCount] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    void window.steward.ssh.list({ projectId: project.id }).then((result) => {
+      if (!cancelled && result.success) setVpcCount(result.data.length);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [project.id]);
+
+  const githubCount = (repositories ?? []).filter((repository) => repository.provider === 'github').length;
+  const otherCount = (repositories ?? []).length - githubCount;
 
   return (
     <article className="projectcard" style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}>
@@ -64,12 +78,24 @@ function ProjectCard({
 
       <div className="chips">
         {(repositories ?? []).length === 0 && <span className="pill pill--dim">No repositories</span>}
-        {(repositories ?? []).map((repository) => (
-          <span key={repository.id} className="pill" title={repository.localPath}>
-            <Icon name={repository.provider === 'github' ? 'github' : 'repo'} size={14} />
-            {repository.name}
+        {githubCount > 0 && (
+          <span className="pill" title={(repositories ?? []).filter((r) => r.provider === 'github').map((r) => r.name).join(', ')}>
+            <Icon name="github" size={14} />
+            GitHub ({githubCount})
           </span>
-        ))}
+        )}
+        {otherCount > 0 && (
+          <span className="pill" title={(repositories ?? []).filter((r) => r.provider !== 'github').map((r) => r.name).join(', ')}>
+            <Icon name="repo" size={14} />
+            Repositories ({otherCount})
+          </span>
+        )}
+        {vpcCount > 0 && (
+          <span className="pill">
+            <Icon name="ssh" size={14} />
+            VPC ({vpcCount})
+          </span>
+        )}
       </div>
 
       <div className="projectcard__foot">

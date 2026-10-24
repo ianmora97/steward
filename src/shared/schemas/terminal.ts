@@ -12,7 +12,10 @@ const dimensionSchema = z.number().int().min(1).max(1000);
 export const terminalSessionSchema = z.object({
   id: idSchema,
   projectId: idSchema,
-  repositoryId: idSchema,
+  /** Null for a remote shell, which has no local folder. */
+  repositoryId: idSchema.nullable(),
+  /** Set for a shell on an SSH host: everything typed in it runs there, not on this machine. */
+  sshHostId: idSchema.nullable(),
   executionId: idSchema,
   shell: z.string(),
   profileName: z.string(),
@@ -24,14 +27,21 @@ export const terminalSessionSchema = z.object({
   startedAt: isoTimestampSchema
 });
 
-export const terminalCreateInputSchema = z.object({
-  projectId: idSchema,
-  repositoryId: idSchema,
-  /** Omitted = the project's default profile. The renderer names a profile; main resolves the executable. */
-  profileId: profileIdSchema.optional(),
-  cols: dimensionSchema,
-  rows: dimensionSchema
-});
+export const terminalCreateInputSchema = z
+  .object({
+    projectId: idSchema,
+    /** A local shell opens in this repository's folder. */
+    repositoryId: idSchema.optional(),
+    /** A remote shell: main starts the system `ssh` for this saved host. */
+    sshHostId: idSchema.optional(),
+    /** Omitted = the project's default profile. The renderer names a profile; main resolves the executable. */
+    profileId: profileIdSchema.optional(),
+    cols: dimensionSchema,
+    rows: dimensionSchema
+  })
+  .refine((input) => (input.repositoryId === undefined) !== (input.sshHostId === undefined), {
+    message: 'choose either a repository or an SSH host'
+  });
 
 /** Keystrokes for an existing session. It never starts a process. */
 export const terminalWriteInputSchema = z.object({

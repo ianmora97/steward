@@ -185,7 +185,8 @@ function record(
       durationMs: outcome.durationMs,
       errorCode: outcome.errorCode,
       errorMessage: outcome.errorMessage,
-      logPath: null
+      logPath: null,
+      sshHostId: null
     });
   } catch (error) {
     // History is an audit aid. Failing to write it must not turn a Git

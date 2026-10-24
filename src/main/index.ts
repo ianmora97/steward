@@ -3,8 +3,9 @@ import { BrowserWindow, app, dialog, shell } from 'electron';
 import { TERMINAL_EVENTS, type AppInfo, type DirectoryPick } from '@shared/types/ipc';
 import { openStewardDatabase, type StewardDatabase } from './db/connection';
 import { registerIpcHandlers } from './ipc/register';
-import { validateExistingDirectory } from './security/paths';
+import { validateExistingDirectory, validateExistingFile } from './security/paths';
 import { getGitVersion } from './services/git.service';
+import { createSshService } from './services/ssh.service';
 import { createTerminalService, type TerminalService } from './services/terminal.service';
 
 const isDev = !app.isPackaged;
@@ -127,6 +128,30 @@ async function pickDirectory(): Promise<DirectoryPick> {
   return { cancelled: false, localPath: validateExistingDirectory(chosen).path };
 }
 
+async function pickKeyFile(): Promise<DirectoryPick> {
+  const options = {
+    title: 'Choose a private key (.pem)',
+    // Keys usually live in ~/.ssh, which a file dialog hides unless it starts there.
+    defaultPath: join(app.getPath('home'), '.ssh'),
+    properties: ['openFile' as const, 'dontAddToRecent' as const],
+    filters: [
+      { name: 'Private keys', extensions: ['pem', 'key'] },
+      { name: 'All files', extensions: ['*'] }
+    ]
+  };
+
+  const result =
+    mainWindow === null
+      ? await dialog.showOpenDialog(options)
+      : await dialog.showOpenDialog(mainWindow, options);
+
+  const chosen = result.filePaths[0];
+  if (result.canceled || chosen === undefined) {
+    return { cancelled: true, localPath: null };
+  }
+  return { cancelled: false, localPath: validateExistingFile(chosen).path };
+}
+
 function createWindow(): BrowserWindow {
   const window = new BrowserWindow({
     width: 1280,
@@ -195,9 +220,16 @@ function startup(): void {
       target.webContents.send(channel, payload);
     }
   };
+  const knownHostsFile = join(app.getPath('userData'), 'ssh', 'known_hosts');
+  const ssh = createSshService({
+    db: database.db,
+    knownHostsFile,
+    logDirectory: join(app.getPath('userData'), 'ssh-logs')
+  });
   terminal = createTerminalService({
     db: database.db,
     logDirectory: join(app.getPath('userData'), 'terminal-logs'),
+    knownHostsFile,
     emitData: (event) => sendToWindow(TERMINAL_EVENTS.data, event),
     emitExit: (event) => sendToWindow(TERMINAL_EVENTS.exit, event)
   });
@@ -205,8 +237,10 @@ function startup(): void {
   registerIpcHandlers({
     database,
     terminal,
+    ssh,
     readAppInfo,
-    pickDirectory
+    pickDirectory,
+    pickKeyFile
   });
 
   mainWindow = createWindow();

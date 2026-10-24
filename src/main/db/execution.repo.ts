@@ -19,6 +19,7 @@ interface ExecutionRow {
   error_code: string | null;
   error_message: string | null;
   log_path: string | null;
+  ssh_host_id: string | null;
 }
 
 function toExecution(row: ExecutionRow): Execution {
@@ -39,7 +40,8 @@ function toExecution(row: ExecutionRow): Execution {
     durationMs: row.duration_ms,
     errorCode: row.error_code,
     errorMessage: row.error_message,
-    logPath: row.log_path
+    logPath: row.log_path,
+    sshHostId: row.ssh_host_id
   };
 }
 
@@ -47,10 +49,10 @@ export function insertExecution(db: SqlDatabase, execution: Execution): void {
   db.prepare(
     `INSERT INTO executions (id, project_id, repository_id, kind, context, command, args_json, cwd, status,
                              exit_code, confirmed_by_user, started_at, finished_at, duration_ms,
-                             error_code, error_message, log_path)
+                             error_code, error_message, log_path, ssh_host_id)
      VALUES (:id, :project_id, :repository_id, :kind, :context, :command, :args_json, :cwd, :status,
              :exit_code, :confirmed_by_user, :started_at, :finished_at, :duration_ms,
-             :error_code, :error_message, :log_path)`
+             :error_code, :error_message, :log_path, :ssh_host_id)`
   ).run({
     id: execution.id,
     project_id: execution.projectId,
@@ -68,7 +70,8 @@ export function insertExecution(db: SqlDatabase, execution: Execution): void {
     duration_ms: execution.durationMs,
     error_code: execution.errorCode,
     error_message: execution.errorMessage,
-    log_path: execution.logPath
+    log_path: execution.logPath,
+    ssh_host_id: execution.sshHostId
   });
 }
 
@@ -107,4 +110,26 @@ export function listExecutionsByRepository(db: SqlDatabase, repositoryId: string
     )
     .all<ExecutionRow>({ repository_id: repositoryId, limit })
     .map(toExecution);
+}
+
+export function listExecutionsBySshHost(db: SqlDatabase, sshHostId: string, limit: number): Execution[] {
+  return db
+    .prepare(
+      `SELECT * FROM executions WHERE ssh_host_id = :ssh_host_id
+        ORDER BY started_at DESC, id DESC LIMIT :limit`
+    )
+    .all<ExecutionRow>({ ssh_host_id: sshHostId, limit })
+    .map(toExecution);
+}
+
+/** The most recent finished run of `kind` against a host, or null when there is none yet. */
+export function findLastFinishedExecution(db: SqlDatabase, sshHostId: string, kind: string): Execution | null {
+  const row = db
+    .prepare(
+      `SELECT * FROM executions
+        WHERE ssh_host_id = :ssh_host_id AND kind = :kind AND finished_at IS NOT NULL
+        ORDER BY started_at DESC, id DESC LIMIT 1`
+    )
+    .get<ExecutionRow>({ ssh_host_id: sshHostId, kind });
+  return row === undefined ? null : toExecution(row);
 }
