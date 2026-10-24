@@ -464,6 +464,25 @@ const m014: Migration = {
   `
 };
 
+/**
+ * The Docker tab. Docker itself is the source of truth for containers and images,
+ * so there are no tables: only the tab, added like m006, m011 and m014.
+ */
+const m015: Migration = {
+  version: 15,
+  name: 'docker-tab-for-existing-projects',
+  sql: `
+    INSERT INTO workspace_tabs (id, project_id, tab_key, position, visible, pinned, source, integration_id, updated_at)
+      SELECT lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-4' || substr(hex(randomblob(2)), 2) ||
+                   '-a' || substr(hex(randomblob(2)), 2) || '-' || hex(randomblob(6))),
+             p.id, 'docker',
+             COALESCE((SELECT MAX(position) FROM workspace_tabs WHERE project_id = p.id), -1) + 1,
+             1, 0, 'builtin', NULL, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+        FROM projects p
+       WHERE NOT EXISTS (SELECT 1 FROM workspace_tabs t WHERE t.project_id = p.id AND t.tab_key = 'docker');
+  `
+};
+
 export const MIGRATIONS: readonly Migration[] = [
   m001,
   m002,
@@ -478,7 +497,8 @@ export const MIGRATIONS: readonly Migration[] = [
   m011,
   m012,
   m013,
-  m014
+  m014,
+  m015
 ];
 
 export const LATEST_SCHEMA_VERSION = MIGRATIONS.reduce((max, m) => Math.max(max, m.version), 0);

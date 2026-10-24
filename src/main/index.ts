@@ -1,11 +1,13 @@
 import { join } from 'node:path';
 import { BrowserWindow, app, dialog, safeStorage, shell } from 'electron';
-import { TERMINAL_EVENTS, type AppInfo, type DirectoryPick } from '@shared/types/ipc';
+import { DOCKER_EVENTS, TERMINAL_EVENTS, type AppInfo, type DirectoryPick } from '@shared/types/ipc';
 import { openStewardDatabase, type StewardDatabase } from './db/connection';
 import { registerIpcHandlers } from './ipc/register';
 import { validateExistingDirectory, validateExistingFile } from './security/paths';
 import { getGitVersion } from './services/git.service';
 import { createDeploymentService } from './services/deployment.service';
+import { createDockerExec } from './services/docker-exec';
+import { createDockerService, type DockerService } from './services/docker.service';
 import { createGithubActionsService } from './services/github-actions.service';
 import { createGithubApi } from './services/github-api';
 import { createGithubIntegrationService } from './services/github-integration.service';
@@ -20,6 +22,7 @@ const rendererDevUrl = process.env['ELECTRON_RENDERER_URL'];
 let mainWindow: BrowserWindow | null = null;
 let database: StewardDatabase | null = null;
 let terminal: TerminalService | null = null;
+let docker: DockerService | null = null;
 
 function databaseFilePath(): string {
   // An override keeps development and manual testing off the real database.
@@ -259,6 +262,13 @@ function startup(): void {
   // Deployments a previous run of the app left open cannot be trusted to have finished.
   deployments.resumeOnStartup();
 
+  docker = createDockerService({
+    db: database.db,
+    exec: createDockerExec({ db: database.db, knownHostsFile }),
+    emitLog: (event) => sendToWindow(DOCKER_EVENTS.log, event),
+    emitLogEnd: (event) => sendToWindow(DOCKER_EVENTS.logEnd, event)
+  });
+
   registerIpcHandlers({
     database,
     terminal,
@@ -267,6 +277,7 @@ function startup(): void {
     githubPulls,
     githubActions,
     deployments,
+    docker,
     readAppInfo,
     pickDirectory,
     pickKeyFile
@@ -303,6 +314,7 @@ if (!app.requestSingleInstanceLock()) {
 
   app.on('will-quit', () => {
     terminal?.shutdown();
+    docker?.shutdown();
     try {
       database?.db.close();
     } catch (error) {

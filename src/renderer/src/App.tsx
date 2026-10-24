@@ -5,6 +5,7 @@ import { Overview } from './features/overview/Overview';
 import { NewProjectModal } from './features/projects/NewProjectModal';
 import { ProjectSidebar } from './features/projects/ProjectSidebar';
 import { DeploymentsPanel } from './features/deployments/DeploymentsPanel';
+import { DockerPanel } from './features/docker/DockerPanel';
 import { GitPanel } from './features/git/GitPanel';
 import { GithubPanel } from './features/github/GithubPanel';
 import { SshPanel } from './features/ssh/SshPanel';
@@ -38,6 +39,8 @@ function PanelFor({ tabKey }: { tabKey: TabKey | null }): React.JSX.Element {
       return <GithubPanel />;
     case 'deployments':
       return <DeploymentsPanel />;
+    case 'docker':
+      return <DockerPanel />;
     default:
       return <EmptyState title="No tab selected" description="Every project keeps its Git tab." />;
   }

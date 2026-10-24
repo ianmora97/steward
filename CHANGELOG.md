@@ -11,6 +11,13 @@ Categories: **Added** · **Changed** · **Fixed** · **Removed** · **Security**
 ## [Unreleased]
 
 ### Added
+- **M8** Docker tab for every project, with four views: *Containers*, *Images*, *Volumes & networks* and *Compose*. Pick where it runs: this machine or any of the project's SSH servers. If Docker is not installed, not running, not allowed for your user or the server is unreachable, the tab says which and what to do instead of showing an error.
+- **M8** Steward starts Docker for you. Opening the Docker tab with the daemon off launches Docker Desktop in the background (once per visit, on this machine only), shows *Starting Docker…* while it comes up and switches to the containers by itself. There is also a *Start Docker* button if you want to retry. A server's Docker is never started from Steward.
+- **M8** Containers: filter by name, image or Compose project; state shown as a pill (running, exited, exited with error, unhealthy, paused…); CPU and memory refreshed every few seconds; start, stop, restart, unpause, kill and remove. Open a container for its details (ports, mounts, networks, environment, labels) and live logs with pause, filter and a 2000-line window.
+- **M8** *Shell* on a running container opens in the Terminal tab (`docker exec -it`, using bash when the image has it), on this machine or on the server over SSH.
+- **M8** Images: pull by name, remove, and see which containers use each one. *Prune* (stopped containers, dangling images, unused volumes or networks, or everything unused) shows `docker system df` before asking you to confirm.
+- **M8** Compose: Steward finds `compose.yaml` / `docker-compose.yml` at the root of the project's repositories, shows each service's state and runs Up, Down, Restart, Stop and Pull. *Down + volumes* asks first because it deletes data.
+- **M8** Everything Docker changes is recorded in the activity history. On a server in a protected environment, removing or killing something makes you type its name, and Steward checks it again itself.
 - **M7** Deployments tab with three views: *Targets*, *History* and *Environments*. A project now has environments (Production, Staging…) you can create, reorder and delete; deleting is refused while targets or deployment history still depend on one.
 - **M7** Protected environments: a deploy to one makes you type its name exactly before anything runs, and Steward checks it again itself. Production-like environments are protected automatically when your existing servers are migrated; removing the protection from an environment asks for confirmation.
 - **M7** Deploy targets run a fixed command on one of your servers over SSH (with an optional directory and a timeout, 120 s by default) or start a GitHub Actions workflow you pick, on a branch or tag you choose. Targets that point at a server or repository you later delete are marked *Broken* and cannot be deployed until you fix them.
@@ -111,6 +118,8 @@ Categories: **Added** · **Changed** · **Fixed** · **Removed** · **Security**
 - **Tooling** `graphify-out/` and the Obsidian `vault/` are no longer tracked; they stay local and are ignored by Git.
 
 ### Security
+- **M8** A container's environment variables whose names look like secrets (`PASSWORD`, `TOKEN`, `KEY`, `SECRET`…) are shown without their value: the value never leaves the main process. Log lines are redacted for tokens and URL credentials before they reach the screen.
+- **M8** Docker commands on a server are built from fixed templates with every value validated and quoted; a container or image name can never become shell syntax.
 - **M6** The GitHub token is encrypted with the OS keyring (`safeStorage`) in a file under Steward's data folder, readable only by the main process. It is never stored in the database, logs, activity history or the UI, and it is not sent anywhere except `api.github.com`. If the system cannot encrypt secrets, Steward refuses to store the token.
 - **M6** Links opened from Steward must be plain `https://github.com/…`; repository owner and name are taken from the stored remote, never from the UI.
 - **M4** The renderer can only send keystrokes and resize requests to terminals that already exist; folder and shell are resolved in the main process, and there is still no channel that runs a command string. Terminal logs mask URL credentials and GitHub tokens.

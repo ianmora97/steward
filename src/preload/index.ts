@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron';
+import type { DockerLogEndEvent, DockerLogEvent } from '@shared/schemas/docker';
 import type { TerminalDataEvent, TerminalExitEvent } from '@shared/schemas/terminal';
-import { IPC_CHANNELS, TERMINAL_EVENTS, type StewardApi } from '@shared/types/ipc';
+import { DOCKER_EVENTS, IPC_CHANNELS, TERMINAL_EVENTS, type StewardApi } from '@shared/types/ipc';
 
 /**
  * The entire bridge between the renderer and the main process.
@@ -137,6 +138,30 @@ const api: StewardApi = {
     get: (input) => invoke(IPC_CHANNELS.deploymentsGet, input),
     log: (input) => invoke(IPC_CHANNELS.deploymentsLog, input),
     workflowInputs: (input) => invoke(IPC_CHANNELS.deploymentsWorkflowInputs, input)
+  },
+  docker: {
+    status: (input) => invoke(IPC_CHANNELS.dockerStatus, input),
+    startEngine: (input) => invoke(IPC_CHANNELS.dockerStart, input),
+    listContainers: (input) => invoke(IPC_CHANNELS.dockerContainersList, input),
+    containerStats: (input) => invoke(IPC_CHANNELS.dockerContainersStats, input),
+    inspectContainer: (input) => invoke(IPC_CHANNELS.dockerContainerInspect, input),
+    containerAction: (input) => invoke(IPC_CHANNELS.dockerContainerAction, input),
+    listImages: (input) => invoke(IPC_CHANNELS.dockerImagesList, input),
+    pullImage: (input) => invoke(IPC_CHANNELS.dockerImagePull, input),
+    removeImage: (input) => invoke(IPC_CHANNELS.dockerImageRemove, input),
+    systemDf: (input) => invoke(IPC_CHANNELS.dockerSystemDf, input),
+    prune: (input) => invoke(IPC_CHANNELS.dockerPrune, input),
+    listVolumes: (input) => invoke(IPC_CHANNELS.dockerVolumesList, input),
+    removeVolume: (input) => invoke(IPC_CHANNELS.dockerVolumeRemove, input),
+    listNetworks: (input) => invoke(IPC_CHANNELS.dockerNetworksList, input),
+    removeNetwork: (input) => invoke(IPC_CHANNELS.dockerNetworkRemove, input),
+    startLogs: (input) => invoke(IPC_CHANNELS.dockerLogsStart, input),
+    stopLogs: (input) => invoke(IPC_CHANNELS.dockerLogsStop, input),
+    composeList: (input) => invoke(IPC_CHANNELS.dockerComposeList, input),
+    composeServices: (input) => invoke(IPC_CHANNELS.dockerComposeServices, input),
+    composeAction: (input) => invoke(IPC_CHANNELS.dockerComposeAction, input),
+    onLog: (listener) => subscribe<DockerLogEvent>(DOCKER_EVENTS.log, listener),
+    onLogEnd: (listener) => subscribe<DockerLogEndEvent>(DOCKER_EVENTS.logEnd, listener)
   }
 };
 

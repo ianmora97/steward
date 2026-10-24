@@ -2,6 +2,7 @@ import { StewardServiceError } from '@shared/types/result';
 import { linkExecutionToDeploy } from '../db/deployment.repo';
 import type { SqlDatabase } from '../db/driver';
 import type { DeploymentRunner } from './deployment-runner';
+import { singleQuote } from './remote-quote';
 import type { SshService } from './ssh.service';
 
 /**
@@ -12,10 +13,6 @@ import type { SshService } from './ssh.service';
 export const START_MARKER = 'steward: command started';
 
 const MARKER_COMMAND = `printf '%s\\n' '${START_MARKER}' >&2`;
-
-function singleQuote(text: string): string {
-  return `'${text.replaceAll("'", `'\\''`)}'`;
-}
 
 /** A leading `~` must stay outside the quotes or the shell will not expand it. */
 function quoteDirectory(directory: string): string {

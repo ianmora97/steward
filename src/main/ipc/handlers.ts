@@ -42,6 +42,22 @@ import {
   deploymentWorkflowInputsInputSchema
 } from '@shared/schemas/deployments';
 import {
+  dockerComposeActionInputSchema,
+  dockerComposeListInputSchema,
+  dockerComposeRepositoryInputSchema,
+  dockerContainerActionInputSchema,
+  dockerContainerIdInputSchema,
+  dockerImagePullInputSchema,
+  dockerImageRemoveInputSchema,
+  dockerLogsStartInputSchema,
+  dockerLogsStopInputSchema,
+  dockerNetworkRemoveInputSchema,
+  dockerPruneInputSchema,
+  dockerStartInputSchema,
+  dockerTargetInputSchema,
+  dockerVolumeRemoveInputSchema
+} from '@shared/schemas/docker';
+import {
   environmentCreateInputSchema,
   environmentIdInputSchema,
   environmentListInputSchema,
@@ -141,6 +157,7 @@ import {
   updateEnvironment
 } from '../services/environment.service';
 import type { DeploymentService } from '../services/deployment.service';
+import type { DockerService } from '../services/docker.service';
 import type { GithubIntegrationService } from '../services/github-integration.service';
 import type { GithubActionsService } from '../services/github-actions.service';
 import type { GithubPullsService } from '../services/github-pulls.service';
@@ -171,6 +188,7 @@ export interface IpcContext {
   githubPulls: GithubPullsService;
   githubActions: GithubActionsService;
   deployments: DeploymentService;
+  docker: DockerService;
   /** Supplied by the Electron layer; see src/main/index.ts. */
   readAppInfo: () => Promise<AppInfo>;
   /** Opens the OS folder picker. Cancelling is a normal outcome, not an error. */
@@ -263,6 +281,7 @@ export function buildHandlerDefinitions(context: IpcContext): IpcHandlerDefiniti
       schema: projectIdPayloadSchema,
       handle: (input) => {
         context.terminal.closeByProject(input.id);
+        context.docker.closeByProject(input.id);
         // The row would cascade away, but the encrypted token file would stay behind.
         context.github.purgeProject(input.id);
         return deleteProject(db, input.id);
@@ -495,6 +514,7 @@ export function buildHandlerDefinitions(context: IpcContext): IpcHandlerDefiniti
       schema: sshHostIdInputSchema,
       handle: (input) => {
         context.terminal.closeBySshHost(input.id);
+        context.docker.closeBySshHost(input.id);
         return context.ssh.remove(input);
       }
     }),
@@ -666,6 +686,107 @@ export function buildHandlerDefinitions(context: IpcContext): IpcHandlerDefiniti
       channel: IPC_CHANNELS.deploymentsWorkflowInputs,
       schema: deploymentWorkflowInputsInputSchema,
       handle: (input) => context.deployments.listWorkflowInputs(input)
+    }),
+
+    defineHandler({
+      channel: IPC_CHANNELS.dockerStatus,
+      schema: dockerTargetInputSchema,
+      handle: (input) => context.docker.status(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.dockerStart,
+      schema: dockerStartInputSchema,
+      handle: (input) => context.docker.startEngine(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.dockerContainersList,
+      schema: dockerTargetInputSchema,
+      handle: (input) => context.docker.listContainers(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.dockerContainersStats,
+      schema: dockerTargetInputSchema,
+      handle: (input) => context.docker.containerStats(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.dockerContainerInspect,
+      schema: dockerContainerIdInputSchema,
+      handle: (input) => context.docker.inspectContainer(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.dockerContainerAction,
+      schema: dockerContainerActionInputSchema,
+      handle: (input) => context.docker.containerAction(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.dockerImagesList,
+      schema: dockerTargetInputSchema,
+      handle: (input) => context.docker.listImages(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.dockerImagePull,
+      schema: dockerImagePullInputSchema,
+      handle: (input) => context.docker.pullImage(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.dockerImageRemove,
+      schema: dockerImageRemoveInputSchema,
+      handle: (input) => context.docker.removeImage(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.dockerSystemDf,
+      schema: dockerTargetInputSchema,
+      handle: (input) => context.docker.systemDf(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.dockerPrune,
+      schema: dockerPruneInputSchema,
+      handle: (input) => context.docker.prune(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.dockerVolumesList,
+      schema: dockerTargetInputSchema,
+      handle: (input) => context.docker.listVolumes(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.dockerVolumeRemove,
+      schema: dockerVolumeRemoveInputSchema,
+      handle: (input) => context.docker.removeVolume(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.dockerNetworksList,
+      schema: dockerTargetInputSchema,
+      handle: (input) => context.docker.listNetworks(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.dockerNetworkRemove,
+      schema: dockerNetworkRemoveInputSchema,
+      handle: (input) => context.docker.removeNetwork(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.dockerLogsStart,
+      schema: dockerLogsStartInputSchema,
+      handle: (input) => context.docker.startLogs(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.dockerLogsStop,
+      schema: dockerLogsStopInputSchema,
+      handle: (input) => context.docker.stopLogs(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.dockerComposeList,
+      schema: dockerComposeListInputSchema,
+      handle: (input) => context.docker.listComposeProjects(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.dockerComposeServices,
+      schema: dockerComposeRepositoryInputSchema,
+      handle: (input) => context.docker.composeServices(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.dockerComposeAction,
+      schema: dockerComposeActionInputSchema,
+      handle: (input) => context.docker.composeAction(input)
     })
   ];
 }

@@ -114,6 +114,36 @@ import type {
   EnvironmentReorderInput,
   EnvironmentUpdateInput
 } from '../schemas/environments';
+import type {
+  DockerCommandOutput,
+  DockerComposeActionInput,
+  DockerComposeListInput,
+  DockerComposeProject,
+  DockerComposeRepositoryInput,
+  DockerComposeService,
+  DockerContainer,
+  DockerContainerActionInput,
+  DockerContainerDetail,
+  DockerContainerIdInput,
+  DockerContainerStats,
+  DockerImage,
+  DockerImagePullInput,
+  DockerImageRemoveInput,
+  DockerLogEndEvent,
+  DockerLogEvent,
+  DockerLogsStarted,
+  DockerLogsStartInput,
+  DockerLogsStopInput,
+  DockerNetwork,
+  DockerNetworkRemoveInput,
+  DockerPruneInput,
+  DockerStartInput,
+  DockerStartResult,
+  DockerStatus,
+  DockerTargetInput,
+  DockerVolume,
+  DockerVolumeRemoveInput
+} from '../schemas/docker';
 
 /**
  * Every channel Steward exposes, enumerated.
@@ -215,7 +245,28 @@ export const IPC_CHANNELS = {
   deploymentsList: 'deployments:list',
   deploymentsGet: 'deployments:get',
   deploymentsLog: 'deployments:log',
-  deploymentsWorkflowInputs: 'deployments:workflowInputs'
+  deploymentsWorkflowInputs: 'deployments:workflowInputs',
+
+  dockerStatus: 'docker:status',
+  dockerStart: 'docker:start',
+  dockerContainersList: 'docker:containers:list',
+  dockerContainersStats: 'docker:containers:stats',
+  dockerContainerInspect: 'docker:containers:inspect',
+  dockerContainerAction: 'docker:containers:action',
+  dockerImagesList: 'docker:images:list',
+  dockerImagePull: 'docker:images:pull',
+  dockerImageRemove: 'docker:images:remove',
+  dockerSystemDf: 'docker:systemDf',
+  dockerPrune: 'docker:prune',
+  dockerVolumesList: 'docker:volumes:list',
+  dockerVolumeRemove: 'docker:volumes:remove',
+  dockerNetworksList: 'docker:networks:list',
+  dockerNetworkRemove: 'docker:networks:remove',
+  dockerLogsStart: 'docker:logs:start',
+  dockerLogsStop: 'docker:logs:stop',
+  dockerComposeList: 'docker:compose:list',
+  dockerComposeServices: 'docker:compose:services',
+  dockerComposeAction: 'docker:compose:action'
 } as const;
 
 /**
@@ -226,6 +277,11 @@ export const IPC_CHANNELS = {
 export const TERMINAL_EVENTS = {
   data: 'terminal:data',
   exit: 'terminal:exit'
+} as const;
+
+export const DOCKER_EVENTS = {
+  log: 'docker:log',
+  logEnd: 'docker:log-end'
 } as const;
 
 export type IpcChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS];
@@ -380,5 +436,38 @@ export interface StewardApi {
     log: (input: DeploymentIdInput) => Promise<StewardResult<DeploymentLog>>;
     /** What a workflow asks for on a manual run, read from its file on GitHub at the given ref. */
     workflowInputs: (input: DeploymentWorkflowInputsInput) => Promise<StewardResult<WorkflowInputSpec[]>>;
+  };
+  docker: {
+    /** Reports "Docker is off" as a state to explain, not as an error. */
+    status: (input: DockerTargetInput) => Promise<StewardResult<DockerStatus>>;
+    /**
+     * Starts Docker Desktop on this machine (never on a server) and returns at once; poll `status`, which
+     * reports `starting` until the daemon answers.
+     */
+    startEngine: (input: DockerStartInput) => Promise<StewardResult<DockerStartResult>>;
+    listContainers: (input: DockerTargetInput) => Promise<StewardResult<DockerContainer[]>>;
+    containerStats: (input: DockerTargetInput) => Promise<StewardResult<DockerContainerStats[]>>;
+    /** Environment values whose names look like secrets come back without their value. */
+    inspectContainer: (input: DockerContainerIdInput) => Promise<StewardResult<DockerContainerDetail>>;
+    /** `kill` and `remove` need `confirmed: true`; on a protected server also the container's name. */
+    containerAction: (input: DockerContainerActionInput) => Promise<StewardResult<{ containerId: string }>>;
+    listImages: (input: DockerTargetInput) => Promise<StewardResult<DockerImage[]>>;
+    pullImage: (input: DockerImagePullInput) => Promise<StewardResult<DockerCommandOutput>>;
+    removeImage: (input: DockerImageRemoveInput) => Promise<StewardResult<{ image: string }>>;
+    /** What `docker system df` says, shown before a prune. */
+    systemDf: (input: DockerTargetInput) => Promise<StewardResult<DockerCommandOutput>>;
+    prune: (input: DockerPruneInput) => Promise<StewardResult<DockerCommandOutput>>;
+    listVolumes: (input: DockerTargetInput) => Promise<StewardResult<DockerVolume[]>>;
+    removeVolume: (input: DockerVolumeRemoveInput) => Promise<StewardResult<{ name: string }>>;
+    listNetworks: (input: DockerTargetInput) => Promise<StewardResult<DockerNetwork[]>>;
+    removeNetwork: (input: DockerNetworkRemoveInput) => Promise<StewardResult<{ name: string }>>;
+    /** Lines arrive through `onLog` until `stopLogs` or the container ends (`onLogEnd`). */
+    startLogs: (input: DockerLogsStartInput) => Promise<StewardResult<DockerLogsStarted>>;
+    stopLogs: (input: DockerLogsStopInput) => Promise<StewardResult<{ subscriptionId: string }>>;
+    composeList: (input: DockerComposeListInput) => Promise<StewardResult<DockerComposeProject[]>>;
+    composeServices: (input: DockerComposeRepositoryInput) => Promise<StewardResult<DockerComposeService[]>>;
+    composeAction: (input: DockerComposeActionInput) => Promise<StewardResult<DockerCommandOutput>>;
+    onLog: (listener: (event: DockerLogEvent) => void) => () => void;
+    onLogEnd: (listener: (event: DockerLogEndEvent) => void) => () => void;
   };
 }
