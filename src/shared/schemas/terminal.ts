@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { absolutePathSchema, idSchema, isoTimestampSchema } from './common';
+import { dockerObjectIdSchema } from './docker';
 
 export const TERMINAL_LOG_CAP_BYTES = 5 * 1024 * 1024;
 export const TERMINAL_RING_BYTES = 1024 * 1024;
@@ -16,6 +17,8 @@ export const terminalSessionSchema = z.object({
   repositoryId: idSchema.nullable(),
   /** Set for a shell on an SSH host: everything typed in it runs there, not on this machine. */
   sshHostId: idSchema.nullable(),
+  /** Set for a shell inside a container (on this machine, or on `sshHostId`). */
+  dockerContainer: z.string().nullable(),
   executionId: idSchema,
   shell: z.string(),
   profileName: z.string(),
@@ -34,14 +37,20 @@ export const terminalCreateInputSchema = z
     repositoryId: idSchema.optional(),
     /** A remote shell: main starts the system `ssh` for this saved host. */
     sshHostId: idSchema.optional(),
+    /** A shell inside this container: on this machine, or on `sshHostId` when that is given. */
+    docker: z.object({ containerId: dockerObjectIdSchema }).optional(),
     /** Omitted = the project's default profile. The renderer names a profile; main resolves the executable. */
     profileId: profileIdSchema.optional(),
     cols: dimensionSchema,
     rows: dimensionSchema
   })
-  .refine((input) => (input.repositoryId === undefined) !== (input.sshHostId === undefined), {
-    message: 'choose either a repository or an SSH host'
-  });
+  .refine(
+    (input) =>
+      input.docker === undefined
+        ? (input.repositoryId === undefined) !== (input.sshHostId === undefined)
+        : input.repositoryId === undefined,
+    { message: 'choose either a repository or an SSH host (a container shell takes no repository)' }
+  );
 
 /** Keystrokes for an existing session. It never starts a process. */
 export const terminalWriteInputSchema = z.object({

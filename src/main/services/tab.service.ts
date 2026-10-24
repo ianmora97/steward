@@ -30,6 +30,7 @@ const DEFAULT_TABS: readonly TabDefinition[] = [
   { tabKey: 'ssh', pinned: false },
   { tabKey: 'github', pinned: false },
   { tabKey: 'deployments', pinned: false },
+  { tabKey: 'docker', pinned: false },
   { tabKey: 'settings', pinned: false }
 ];
 

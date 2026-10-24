@@ -176,7 +176,9 @@ export function TerminalPanel(): React.JSX.Element {
     repositories.find((repository) => repository.id === id)?.name ?? 'repository';
   const titleOf = (session: TerminalSession, index: number): string =>
     titles[session.id] ??
-    (session.sshHostId === null
+    (session.dockerContainer !== null
+      ? `${session.profileName} #${index + 1}`
+      : session.sshHostId === null
       ? `${session.profileName} · ${nameOf(session.repositoryId)} #${index + 1}`
       : `${session.profileName} #${index + 1}`);
   const active = sessions.find((session) => session.id === activeId) ?? null;
@@ -211,7 +213,10 @@ export function TerminalPanel(): React.JSX.Element {
                   onClick={() => setActive(projectId, session.id)}
                   onDoubleClick={() => setRenamingId(session.id)}
                 >
-                  <Icon name={session.sshHostId === null ? 'terminal' : 'ssh'} size={14} />
+                  <Icon
+                    name={session.dockerContainer !== null ? 'docker' : session.sshHostId === null ? 'terminal' : 'ssh'}
+                    size={14}
+                  />
                   <span className="termbar__title">{titleOf(session, index)}</span>
                   {session.status === 'exited' && (
                     <span className="termbar__exit">exit {session.exitCode ?? '?'}</span>

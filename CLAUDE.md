@@ -1,6 +1,6 @@
 # Steward — instrucciones para Claude
 
-Steward es un workspace de escritorio centrado en proyectos para DevOps: un proyecto agrupa varios repositorios, entornos e integraciones, y cada proyecto tiene sus propias pestañas (Git primero; terminal, SSH, GitHub Actions y despliegues después). Electron + TypeScript + React + Vite + Zustand + Zod, persistencia local en SQLite (`node:sqlite`, sin servidor). El plan completo está en `docs/plan.md`; el estado actual, en `README.md`.
+Steward es un workspace de escritorio centrado en proyectos para DevOps: un proyecto agrupa varios repositorios, entornos e integraciones, y cada proyecto tiene sus propias pestañas (Git primero; terminal, SSH, GitHub Actions y despliegues después). Electron + TypeScript + React + Vite + Zustand + Zod, persistencia local en SQLite (`node:sqlite`, sin servidor). El plan completo está en `docs/plan.md`; el estado actual, en `README.md`. Tras M7, la hoja de ruta M8–M13 (Docker, PM2, MongoDB, Redis, monitoreo, cloud) está en `docs/superpowers/specs/2026-10-23-m8-m13-roadmap-design.md`, con una spec por milestone junto a ella.
 
 ## Reglas obligatorias
 
@@ -37,8 +37,10 @@ Steward es un workspace de escritorio centrado en proyectos para DevOps: un proy
 ```
 src/main/      Proceso principal: único lugar con acceso al sistema
   db/          driver node:sqlite, migraciones, acceso a datos
-  exec/run.ts  única vía para lanzar procesos hijos
-  security/    validación de rutas
+  exec/run.ts  única vía para lanzar procesos hijos (salida completa y con tope)
+  exec/stream.ts  misma disciplina, para salida continua (logs en vivo); desde M8
+  net/         HTTP con CA propia, topes y redirecciones controladas; desde M12
+  security/    validación de rutas, secret-store (safeStorage)
   services/    project, repository, tab, git-* (exec, parse, errors, ops)
   ipc/         definición de canales (sin Electron) + registro
 src/preload/   superficie contextBridge, nada más
@@ -50,7 +52,10 @@ Flujo: el renderer llama funciones con nombre de `window.steward` → el preload
 
 ## Seguridad (no negociable)
 - `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`. Sin canal genérico `invoke(channel, payload)` ni `runCommand(string)`.
-- Procesos hijos solo vía `src/main/exec/run.ts`: ejecutable + array de argumentos, nunca `shell: true`, nunca strings concatenados. Nombres de rama, rutas y mensajes son datos no confiables.
+- Procesos hijos solo vía `src/main/exec/run.ts` (y `exec/stream.ts` cuando exista): ejecutable + array de argumentos, nunca `shell: true`, nunca strings concatenados. Nombres de rama, rutas y mensajes son datos no confiables. Comandos remotos por SSH (Docker, PM2): plantilla fija por operación, valores validados con regex estricta y entrecomillados; nunca texto libre.
+- Clientes de red (MongoDB, Redis, Grafana/Loki/Prometheus/Sentry, AWS, Cloudflare, DNS/TLS) solo en `src/main/`. El renderer nunca abre sockets. Hosts y URLs salen siempre de una conexión guardada, no de un parámetro libre del canal; toda operación con timeout y tope de tamaño de respuesta; clientes cerrados al borrar la conexión/proyecto y en `will-quit`.
+- Conexiones de datos y cloud: URIs con contraseña, tokens y access keys van en `secret-store`, nunca en SQLite ni al renderer (que solo ve "guardado"). Certificados TLS por ruta. Una conexión de entorno protegido nace en **solo lectura**, y el bloqueo se aplica en main en cada canal de escritura (`CONNECTION_READ_ONLY`). Las escrituras se registran en `executions` sin contenido de documentos/valores.
+- Excepción documentada al "sin canal genérico": la consola de Redis (`redis:execute`, array de argumentos al servidor Redis ya conectado, con denylist y confirmaciones). No hay ni habrá equivalente para el sistema operativo.
 - Git es la fuente de verdad: se lee del `git` instalado, no se cachea como sistema de registro. Acciones destructivas (discard, force-delete de rama, abortar merge) exigen confirmación (`confirmed: true` en el schema).
 - Los secretos nunca van en la base de datos, en logs ni en el renderer. Toda salida de Git se pasa por `redact()` antes de salir de main.
 - Los errores esperados se lanzan como `StewardServiceError` con código; lo inesperado se registra en main y se devuelve genérico.
@@ -59,6 +64,8 @@ Flujo: el renderer llama funciones con nombre de `window.steward` → el preload
 - TypeScript estricto (`noUncheckedIndexedAccess`). Imports de tipos con `import { type X }`.
 - Comentarios solo para el *por qué* no obvio; el código existente es el modelo de estilo.
 - Migraciones SQLite: solo hacia adelante, nunca editar una ya publicada; añadir una nueva en `src/main/db/migrations/index.ts`.
+- Dependencias nuevas: versión exacta, comprobar mantenimiento, licencia y que no traigan binarios nativos antes de añadirlas (los clientes de M10–M13 son JS puro). La spec del milestone dice cuáles se esperan.
+- Una spec por milestone en `docs/superpowers/specs/`; el plan de tareas se escribe al empezar el milestone, no antes.
 - Commits: Conventional Commits (`feat:`, `fix:`, `chore:`…). Solo commitear cuando el usuario lo pida. `vault/` y `graphify-out/` son solo locales (en `.gitignore`): nunca se trackean ni se commitean.
 - Responde en español, tono directo.
 

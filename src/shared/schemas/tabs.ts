@@ -6,7 +6,7 @@ import { idSchema, isoTimestampSchema } from './common';
  * project; integration tabs are inserted when their integration is configured.
  * Hiding a tab keeps its row so it can be restored later.
  */
-export const tabKeySchema = z.enum(['git', 'terminal', 'ssh', 'github', 'deployments', 'settings']);
+export const tabKeySchema = z.enum(['git', 'terminal', 'ssh', 'github', 'deployments', 'docker', 'settings']);
 
 export const tabSourceSchema = z.enum(['builtin', 'integration']);
 

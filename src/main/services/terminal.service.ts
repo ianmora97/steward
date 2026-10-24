@@ -22,9 +22,12 @@ import { insertExecution, updateExecutionFinish } from '../db/execution.repo';
 import { nowIso, uuidv7 } from '../db/id';
 import { findRepositoryById } from '../db/repository.repo';
 import { findSshHost } from '../db/ssh-host.repo';
+import { resolveExecutable } from '../exec/resolve';
 import { runCommand } from '../exec/run';
 import { validateExistingDirectory } from '../security/paths';
+import { CONTAINER_SHELL_ARGS } from './docker-exec';
 import { redactSecrets } from './git-errors';
+import { remoteCommandLine } from './remote-quote';
 import { resolveSshExecutable, sshDestination, sshOptionArgs } from './ssh-args';
 import { resolveProfile } from './terminal-shell';
 import { requireProject } from './project.service';
@@ -171,6 +174,7 @@ export function createTerminalService(deps: TerminalServiceDeps): TerminalServic
   interface Launch {
     repositoryId: string | null;
     sshHostId: string | null;
+    dockerContainer: string | null;
     file: string;
     args: string[];
     /** The shell or `user@host` shown in the Activity history and the tab. */
@@ -180,21 +184,54 @@ export function createTerminalService(deps: TerminalServiceDeps): TerminalServic
   }
 
   function resolveLaunch(input: TerminalCreateInput): Launch {
+    const containerId = input.docker?.containerId ?? null;
     if (input.sshHostId !== undefined) {
       const host = findSshHost(db, input.sshHostId);
       if (host === null || host.projectId !== input.projectId) {
         throw new StewardServiceError('NOT_FOUND', 'that SSH host is not part of this project');
       }
       const destination = sshDestination(host);
+      if (containerId !== null) {
+        return {
+          repositoryId: null,
+          sshHostId: host.id,
+          dockerContainer: containerId,
+          file: resolveSshExecutable(),
+          // -t: with a command, ssh only allocates a terminal when asked, and docker exec -it needs one.
+          args: [
+            ...sshOptionArgs(host, { knownHostsFile: deps.knownHostsFile, batch: false }),
+            '-t',
+            '--',
+            destination,
+            remoteCommandLine(['docker', 'exec', '-it', containerId, ...CONTAINER_SHELL_ARGS])
+          ],
+          label: `${destination} · ${containerId}`,
+          cwd: homedir(),
+          profileName: `Docker · ${containerId} @ ${host.name}`
+        };
+      }
       return {
         repositoryId: null,
         sshHostId: host.id,
+        dockerContainer: null,
         file: resolveSshExecutable(),
         // Interactive: no BatchMode, so a password or passphrase can be typed into the terminal itself.
         args: [...sshOptionArgs(host, { knownHostsFile: deps.knownHostsFile, batch: false }), '--', destination],
         label: destination,
         cwd: homedir(),
         profileName: `SSH · ${host.name}`
+      };
+    }
+    if (containerId !== null) {
+      return {
+        repositoryId: null,
+        sshHostId: null,
+        dockerContainer: containerId,
+        file: resolveExecutable('docker'),
+        args: ['exec', '-it', containerId, ...CONTAINER_SHELL_ARGS],
+        label: 'docker',
+        cwd: homedir(),
+        profileName: `Docker · ${containerId}`
       };
     }
     const repository = input.repositoryId === undefined ? null : findRepositoryById(db, input.repositoryId);
@@ -205,6 +242,7 @@ export function createTerminalService(deps: TerminalServiceDeps): TerminalServic
     return {
       repositoryId: repository.id,
       sshHostId: null,
+      dockerContainer: null,
       file: shell.file,
       args: shell.args,
       label: shell.file,
@@ -304,10 +342,11 @@ export function createTerminalService(deps: TerminalServiceDeps): TerminalServic
       projectId: input.projectId,
       repositoryId: launch.repositoryId,
       sshHostId: launch.sshHostId,
+      dockerContainer: launch.dockerContainer,
       executionId,
       shell: shell.file,
       profileName: shell.name,
-      cwd: launch.sshHostId === null ? cwd : launch.label,
+      cwd: launch.sshHostId === null && launch.dockerContainer === null ? cwd : launch.label,
       status: 'running',
       exitCode: null,
       truncated: false,

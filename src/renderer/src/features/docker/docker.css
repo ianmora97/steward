@@ -1,0 +1,209 @@
+.panel.dkpage {
+  max-width: 1080px;
+}
+
+.dktarget {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.dkwhere {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+}
+
+.dkbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+.dkfilters,
+.dkpull,
+.dkprune {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dkpull .field__input {
+  min-width: 260px;
+}
+
+.dksearch {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.dksearch .icon {
+  position: absolute;
+  left: 10px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.dksearch .field__input {
+  min-width: 280px;
+  padding-left: 32px;
+}
+
+.dklist {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.dkrow {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1.6fr) minmax(0, 1fr) 120px max-content;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--border);
+}
+
+.dkrow:first-child {
+  border-top: 0;
+}
+
+.dkrow--image {
+  grid-template-columns: minmax(0, 1.6fr) 140px 160px max-content;
+}
+
+.dkrow--simple {
+  grid-template-columns: max-content minmax(0, 1fr) max-content;
+}
+
+.dkrow--simple:not(:has(.status-pill)) {
+  grid-template-columns: minmax(0, 1fr) max-content;
+}
+
+.dkrow__main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 0;
+  color: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.dkrow__main--static {
+  cursor: default;
+}
+
+.dkrow__name {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dkrow__meta {
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 12.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dkrow__ports {
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 12.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dkrow__usage {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+}
+
+.dkrow__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dkdetail__body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 20px 20px;
+}
+
+.dkdetail__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dkinfo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 55vh;
+  overflow: auto;
+}
+
+.dkinfo__title {
+  margin: 10px 0 2px;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.dkinfo__list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  overflow-wrap: anywhere;
+  list-style: none;
+}
+
+.dklogs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dklogs__view {
+  height: 45vh;
+  max-height: none;
+  white-space: pre-wrap;
+}
+
+.dklogs__err {
+  color: var(--danger);
+}
+
+.dkcompose {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.dkcompose__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
