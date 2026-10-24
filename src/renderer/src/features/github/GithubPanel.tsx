@@ -5,15 +5,19 @@ import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { EmptyState } from '../../components/EmptyState';
 import { ErrorBanner } from '../../components/ErrorBanner';
 import { Icon } from '../../components/Icon';
+import { Pill } from '../../components/Pill';
 import { useAppStore } from '../../stores/app.store';
 import { useGithubStore } from '../../stores/github.store';
 import { ConnectForm } from './ConnectForm';
 import { ActionsView } from './ActionsView';
 import { CreatePullModal } from './CreatePullModal';
 import { PullList } from './PullList';
+import { healthPill } from './run-format';
 import './github.css';
 
 const STATE_FILTERS: readonly GithubPullState[] = ['open', 'closed', 'all'];
+
+const STATE_LABELS: Record<GithubPullState, string> = { open: 'Open', closed: 'Closed', all: 'All' };
 
 export function GithubPanel(): React.JSX.Element {
   const projectId = useAppStore((state) => state.selectedProjectId);
@@ -29,8 +33,14 @@ export function GithubPanel(): React.JSX.Element {
   const hasNext = useGithubStore((state) => state.hasNext);
   const loadingPulls = useGithubStore((state) => state.loadingPulls);
   const view = useGithubStore((state) => state.view);
+  const workflows = useGithubStore((state) => state.workflows);
+  const workflowId = useGithubStore((state) => state.workflowId);
+  const health = useGithubStore((state) => state.health);
+  const loadingRuns = useGithubStore((state) => state.loadingRuns);
   const setView = useGithubStore((state) => state.setView);
+  const setWorkflow = useGithubStore((state) => state.setWorkflow);
   const loadActions = useGithubStore((state) => state.loadActions);
+  const refreshActions = useGithubStore((state) => state.refreshActions);
   const loadStatus = useGithubStore((state) => state.loadStatus);
   const connect = useGithubStore((state) => state.connect);
   const importFromGh = useGithubStore((state) => state.importFromGh);
@@ -76,15 +86,39 @@ export function GithubPanel(): React.JSX.Element {
 
   const needsToken = status === 'unconfigured' || status === 'auth_error';
   const selected = githubRepositories.find((repository) => repository.id === repositoryId) ?? null;
+  const actionsHealth = healthPill(health?.status ?? 'unknown');
+  const showPullCount = pullsState === 'open' && selected !== null && (pulls.length > 0 || !loadingPulls);
 
   return (
     <section className="panel ghpage">
       <header className="ghpage__head">
         <h2 className="ghpage__title">
-          <Icon name="pullRequest" size={22} /> GitHub
+          <Icon name="github" size={22} /> GitHub
         </h2>
+        {connected && integration !== undefined && (
+          <div className="ghaccount">
+            <Pill tone="success" icon="checkCircle">
+              Connected as {integration.login ?? 'unknown'}
+            </Pill>
+            {integration.scopes.length > 0 ? (
+              <span className="ghscopes" title="Token scopes">
+                {integration.scopes.map((scope) => (
+                  <code key={scope} className="ghref">
+                    {scope}
+                  </code>
+                ))}
+              </span>
+            ) : (
+              <span className="ghmeta__item">fine-grained token</span>
+            )}
+          </div>
+        )}
         {connected && (
-          <button type="button" className="button button--ghost" onClick={() => setConfirmingDisconnect(true)}>
+          <button
+            type="button"
+            className="button button--ghost ghpage__disconnect"
+            onClick={() => setConfirmingDisconnect(true)}
+          >
             Disconnect
           </button>
         )}
@@ -128,78 +162,126 @@ export function GithubPanel(): React.JSX.Element {
         />
       )}
 
-      {connected && integration !== undefined && (
-        <div className="card ghaccount">
-          <h3 className="card__title">Connected as {integration.login ?? 'unknown'}</h3>
-          <p className="card__hint">
-            Scopes:{' '}
-            {integration.scopes.length > 0 ? integration.scopes.join(', ') : 'none reported (fine-grained token)'}
-          </p>
-        </div>
-      )}
-
       {connected && (
-        <div className="card ghpulls-card">
-          <div className="ghpulls-card__head">
-            <div className="ghview" role="tablist" aria-label="GitHub view">
-              <button
-                type="button"
-                role="tab"
-                aria-selected={view === 'pulls'}
-                className={`ghview__button${view === 'pulls' ? ' is-active' : ''}`}
-                onClick={() => setView('pulls')}
-              >
-                Pull requests
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={view === 'actions'}
-                className={`ghview__button${view === 'actions' ? ' is-active' : ''}`}
-                onClick={() => setView('actions')}
-              >
-                Actions
-              </button>
-            </div>
-            <div className="ghpulls-card__controls">
-              <select
-                className="field__input"
-                aria-label="Repository"
-                value={repositoryId ?? ''}
-                disabled={githubRepositories.length === 0}
-                onChange={(event) => void selectRepository(projectId, event.target.value || null)}
-              >
-                {repositories.map((repository) => {
-                  const onGithub = parseGithubRemote(repository.remoteUrl) !== null;
-                  return (
-                    <option key={repository.id} value={repository.id} disabled={!onGithub}>
-                      {repository.name}
-                      {onGithub ? '' : ' (not on GitHub)'}
-                    </option>
-                  );
-                })}
-              </select>
-              {view === 'pulls' && (
-                <>
+        <div className="card ghmain">
+          <div className="ghnav" role="tablist" aria-label="GitHub view">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={view === 'pulls'}
+              className={`ghnav__button${view === 'pulls' ? ' is-active' : ''}`}
+              onClick={() => setView('pulls')}
+            >
+              <Icon name="pullRequest" size={15} />
+              Pull requests
+              {showPullCount && (
+                <Pill tone={pulls.length > 0 ? 'success' : 'neutral'}>
+                  {pulls.length}
+                  {hasNext ? '+' : ''} open
+                </Pill>
+              )}
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={view === 'actions'}
+              className={`ghnav__button${view === 'actions' ? ' is-active' : ''}`}
+              onClick={() => setView('actions')}
+            >
+              <Icon name="actions" size={15} />
+              Actions
+              <Pill tone={actionsHealth.tone} icon={actionsHealth.icon}>
+                {actionsHealth.label}
+              </Pill>
+            </button>
+          </div>
+
+          <div className="ghtoolbar">
+            <div className="ghtoolbar__filters">
+              <label className="ghselect">
+                <Icon name="repo" size={14} />
+                <select
+                  className="ghselect__input"
+                  aria-label="Repository"
+                  value={repositoryId ?? ''}
+                  disabled={githubRepositories.length === 0}
+                  onChange={(event) => void selectRepository(projectId, event.target.value || null)}
+                >
+                  {repositories.map((repository) => {
+                    const onGithub = parseGithubRemote(repository.remoteUrl) !== null;
+                    return (
+                      <option key={repository.id} value={repository.id} disabled={!onGithub}>
+                        {repository.name}
+                        {onGithub ? '' : ' (not on GitHub)'}
+                      </option>
+                    );
+                  })}
+                </select>
+              </label>
+
+              {view === 'pulls' ? (
+                <div className="segmented" role="group" aria-label="Pull request state">
+                  {STATE_FILTERS.map((state) => (
+                    <button
+                      key={state}
+                      type="button"
+                      className={`segmented__option${pullsState === state ? ' segmented__option--active' : ''}`}
+                      onClick={() => void setPullsState(projectId, state)}
+                    >
+                      {STATE_LABELS[state]}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <label className="ghselect">
+                  <Icon name="filter" size={14} />
                   <select
-                    className="field__input"
-                    aria-label="Pull request state"
-                    value={pullsState}
-                    onChange={(event) => void setPullsState(projectId, event.target.value as GithubPullState)}
+                    className="ghselect__input"
+                    aria-label="Workflow"
+                    value={workflowId ?? ''}
+                    onChange={(event) =>
+                      void setWorkflow(projectId, event.target.value === '' ? null : Number(event.target.value))
+                    }
                   >
-                    {STATE_FILTERS.map((state) => (
-                      <option key={state} value={state}>
-                        {state}
+                    <option value="">All workflows</option>
+                    {workflows.map((workflow) => (
+                      <option key={workflow.id} value={workflow.id}>
+                        {workflow.name}
+                        {workflow.state === 'active' ? '' : ' (disabled)'}
                       </option>
                     ))}
                   </select>
+                </label>
+              )}
+            </div>
+
+            <div className="ghtoolbar__actions">
+              {view === 'actions' ? (
+                <button
+                  type="button"
+                  className="button button--small ghbutton"
+                  disabled={loadingRuns || selected === null}
+                  onClick={() => void refreshActions(projectId)}
+                >
+                  <Icon name="refresh" size={13} /> Refresh
+                </button>
+              ) : (
+                <>
                   <button
                     type="button"
-                    className="button button--primary"
+                    className="button button--small ghbutton"
+                    disabled={loadingPulls || selected === null}
+                    onClick={() => void reloadPulls(projectId)}
+                  >
+                    <Icon name="refresh" size={13} /> Refresh
+                  </button>
+                  <button
+                    type="button"
+                    className="button button--primary button--small ghbutton"
                     disabled={selected === null}
                     onClick={() => setCreating(true)}
                   >
-                    New pull request
+                    <Icon name="plus" size={13} /> New pull request
                   </button>
                 </>
               )}

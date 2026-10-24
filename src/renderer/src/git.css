@@ -552,7 +552,27 @@
 
 .graph__spacer {
   position: relative;
-  min-width: 720px;
+  min-width: 900px;
+}
+
+/* Column labels stay in view while the history scrolls underneath. */
+.graph__head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 900px;
+  height: 28px;
+  padding: 0 16px 0 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-raised);
+  color: var(--text-dim);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .graph__row {
@@ -561,10 +581,11 @@
   right: 0;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 0 12px 0 4px;
+  gap: 14px;
+  padding: 0 16px 0 12px;
   background: none;
   border: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
   color: var(--text);
   font-family: inherit;
   font-size: 12.5px;
@@ -584,6 +605,7 @@
 
 .graph__lanes {
   flex-shrink: 0;
+  margin-left: -14px;
 }
 
 .graph__line {
@@ -591,46 +613,73 @@
   stroke-width: 2;
 }
 
+.graph__link {
+  stroke-width: 1.5;
+  stroke-dasharray: 2 3;
+  opacity: 0.7;
+}
+
 .graph__node {
   stroke-width: 2;
 }
 
+/* Branch and tag labels sit in their own column, right-aligned against the graph. */
 .graph__refs {
   display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: flex-end;
   gap: 4px;
-  flex-shrink: 0;
+  width: 232px;
+  min-width: 0;
 }
 
 .ref {
-  padding: 0 6px;
-  border: 1px solid var(--border-strong);
+  --ref-tint: var(--ref-color, var(--text-muted));
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  max-width: 150px;
+  padding: 0 7px;
+  border: 1px solid color-mix(in srgb, var(--ref-tint) 45%, transparent);
   border-radius: 999px;
+  background: color-mix(in srgb, var(--ref-tint) 16%, transparent);
+  color: var(--ref-tint);
   font-size: 11px;
+  font-weight: 560;
   line-height: 18px;
   white-space: nowrap;
 }
 
-.ref--local {
-  border-color: #27405f;
-  color: var(--accent);
+.ref__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ref .icon {
+  flex: none;
 }
 
 .ref--remote {
-  border-color: #1e3d2f;
-  color: var(--ok);
+  --ref-tint: var(--text-muted);
 }
 
 .ref--tag {
-  border-color: #4a3a16;
-  color: #e8c26a;
+  --ref-tint: #e8c26a;
+}
+
+.ref--more {
+  --ref-tint: var(--text-muted);
+  padding: 0 6px;
 }
 
 .ref--head,
 .ref--current {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--accent-ink);
-  font-weight: 600;
+  background: var(--ref-tint);
+  border-color: var(--ref-tint);
+  color: #0a0f1c;
+  font-weight: 650;
 }
 
 .graph__subject {
@@ -655,8 +704,13 @@
   white-space: nowrap;
 }
 
+.graph__date {
+  width: 84px;
+}
+
 .graph__sha {
   flex-shrink: 0;
+  width: 58px;
   color: var(--text-dim);
   font-size: 11.5px;
 }

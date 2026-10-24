@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { GraphCommit, GraphRef } from '@shared/schemas/graph';
 import { layoutGraph, type GraphRow } from '@shared/graph/layout';
+import { Icon } from '../../components/Icon';
 import { useGitStore } from '../../stores/git.store';
 
-const ROW_HEIGHT = 28;
+const ROW_HEIGHT = 32;
+const VISIBLE_REFS = 2;
 const LANE_WIDTH = 16;
 const MAX_VISIBLE_LANES = 14;
 const OVERSCAN = 12;
@@ -24,12 +26,33 @@ function segmentPath(x1: number, y1: number, x2: number, y2: number): string {
   return `M${x1} ${y1} C${x1} ${mid} ${x2} ${mid} ${x2} ${y2}`;
 }
 
-function RowGraphic({ row, merge, width }: { row: GraphRow; merge: boolean; width: number }): React.JSX.Element {
+function RowGraphic({
+  row,
+  merge,
+  linked,
+  width
+}: {
+  row: GraphRow;
+  merge: boolean;
+  /** True when the commit has branch labels: a short line ties them to the node. */
+  linked: boolean;
+  width: number;
+}): React.JSX.Element {
   const mid = ROW_HEIGHT / 2;
   const stroke = (color: number): string => `var(--lane-${color})`;
 
   return (
     <svg className="graph__lanes" width={width} height={ROW_HEIGHT} aria-hidden="true">
+      {linked && (
+        <line
+          x1={0}
+          y1={mid}
+          x2={laneX(clampColumn(row.column))}
+          y2={mid}
+          stroke={stroke(row.color)}
+          className="graph__link"
+        />
+      )}
       {row.through.map((segment, index) => (
         <path
           key={`t${index}`}
@@ -66,10 +89,44 @@ function RowGraphic({ row, merge, width }: { row: GraphRow; merge: boolean; widt
   );
 }
 
-function RefChip({ reference }: { reference: GraphRef }): React.JSX.Element {
+interface RefGroup {
+  name: string;
+  kind: GraphRef['kind'];
+  current: boolean;
+  /** A local branch and its remote counterpart on the same commit collapse into one label. */
+  remote: boolean;
+}
+
+function groupRefs(refs: GraphRef[]): RefGroup[] {
+  const groups: RefGroup[] = [];
+  for (const reference of refs) {
+    if (reference.kind === 'remote') continue;
+    groups.push({ name: reference.name, kind: reference.kind, current: reference.current, remote: false });
+  }
+  for (const reference of refs) {
+    if (reference.kind !== 'remote') continue;
+    const branch = reference.name.slice(reference.name.indexOf('/') + 1);
+    const local = groups.find((group) => group.kind === 'local' && group.name === branch);
+    if (local === undefined) groups.push({ name: reference.name, kind: 'remote', current: false, remote: true });
+    else local.remote = true;
+  }
+  // The checked-out branch leads, then branches, then remotes and tags.
+  const rank = (group: RefGroup): number => (group.current ? 0 : group.kind === 'local' ? 1 : group.kind === 'remote' ? 2 : 3);
+  return groups.sort((a, b) => rank(a) - rank(b));
+}
+
+function RefChip({ group }: { group: RefGroup }): React.JSX.Element {
+  const title =
+    group.kind === 'tag'
+      ? `Tag ${group.name}`
+      : group.kind === 'remote'
+        ? `Remote branch ${group.name}`
+        : `${group.current ? 'Current branch ' : 'Branch '}${group.name}${group.remote ? ' (also on the remote)' : ''}`;
   return (
-    <span className={`ref ref--${reference.kind}${reference.current ? ' ref--current' : ''}`} title={reference.kind}>
-      {reference.name}
+    <span className={`ref ref--${group.kind}${group.current ? ' ref--current' : ''}`} title={title}>
+      <Icon name={group.current ? 'check' : group.kind === 'tag' ? 'tag' : group.kind === 'remote' ? 'cloud' : 'laptop'} size={11} />
+      <span className="ref__name">{group.name}</span>
+      {group.kind === 'local' && group.remote && <Icon name="cloud" size={11} />}
     </span>
   );
 }
@@ -89,20 +146,29 @@ function CommitRow({
   selected: boolean;
   onSelect: () => void;
 }): React.JSX.Element {
+  const groups = groupRefs(commit.refs);
+  const shown = groups.slice(0, VISIBLE_REFS);
+  const hidden = groups.slice(VISIBLE_REFS);
   return (
     <button
       type="button"
       className={`graph__row${selected ? ' graph__row--selected' : ''}`}
-      style={{ top, height: ROW_HEIGHT }}
+      style={{ top, height: ROW_HEIGHT, '--ref-color': `var(--lane-${row.color})` } as React.CSSProperties}
       onClick={onSelect}
       title={`${commit.sha}\n${commit.subject}`}
     >
-      <RowGraphic row={row} merge={commit.parents.length > 1} width={width} />
       <span className="graph__refs">
-        {commit.refs.map((reference) => (
-          <RefChip key={`${reference.kind}-${reference.name}`} reference={reference} />
+        {shown.map((group) => (
+          <RefChip key={`${group.kind}-${group.name}`} group={group} />
         ))}
+        {hidden.length > 0 && (
+          <span className="ref ref--more" title={hidden.map((group) => group.name).join('\n')}>
+            +{hidden.length}
+          </span>
+        )}
       </span>
+      <RowGraphic row={row} merge={commit.parents.length > 1} linked={groups.length > 0} width={width} />
+
       <span className="graph__subject">{commit.subject}</span>
       <span className="graph__author">{commit.author}</span>
       <span className="graph__date">{new Date(commit.date).toLocaleDateString()}</span>
@@ -221,6 +287,14 @@ export function GraphView(): React.JSX.Element {
             role="list"
             aria-label="Commit history"
           >
+            <div className="graph__head" aria-hidden="true">
+              <span className="graph__refs">Branch / tag</span>
+              <span style={{ width: graphWidth, marginLeft: -14 }}>Graph</span>
+              <span className="graph__subject">Commit</span>
+              <span className="graph__author">Author</span>
+              <span className="graph__date">Date</span>
+              <span className="graph__sha">SHA</span>
+            </div>
             <div className="graph__spacer" style={{ height: commits.length * ROW_HEIGHT }}>
               {visible}
             </div>

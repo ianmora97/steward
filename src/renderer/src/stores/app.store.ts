@@ -196,7 +196,11 @@ export const useAppStore = create<AppState>((set, get) => {
       const projectId = get().selectedProjectId;
       if (projectId === null) return;
 
-      const ordered = [...get().tabs].sort((a, b) => a.position - b.position).map((tab) => tab.tabKey);
+      // Settings is pinned to the end of the bar, so it takes no part in the swap and is appended back.
+      const ordered: TabKey[] = [...get().tabs]
+        .sort((a, b) => a.position - b.position)
+        .map((tab) => tab.tabKey)
+        .filter((key) => key !== 'settings');
       const index = ordered.indexOf(tabKey);
       const target = index + direction;
       if (index === -1 || target < 0 || target >= ordered.length) return;
@@ -205,6 +209,7 @@ export const useAppStore = create<AppState>((set, get) => {
       const moving = swapped[index] as TabKey;
       swapped[index] = swapped[target] as TabKey;
       swapped[target] = moving;
+      if (get().tabs.some((tab) => tab.tabKey === 'settings')) swapped.push('settings');
 
       const tabs = await unwrap(api().tabs.reorder({ projectId, orderedTabKeys: swapped }));
       if (tabs !== null) set({ tabs });

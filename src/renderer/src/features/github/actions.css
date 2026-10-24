@@ -8,43 +8,13 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 8px 10px;
 }
 
-.ghactions__refresh {
-  margin-left: auto;
-}
-
-.ghactions__filter {
-  align-self: flex-start;
-}
-
-.ghchip--success {
-  color: var(--ok, #3fb950);
-}
-
-.ghchip--failure {
-  color: var(--danger, #f85149);
-}
-
-.ghchip--running {
-  color: var(--warn, #d29922);
-}
-
-.ghchip--neutral {
-  color: var(--text-muted);
-}
-
-.ghrun + .ghrun {
-  border-top: 1px solid var(--border);
-}
+/* A run is a button row that opens its jobs ---------------------------------- */
 
 .ghrun__row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
   width: 100%;
-  padding: 10px 12px;
   border: 0;
   background: none;
   color: inherit;
@@ -57,33 +27,43 @@
   background: var(--bg-raised);
 }
 
-.ghrun__main {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
+.ghrun__duration {
+  flex: none;
+  margin-top: 1px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
 }
 
-.ghrun__title {
-  font-weight: 600;
-  overflow-wrap: anywhere;
+.ghrun__chevron {
+  display: inline-flex;
+  flex: none;
+  margin-top: 2px;
+  color: var(--text-dim);
+  transition: transform 0.15s ease;
+}
+
+.ghrun__chevron.is-open {
+  transform: rotate(90deg);
 }
 
 .ghdetail {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 4px 12px 12px 32px;
+  gap: 12px;
+  padding: 4px 14px 14px 110px;
+  background: var(--bg-sunken);
 }
 
 .ghdetail__bar {
   display: flex;
+  padding-top: 10px;
 }
 
 .ghjob {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .ghjob__head {
@@ -105,42 +85,38 @@
 .ghsteps {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
   margin: 0;
-  padding: 0 0 0 12px;
+  padding: 0 0 0 4px;
   list-style: none;
 }
 
 .ghstep {
+  --step-color: var(--text-dim);
   display: flex;
   align-items: center;
   gap: 8px;
+  color: var(--text-muted);
   font-size: 12px;
 }
 
-.ghstep__state {
-  margin-left: auto;
-  color: var(--text-muted);
+.ghstep__icon {
+  display: inline-flex;
+  color: var(--step-color);
 }
 
-.ghdot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--text-dim);
-  flex-shrink: 0;
+.ghstep--success {
+  --step-color: var(--ok);
 }
 
-.ghdot--success {
-  background: var(--ok, #3fb950);
+.ghstep--failure {
+  --step-color: var(--danger);
+  color: var(--text);
 }
 
-.ghdot--failure {
-  background: var(--danger, #f85149);
-}
-
-.ghdot--running {
-  background: var(--warn, #d29922);
+.ghstep--running,
+.ghstep--warning {
+  --step-color: var(--warn);
 }
 
 .ghlog__body {
@@ -162,28 +138,4 @@
   line-height: 1.45;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-}
-
-.ghview {
-  display: inline-flex;
-  gap: 2px;
-  padding: 2px;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-sm);
-}
-
-.ghview__button {
-  padding: 4px 12px;
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: none;
-  color: var(--text-muted);
-  font: inherit;
-  cursor: pointer;
-}
-
-.ghview__button.is-active {
-  background: var(--bg-raised);
-  color: var(--text);
-  font-weight: 600;
 }

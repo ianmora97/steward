@@ -1,4 +1,6 @@
 import type { GithubJob } from '@shared/schemas/github';
+import { Icon } from '../../components/Icon';
+import { Pill } from '../../components/Pill';
 import { formatDuration, runChip } from './run-format';
 
 export function RunDetail({
@@ -16,8 +18,8 @@ export function RunDetail({
   return (
     <div className="ghdetail">
       <div className="ghdetail__bar">
-        <button type="button" className="button button--small" onClick={() => onOpen(runUrl)}>
-          Open run on GitHub
+        <button type="button" className="button button--small ghbutton" onClick={() => onOpen(runUrl)}>
+          <Icon name="external" size={13} /> Open run on GitHub
         </button>
       </div>
       {jobs === undefined && <p className="card__hint">Loading jobs…</p>}
@@ -27,11 +29,13 @@ export function RunDetail({
         return (
           <div key={job.id} className="ghjob">
             <div className="ghjob__head">
-              <span className={`chip ghchip ghchip--${chip.tone}`}>{chip.label}</span>
+              <Pill tone={chip.tone} icon={chip.icon}>
+                {chip.label}
+              </Pill>
               <span className="ghjob__name">{job.name}</span>
               <span className="ghjob__time">{formatDuration(job.startedAt, job.completedAt)}</span>
-              <button type="button" className="button button--small" onClick={() => onViewLog(job)}>
-                View log
+              <button type="button" className="button button--small ghbutton" onClick={() => onViewLog(job)}>
+                <Icon name="file" size={13} /> View log
               </button>
             </div>
             {job.steps.length > 0 && (
@@ -39,10 +43,11 @@ export function RunDetail({
                 {job.steps.map((step) => {
                   const stepChip = runChip(step);
                   return (
-                    <li key={step.number} className="ghstep">
-                      <span className={`ghdot ghdot--${stepChip.tone}`} title={stepChip.label} />
+                    <li key={step.number} className={`ghstep ghstep--${stepChip.tone}`}>
+                      <span className="ghstep__icon" title={stepChip.label}>
+                        <Icon name={stepChip.icon} size={14} />
+                      </span>
                       <span className="ghstep__name">{step.name}</span>
-                      <span className="ghstep__state">{stepChip.label}</span>
                     </li>
                   );
                 })}
