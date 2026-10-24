@@ -57,7 +57,16 @@ import type {
   GithubConnectInput,
   GithubCreatePullInput,
   GithubCreatedPull,
+  GithubGetJobLogInput,
+  GithubHealth,
   GithubIntegration,
+  GithubJob,
+  GithubJobLog,
+  GithubListJobsInput,
+  GithubListRunsInput,
+  GithubRepositoryInput,
+  GithubRunPage,
+  GithubWorkflow,
   GithubListBranchesInput,
   GithubListPullsInput,
   GithubOpenUrlInput,
@@ -160,7 +169,12 @@ export const IPC_CHANNELS = {
   githubListPulls: 'github:listPulls',
   githubListBranches: 'github:listBranches',
   githubCreatePull: 'github:createPull',
-  githubOpenUrl: 'github:openUrl'
+  githubOpenUrl: 'github:openUrl',
+  githubListWorkflows: 'github:listWorkflows',
+  githubListRuns: 'github:listRuns',
+  githubListJobs: 'github:listJobs',
+  githubGetJobLog: 'github:getJobLog',
+  githubGetHealth: 'github:getHealth'
 } as const;
 
 /**
@@ -289,5 +303,12 @@ export interface StewardApi {
     createPull: (input: GithubCreatePullInput) => Promise<StewardResult<GithubCreatedPull>>;
     /** Opens a github.com link in the browser; main rejects any other host. */
     openUrl: (input: GithubOpenUrlInput) => Promise<StewardResult<null>>;
+    listWorkflows: (input: GithubRepositoryInput) => Promise<StewardResult<GithubWorkflow[]>>;
+    listRuns: (input: GithubListRunsInput) => Promise<StewardResult<GithubRunPage>>;
+    listJobs: (input: GithubListJobsInput) => Promise<StewardResult<GithubJob[]>>;
+    /** The end of a job log, already stripped of colour codes and secrets. */
+    getJobLog: (input: GithubGetJobLogInput) => Promise<StewardResult<GithubJobLog>>;
+    /** Workflow health derived from recent runs; separate from whether the token works. */
+    getHealth: (input: GithubRepositoryInput) => Promise<StewardResult<GithubHealth>>;
   };
 }

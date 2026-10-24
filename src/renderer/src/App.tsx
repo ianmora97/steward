@@ -36,14 +36,6 @@ function PanelFor({ tabKey }: { tabKey: TabKey | null }): React.JSX.Element {
       return <SshPanel />;
     case 'github':
       return <GithubPanel />;
-    case 'actions':
-      return (
-        <PendingPanel
-          title="GitHub Actions"
-          milestone="Milestone 6.5"
-          description="Workflow runs, statuses and logs, read from the GitHub API. Connection health and workflow health are reported separately."
-        />
-      );
     case 'deployments':
       return (
         <PendingPanel

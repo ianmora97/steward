@@ -11,11 +11,10 @@ import { StewardServiceError } from '@shared/types/result';
 import type { SqlDatabase } from '../db/driver';
 import { insertExecution, updateExecutionFinish } from '../db/execution.repo';
 import { nowIso, uuidv7 } from '../db/id';
-import { findRepositoryById } from '../db/repository.repo';
 import type { GithubApi } from './github-api';
 import type { GithubIntegrationService } from './github-integration.service';
 import { redactSecrets } from './git-errors';
-import { parseGithubRemote, type GithubRepoRef } from '@shared/github-remote';
+import { resolveGithubRepo } from './github-repo';
 
 const KIND_CREATE_PR = 'github_create_pr';
 
@@ -50,33 +49,16 @@ function assertGithubUrl(text: string): URL {
 export function createGithubPullsService(deps: GithubPullsServiceDeps): GithubPullsService {
   const { db, github, api } = deps;
 
-  /**
-   * Owner and repo come from the remote Steward stored, never from the
-   * renderer, and the repository must belong to the project whose token is
-   * used. A mismatch looks exactly like "not found".
-   */
-  function resolveRepo(input: { projectId: string; repositoryId: string }): GithubRepoRef {
-    const repository = findRepositoryById(db, input.repositoryId);
-    if (repository === null || repository.projectId !== input.projectId) {
-      throw new StewardServiceError('NOT_FOUND', 'that repository no longer exists');
-    }
-    const ref = parseGithubRemote(repository.remoteUrl);
-    if (ref === null) {
-      throw new StewardServiceError('VALIDATION_FAILED', 'this repository has no github.com remote');
-    }
-    return ref;
-  }
-
   return {
     listPulls(input) {
-      const { owner, name } = resolveRepo(input);
+      const { owner, name } = resolveGithubRepo(db, input);
       const state = input.state ?? 'open';
       const page = input.page ?? 1;
       return github.withToken(input.projectId, (token) => api.listPulls(token, owner, name, { state, page }));
     },
 
     listBranches(input) {
-      const { owner, name } = resolveRepo(input);
+      const { owner, name } = resolveGithubRepo(db, input);
       return github.withToken(input.projectId, async (token) => {
         const [names, repo] = await Promise.all([
           api.listBranches(token, owner, name),
@@ -87,7 +69,7 @@ export function createGithubPullsService(deps: GithubPullsServiceDeps): GithubPu
     },
 
     async createPull(input) {
-      const { owner, name } = resolveRepo(input);
+      const { owner, name } = resolveGithubRepo(db, input);
       const executionId = uuidv7();
       const startedAt = nowIso();
       const startedMs = Date.now();

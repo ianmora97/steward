@@ -32,6 +32,10 @@ import {
 import {
   githubConnectInputSchema,
   githubCreatePullInputSchema,
+  githubGetJobLogInputSchema,
+  githubListJobsInputSchema,
+  githubListRunsInputSchema,
+  githubRepositoryInputSchema,
   githubListBranchesInputSchema,
   githubListPullsInputSchema,
   githubOpenUrlInputSchema,
@@ -105,6 +109,7 @@ import {
   setSettings
 } from '../services/terminal-settings.service';
 import type { GithubIntegrationService } from '../services/github-integration.service';
+import type { GithubActionsService } from '../services/github-actions.service';
 import type { GithubPullsService } from '../services/github-pulls.service';
 import type { SshService } from '../services/ssh.service';
 import type { TerminalService } from '../services/terminal.service';
@@ -131,6 +136,7 @@ export interface IpcContext {
   ssh: SshService;
   github: GithubIntegrationService;
   githubPulls: GithubPullsService;
+  githubActions: GithubActionsService;
   /** Supplied by the Electron layer; see src/main/index.ts. */
   readAppInfo: () => Promise<AppInfo>;
   /** Opens the OS folder picker. Cancelling is a normal outcome, not an error. */
@@ -528,6 +534,31 @@ export function buildHandlerDefinitions(context: IpcContext): IpcHandlerDefiniti
       channel: IPC_CHANNELS.githubOpenUrl,
       schema: githubOpenUrlInputSchema,
       handle: (input) => context.githubPulls.openUrl(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.githubListWorkflows,
+      schema: githubRepositoryInputSchema,
+      handle: (input) => context.githubActions.listWorkflows(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.githubListRuns,
+      schema: githubListRunsInputSchema,
+      handle: (input) => context.githubActions.listRuns(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.githubListJobs,
+      schema: githubListJobsInputSchema,
+      handle: (input) => context.githubActions.listJobs(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.githubGetJobLog,
+      schema: githubGetJobLogInputSchema,
+      handle: (input) => context.githubActions.getJobLog(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.githubGetHealth,
+      schema: githubRepositoryInputSchema,
+      handle: (input) => context.githubActions.getHealth(input)
     })
   ];
 }

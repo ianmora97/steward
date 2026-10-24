@@ -93,3 +93,101 @@ export type GithubCreatedPull = z.infer<typeof githubCreatedPullSchema>;
 
 export const githubOpenUrlInputSchema = z.object({ url: z.string().max(2048) });
 export type GithubOpenUrlInput = z.infer<typeof githubOpenUrlInputSchema>;
+
+export const githubRepositoryInputSchema = z.object({ projectId: idSchema, repositoryId: idSchema });
+export type GithubRepositoryInput = z.infer<typeof githubRepositoryInputSchema>;
+
+export const githubWorkflowSchema = z.object({
+  id: z.number().int(),
+  name: z.string(),
+  path: z.string(),
+  state: z.string()
+});
+export type GithubWorkflow = z.infer<typeof githubWorkflowSchema>;
+
+/** `status` and `conclusion` stay free strings: GitHub adds values over time and an unknown one must not break the list. */
+export const githubRunSchema = z.object({
+  id: z.number().int(),
+  runNumber: z.number().int(),
+  title: z.string(),
+  workflowId: z.number().int(),
+  workflowName: z.string(),
+  status: z.string(),
+  conclusion: z.string().nullable(),
+  event: z.string(),
+  branch: z.string().nullable(),
+  sha: z.string(),
+  actor: z.string().nullable(),
+  url: z.string(),
+  createdAt: isoTimestampSchema,
+  startedAt: isoTimestampSchema.nullable(),
+  updatedAt: isoTimestampSchema
+});
+export type GithubRun = z.infer<typeof githubRunSchema>;
+
+export const githubRunPageSchema = z.object({
+  items: z.array(githubRunSchema),
+  page: z.number().int().min(1),
+  hasNext: z.boolean()
+});
+export type GithubRunPage = z.infer<typeof githubRunPageSchema>;
+
+export const githubStepSchema = z.object({
+  number: z.number().int(),
+  name: z.string(),
+  status: z.string(),
+  conclusion: z.string().nullable()
+});
+export type GithubStep = z.infer<typeof githubStepSchema>;
+
+export const githubJobSchema = z.object({
+  id: z.number().int(),
+  name: z.string(),
+  status: z.string(),
+  conclusion: z.string().nullable(),
+  startedAt: isoTimestampSchema.nullable(),
+  completedAt: isoTimestampSchema.nullable(),
+  url: z.string(),
+  steps: z.array(githubStepSchema)
+});
+export type GithubJob = z.infer<typeof githubJobSchema>;
+
+export const githubJobLogSchema = z.object({
+  text: z.string(),
+  /** Only the end of the log is kept; the start was cut. */
+  truncated: z.boolean(),
+  /** Too big to download at all; `text` is empty. */
+  tooLarge: z.boolean()
+});
+export type GithubJobLog = z.infer<typeof githubJobLogSchema>;
+
+export const githubHealthSchema = z.object({
+  status: z.enum(['unknown', 'healthy', 'degraded', 'failing']),
+  basedOnRuns: z.number().int().min(0),
+  failingWorkflows: z.array(z.string())
+});
+export type GithubHealth = z.infer<typeof githubHealthSchema>;
+
+const githubNumericIdSchema = z.number().int().min(1);
+
+export const githubListRunsInputSchema = z.object({
+  projectId: idSchema,
+  repositoryId: idSchema,
+  workflowId: githubNumericIdSchema.nullable().default(null),
+  page: z.number().int().min(1).max(1000).default(1)
+});
+export type GithubListRunsInput = z.input<typeof githubListRunsInputSchema>;
+
+export const githubListJobsInputSchema = z.object({
+  projectId: idSchema,
+  repositoryId: idSchema,
+  runId: githubNumericIdSchema
+});
+export type GithubListJobsInput = z.infer<typeof githubListJobsInputSchema>;
+
+export const githubGetJobLogInputSchema = z.object({
+  projectId: idSchema,
+  repositoryId: idSchema,
+  jobId: githubNumericIdSchema
+});
+export type GithubGetJobLogInput = z.infer<typeof githubGetJobLogInputSchema>;

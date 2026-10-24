@@ -111,7 +111,12 @@ const api: StewardApi = {
     listPulls: (input) => invoke(IPC_CHANNELS.githubListPulls, input),
     listBranches: (input) => invoke(IPC_CHANNELS.githubListBranches, input),
     createPull: (input) => invoke(IPC_CHANNELS.githubCreatePull, input),
-    openUrl: (input) => invoke(IPC_CHANNELS.githubOpenUrl, input)
+    openUrl: (input) => invoke(IPC_CHANNELS.githubOpenUrl, input),
+    listWorkflows: (input) => invoke(IPC_CHANNELS.githubListWorkflows, input),
+    listRuns: (input) => invoke(IPC_CHANNELS.githubListRuns, input),
+    listJobs: (input) => invoke(IPC_CHANNELS.githubListJobs, input),
+    getJobLog: (input) => invoke(IPC_CHANNELS.githubGetJobLog, input),
+    getHealth: (input) => invoke(IPC_CHANNELS.githubGetHealth, input)
   }
 };
 
