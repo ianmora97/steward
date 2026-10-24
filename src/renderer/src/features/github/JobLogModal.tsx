@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { GithubJobLog } from '@shared/schemas/github';
-import type { StewardError } from '@shared/types/result';
+import type { StewardError, StewardResult } from '@shared/types/result';
 import { ErrorBanner } from '../../components/ErrorBanner';
 import { Modal } from '../../components/Modal';
 import { useGithubStore } from '../../stores/github.store';
@@ -11,16 +11,32 @@ export function JobLogModal({
   jobId,
   jobName,
   jobUrl,
-  onClose
+  onClose,
+  loadLog,
+  onOpenUrl
 }: {
   projectId: string;
   jobId: number;
   jobName: string;
   jobUrl: string;
   onClose: () => void;
+  /**
+   * The GitHub tab's store reads logs for the repository selected there. A caller that works on a
+   * different repository (Deployments) supplies its own loader and link opener.
+   */
+  loadLog?: (jobId: number) => Promise<StewardResult<GithubJobLog>>;
+  onOpenUrl?: (url: string) => void;
 }): React.JSX.Element {
-  const fetchJobLog = useGithubStore((state) => state.fetchJobLog);
-  const openUrl = useGithubStore((state) => state.openUrl);
+  const storeFetch = useGithubStore((state) => state.fetchJobLog);
+  const storeOpen = useGithubStore((state) => state.openUrl);
+  const fetchJobLog = useCallback(
+    (project: string, job: number) => (loadLog === undefined ? storeFetch(project, job) : loadLog(job)),
+    [loadLog, storeFetch]
+  );
+  const openUrl = (url: string): void => {
+    if (onOpenUrl === undefined) void storeOpen(url);
+    else onOpenUrl(url);
+  };
   const [log, setLog] = useState<GithubJobLog | null>(null);
   const [error, setError] = useState<StewardError | null>(null);
 
@@ -64,7 +80,7 @@ export function JobLogModal({
       </div>
       <div className="dialog__actions">
         {jobUrl !== '' && (
-          <button type="button" className="button" onClick={() => void openUrl(jobUrl)}>
+          <button type="button" className="button" onClick={() => openUrl(jobUrl)}>
             Open on GitHub
           </button>
         )}

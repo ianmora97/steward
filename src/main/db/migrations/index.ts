@@ -313,6 +313,172 @@ const m011: Migration = {
   `
 };
 
-export const MIGRATIONS: readonly Migration[] = [m001, m002, m003, m004, m005, m006, m007, m008, m009, m010, m011];
+/**
+ * Environments become rows. Until now an SSH host carried its environment as free
+ * text ("Prod", "prod "); one environment is created per distinct text of each
+ * project and every host is pointed at it. The old text column is left in place
+ * and no longer read: migrations only go forward and never drop user data.
+ *
+ * `key` is the lowercased, trimmed text rather than a slug, so two different
+ * spellings can never collide and abort the migration. Production-like names are
+ * protected, which is what later gates a deploy behind a typed confirmation.
+ */
+const m012: Migration = {
+  version: 12,
+  name: 'environments',
+  sql: `
+    CREATE TABLE environments (
+      id           TEXT NOT NULL PRIMARY KEY,
+      project_id   TEXT NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+      key          TEXT NOT NULL,
+      name         TEXT NOT NULL,
+      kind         TEXT NOT NULL CHECK (kind IN ('development', 'staging', 'production', 'custom')),
+      rank         INTEGER NOT NULL,
+      is_protected INTEGER NOT NULL DEFAULT 0 CHECK (is_protected IN (0, 1)),
+      created_at   TEXT NOT NULL,
+      updated_at   TEXT NOT NULL,
+      UNIQUE (project_id, key)
+    );
+
+    CREATE INDEX idx_environments_project ON environments (project_id, rank);
+
+    INSERT INTO environments (id, project_id, key, name, kind, rank, is_protected, created_at, updated_at)
+      SELECT lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-4' || substr(hex(randomblob(2)), 2) ||
+                   '-a' || substr(hex(randomblob(2)), 2) || '-' || hex(randomblob(6))),
+             g.project_id, g.key, g.name, g.kind,
+             CASE
+               WHEN g.kind = 'production' THEN 0
+               WHEN g.kind = 'staging' THEN 1
+               WHEN g.key IN ('qa', 'test', 'testing', 'uat') THEN 2
+               WHEN g.kind = 'development' THEN 3
+               ELSE 4
+             END,
+             CASE WHEN g.kind = 'production' THEN 1 ELSE 0 END,
+             strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+        FROM (
+          SELECT h.project_id, h.key, h.name,
+                 CASE
+                   WHEN h.key LIKE 'prod%' OR h.key = 'live' THEN 'production'
+                   WHEN h.key LIKE 'stage%' OR h.key IN ('preprod', 'pre-prod') THEN 'staging'
+                   WHEN h.key LIKE 'dev%' THEN 'development'
+                   ELSE 'custom'
+                 END AS kind
+            FROM (
+              SELECT project_id, lower(trim(environment)) AS key, MIN(trim(environment)) AS name
+                FROM ssh_hosts
+               WHERE environment IS NOT NULL AND trim(environment) <> ''
+               GROUP BY project_id, lower(trim(environment))
+            ) h
+        ) g;
+
+    ALTER TABLE ssh_hosts ADD COLUMN environment_id TEXT REFERENCES environments (id) ON DELETE SET NULL;
+
+    UPDATE ssh_hosts
+       SET environment_id = (
+             SELECT e.id FROM environments e
+              WHERE e.project_id = ssh_hosts.project_id AND e.key = lower(trim(ssh_hosts.environment))
+           )
+     WHERE environment IS NOT NULL AND trim(environment) <> '';
+  `
+};
+
+/**
+ * Deploy targets and their history. A target pointing at a host or repository
+ * that is later deleted keeps existing (marked broken in the UI) and a deleted
+ * target keeps its deployments, which carry a copy of its name. Environments are
+ * referenced without ON DELETE on purpose: the service refuses to delete one in
+ * use, and the project cascade must not trip over the reference.
+ *
+ * `status_source` stays NULL until there is evidence; a deployment only becomes
+ * `succeeded` with a provider conclusion or an exit code behind it.
+ */
+const m013: Migration = {
+  version: 13,
+  name: 'deploy-targets-and-deployments',
+  sql: `
+    CREATE TABLE deploy_targets (
+      id                    TEXT NOT NULL PRIMARY KEY,
+      project_id            TEXT NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+      environment_id        TEXT NOT NULL REFERENCES environments (id),
+      name                  TEXT NOT NULL,
+      kind                  TEXT NOT NULL CHECK (kind IN ('ssh_command', 'github_workflow_dispatch')),
+      ssh_host_id           TEXT REFERENCES ssh_hosts (id) ON DELETE SET NULL,
+      repository_id         TEXT REFERENCES repositories (id) ON DELETE SET NULL,
+      config_json           TEXT NOT NULL,
+      requires_confirmation INTEGER NOT NULL DEFAULT 1 CHECK (requires_confirmation IN (0, 1)),
+      created_at            TEXT NOT NULL,
+      updated_at            TEXT NOT NULL,
+      UNIQUE (project_id, name)
+    );
+
+    CREATE INDEX idx_deploy_targets_project ON deploy_targets (project_id);
+
+    CREATE TABLE deployments (
+      id               TEXT NOT NULL PRIMARY KEY,
+      project_id       TEXT NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+      environment_id   TEXT NOT NULL REFERENCES environments (id),
+      deploy_target_id TEXT REFERENCES deploy_targets (id) ON DELETE SET NULL,
+      target_name      TEXT NOT NULL,
+      target_kind      TEXT NOT NULL CHECK (target_kind IN ('ssh_command', 'github_workflow_dispatch')),
+      repository_id    TEXT REFERENCES repositories (id) ON DELETE SET NULL,
+      execution_id     TEXT REFERENCES executions (id) ON DELETE SET NULL,
+      ref              TEXT,
+      commit_sha       TEXT,
+      status           TEXT NOT NULL
+                         CHECK (status IN ('requested', 'in_progress', 'succeeded', 'failed', 'cancelled', 'unknown')),
+      status_source    TEXT CHECK (status_source IN ('provider', 'exit_code')),
+      run_id           INTEGER,
+      run_url          TEXT,
+      requested_at     TEXT NOT NULL,
+      finished_at      TEXT,
+      notes            TEXT
+    );
+
+    CREATE INDEX idx_deployments_project ON deployments (project_id, requested_at);
+    CREATE INDEX idx_deployments_target ON deployments (deploy_target_id, requested_at);
+    -- A run belongs to at most one deployment, whatever the code does: the database refuses a second claim.
+    CREATE UNIQUE INDEX idx_deployments_run ON deployments (run_id) WHERE run_id IS NOT NULL;
+
+    ALTER TABLE executions ADD COLUMN environment_id TEXT REFERENCES environments (id) ON DELETE SET NULL;
+    ALTER TABLE executions ADD COLUMN deploy_target_id TEXT REFERENCES deploy_targets (id) ON DELETE SET NULL;
+  `
+};
+
+/**
+ * The Deployments tab existed as a key since M1 but was never seeded. Same shape
+ * as m006 and m011: added after each project's last tab, visible, and left alone
+ * where one already exists.
+ */
+const m014: Migration = {
+  version: 14,
+  name: 'deployments-tab-for-existing-projects',
+  sql: `
+    INSERT INTO workspace_tabs (id, project_id, tab_key, position, visible, pinned, source, integration_id, updated_at)
+      SELECT lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-4' || substr(hex(randomblob(2)), 2) ||
+                   '-a' || substr(hex(randomblob(2)), 2) || '-' || hex(randomblob(6))),
+             p.id, 'deployments',
+             COALESCE((SELECT MAX(position) FROM workspace_tabs WHERE project_id = p.id), -1) + 1,
+             1, 0, 'builtin', NULL, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+        FROM projects p
+       WHERE NOT EXISTS (SELECT 1 FROM workspace_tabs t WHERE t.project_id = p.id AND t.tab_key = 'deployments');
+  `
+};
+
+export const MIGRATIONS: readonly Migration[] = [
+  m001,
+  m002,
+  m003,
+  m004,
+  m005,
+  m006,
+  m007,
+  m008,
+  m009,
+  m010,
+  m011,
+  m012,
+  m013,
+  m014
+];
 
 export const LATEST_SCHEMA_VERSION = MIGRATIONS.reduce((max, m) => Math.max(max, m.version), 0);

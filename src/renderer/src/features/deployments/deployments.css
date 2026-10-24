@@ -1,0 +1,271 @@
+.panel.dppage {
+  gap: 16px;
+  max-width: 960px;
+}
+
+.dppage__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px 24px;
+}
+
+.dprow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.dpmono {
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: 13px;
+}
+
+.dphint {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.dpcolumns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.dpcolumn {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dpcolumn__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.dptarget {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.dptarget--broken {
+  border-color: var(--danger);
+}
+
+.dptarget__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dptarget__name {
+  font-weight: 600;
+}
+
+.dptarget__destination {
+  margin: 0;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.dptarget__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.dptarget__last {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dpsummary {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 8px 16px;
+  margin: 0;
+}
+
+.dpsummary dt {
+  color: var(--text-muted);
+}
+
+.dpsummary dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.dpcommand {
+  margin: 0;
+  padding: 8px 10px;
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: 13px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.dphistory {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.dphistory__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 14px;
+  color: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.dphistory__target {
+  font-weight: 600;
+}
+
+.dphistory__meta {
+  color: var(--text-muted);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.dpdetail {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 14px 14px;
+}
+
+.dpdetail__unknown {
+  margin: 0;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.dpdetail__notes {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.dplog {
+  max-height: 320px;
+  margin: 0;
+  padding: 10px 12px;
+  overflow: auto;
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: 12.5px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.dpinputs {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.dprequired {
+  color: var(--danger);
+}
+
+.dppage__title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 650;
+}
+
+.dppage__subtitle {
+  margin: 4px 0 0;
+  color: var(--text-muted);
+}
+
+.dpsection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dpsection__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.dpsection__bar .card__hint {
+  margin: 0;
+}
+
+.dplist {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dpitem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.dpitem__name {
+  font-weight: 600;
+}
+
+.dpitem__spacer {
+  flex: 1;
+}
+
+.dpform {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.dpcheck {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: var(--text-muted);
+}
+
+.dpcheck input {
+  margin-top: 4px;
+}

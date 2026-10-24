@@ -5,7 +5,7 @@
 **One workspace for code, pipelines and deployments — per project.**
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue?style=flat-square)](LICENSE)
-[![Status](https://img.shields.io/badge/status-milestone%203%20of%207-orange?style=flat-square)](CHANGELOG.md)
+[![Status](https://img.shields.io/badge/status-milestone%207%20of%207-orange?style=flat-square)](CHANGELOG.md)
 [![Electron](https://img.shields.io/badge/Electron-45-47848F?style=flat-square&logo=electron&logoColor=white)](https://www.electronjs.org/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
@@ -31,7 +31,7 @@ Steward is a desktop app organised around **projects**, not repositories. A proj
 | ✅ | **SSH**: saved hosts through your system `ssh`, host-key review (nothing trusted automatically), one-shot remote commands with exit code / stdout / stderr, remote shells in the terminal, connection and last-command status shown separately |
 | ✅ | **GitHub — pull requests**: connect a project with a personal access token (encrypted with your OS keyring, per project; or import it once from `gh`), list a repository's pull requests by state and create new ones after a confirmation step |
 | ✅ | **GitHub — Actions**: a repository's workflows and runs with status and conclusion, jobs and steps per run, and the end of any job's log as plain text; workflow health is shown separately from the connection |
-| 🔜 | Deployments (M7) |
+| ✅ | **Deployments**: environments (protected ones make you type their name before a deploy), deploy targets that run a fixed command over SSH or start a GitHub Actions workflow with its own inputs, and a history that says what confirmed each result (exit code or GitHub) and shows the output; when Steward cannot be sure how a deploy ended it says *unknown* instead of guessing |
 
 Destructive actions (discard, force-delete a branch, abort a merge) always ask first and say exactly what is lost. Push never forces.
 

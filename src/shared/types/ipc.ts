@@ -90,6 +90,30 @@ import type {
   SetTabVisibilityInput,
   WorkspaceTab
 } from '../schemas/tabs';
+import type {
+  DeployTarget,
+  DeployTargetCreateInput,
+  DeployTargetIdInput,
+  DeployTargetListInput,
+  DeployTargetUpdateInput
+} from '../schemas/deploy-targets';
+import type {
+  Deployment,
+  DeploymentIdInput,
+  DeploymentListInput,
+  DeploymentLog,
+  DeploymentStartInput,
+  DeploymentWorkflowInputsInput,
+  WorkflowInputSpec
+} from '../schemas/deployments';
+import type {
+  Environment,
+  EnvironmentCreateInput,
+  EnvironmentIdInput,
+  EnvironmentListInput,
+  EnvironmentReorderInput,
+  EnvironmentUpdateInput
+} from '../schemas/environments';
 
 /**
  * Every channel Steward exposes, enumerated.
@@ -174,7 +198,24 @@ export const IPC_CHANNELS = {
   githubListRuns: 'github:listRuns',
   githubListJobs: 'github:listJobs',
   githubGetJobLog: 'github:getJobLog',
-  githubGetHealth: 'github:getHealth'
+  githubGetHealth: 'github:getHealth',
+
+  environmentsList: 'environments:list',
+  environmentsCreate: 'environments:create',
+  environmentsUpdate: 'environments:update',
+  environmentsReorder: 'environments:reorder',
+  environmentsDelete: 'environments:delete',
+
+  deployTargetsList: 'deployTargets:list',
+  deployTargetsCreate: 'deployTargets:create',
+  deployTargetsUpdate: 'deployTargets:update',
+  deployTargetsDelete: 'deployTargets:delete',
+
+  deploymentsStart: 'deployments:start',
+  deploymentsList: 'deployments:list',
+  deploymentsGet: 'deployments:get',
+  deploymentsLog: 'deployments:log',
+  deploymentsWorkflowInputs: 'deployments:workflowInputs'
 } as const;
 
 /**
@@ -310,5 +351,34 @@ export interface StewardApi {
     getJobLog: (input: GithubGetJobLogInput) => Promise<StewardResult<GithubJobLog>>;
     /** Workflow health derived from recent runs; separate from whether the token works. */
     getHealth: (input: GithubRepositoryInput) => Promise<StewardResult<GithubHealth>>;
+  };
+  environments: {
+    list: (input: EnvironmentListInput) => Promise<StewardResult<Environment[]>>;
+    create: (input: EnvironmentCreateInput) => Promise<StewardResult<Environment>>;
+    /** Lowering a protected environment's protection needs `confirmed: true`. */
+    update: (input: EnvironmentUpdateInput) => Promise<StewardResult<Environment>>;
+    reorder: (input: EnvironmentReorderInput) => Promise<StewardResult<Environment[]>>;
+    /** Refused while deploy targets or deployment history refer to it. */
+    remove: (input: EnvironmentIdInput) => Promise<StewardResult<{ id: string }>>;
+  };
+  deployTargets: {
+    list: (input: DeployTargetListInput) => Promise<StewardResult<DeployTarget[]>>;
+    create: (input: DeployTargetCreateInput) => Promise<StewardResult<DeployTarget>>;
+    update: (input: DeployTargetUpdateInput) => Promise<StewardResult<DeployTarget>>;
+    /** Its deployment history stays. */
+    remove: (input: DeployTargetIdInput) => Promise<StewardResult<{ id: string }>>;
+  };
+  deployments: {
+    /**
+     * Deploys for real, so main checks the confirmation itself. Returns as soon as the
+     * deployment is recorded; poll `get` or `list` to follow it.
+     */
+    start: (input: DeploymentStartInput) => Promise<StewardResult<Deployment>>;
+    list: (input: DeploymentListInput) => Promise<StewardResult<Deployment[]>>;
+    get: (input: DeploymentIdInput) => Promise<StewardResult<Deployment>>;
+    /** The end of the output of a command deploy, already redacted. Workflow deploys keep their logs on GitHub. */
+    log: (input: DeploymentIdInput) => Promise<StewardResult<DeploymentLog>>;
+    /** What a workflow asks for on a manual run, read from its file on GitHub at the given ref. */
+    workflowInputs: (input: DeploymentWorkflowInputsInput) => Promise<StewardResult<WorkflowInputSpec[]>>;
   };
 }

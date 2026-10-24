@@ -47,8 +47,8 @@ const sshHostFieldsSchema = z.object({
   username: sshUsernameSchema.nullable(),
   /** Path to a private key (.pem). Only the path is stored; the file is read by `ssh`, never by Steward. */
   identityFile: absolutePathSchema.nullable(),
-  /** The user's own grouping ("Prod", "Stage"…); servers with the same name share a column. */
-  environment: optionalText(40),
+  /** One of the project's environments; servers in the same environment share a column. */
+  environmentId: idSchema.nullable(),
   provider: sshProviderSchema.nullable(),
   region: optionalText(60),
   domain: z
@@ -117,6 +117,8 @@ export const sshHostSchema = sshHostFieldsSchema.extend({
   id: idSchema,
   projectId: idSchema,
   createdAt: isoTimestampSchema,
+  /** The environment's name, resolved by main. Read-only: it is changed through `environmentId`. */
+  environment: z.string().nullable(),
   connection: sshConnectionSchema,
   lastCommand: sshLastCommandSchema.nullable(),
   /** `none` until a one-shot command has run; then whether the latest one succeeded. */

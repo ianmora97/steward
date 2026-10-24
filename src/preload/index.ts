@@ -117,6 +117,26 @@ const api: StewardApi = {
     listJobs: (input) => invoke(IPC_CHANNELS.githubListJobs, input),
     getJobLog: (input) => invoke(IPC_CHANNELS.githubGetJobLog, input),
     getHealth: (input) => invoke(IPC_CHANNELS.githubGetHealth, input)
+  },
+  environments: {
+    list: (input) => invoke(IPC_CHANNELS.environmentsList, input),
+    create: (input) => invoke(IPC_CHANNELS.environmentsCreate, input),
+    update: (input) => invoke(IPC_CHANNELS.environmentsUpdate, input),
+    reorder: (input) => invoke(IPC_CHANNELS.environmentsReorder, input),
+    remove: (input) => invoke(IPC_CHANNELS.environmentsDelete, input)
+  },
+  deployTargets: {
+    list: (input) => invoke(IPC_CHANNELS.deployTargetsList, input),
+    create: (input) => invoke(IPC_CHANNELS.deployTargetsCreate, input),
+    update: (input) => invoke(IPC_CHANNELS.deployTargetsUpdate, input),
+    remove: (input) => invoke(IPC_CHANNELS.deployTargetsDelete, input)
+  },
+  deployments: {
+    start: (input) => invoke(IPC_CHANNELS.deploymentsStart, input),
+    list: (input) => invoke(IPC_CHANNELS.deploymentsList, input),
+    get: (input) => invoke(IPC_CHANNELS.deploymentsGet, input),
+    log: (input) => invoke(IPC_CHANNELS.deploymentsLog, input),
+    workflowInputs: (input) => invoke(IPC_CHANNELS.deploymentsWorkflowInputs, input)
   }
 };
 

@@ -30,6 +30,25 @@ import {
   validateRepositoryPathInputSchema
 } from '@shared/schemas/repository';
 import {
+  deployTargetCreateInputSchema,
+  deployTargetIdInputSchema,
+  deployTargetListInputSchema,
+  deployTargetUpdateInputSchema
+} from '@shared/schemas/deploy-targets';
+import {
+  deploymentIdInputSchema,
+  deploymentListInputSchema,
+  deploymentStartInputSchema,
+  deploymentWorkflowInputsInputSchema
+} from '@shared/schemas/deployments';
+import {
+  environmentCreateInputSchema,
+  environmentIdInputSchema,
+  environmentListInputSchema,
+  environmentReorderInputSchema,
+  environmentUpdateInputSchema
+} from '@shared/schemas/environments';
+import {
   githubConnectInputSchema,
   githubCreatePullInputSchema,
   githubGetJobLogInputSchema,
@@ -108,6 +127,20 @@ import {
   saveProfile,
   setSettings
 } from '../services/terminal-settings.service';
+import {
+  createDeployTarget,
+  deleteDeployTarget,
+  listDeployTargets,
+  updateDeployTarget
+} from '../services/deploy-target.service';
+import {
+  createEnvironment,
+  deleteEnvironment,
+  listEnvironments,
+  reorderEnvironments,
+  updateEnvironment
+} from '../services/environment.service';
+import type { DeploymentService } from '../services/deployment.service';
 import type { GithubIntegrationService } from '../services/github-integration.service';
 import type { GithubActionsService } from '../services/github-actions.service';
 import type { GithubPullsService } from '../services/github-pulls.service';
@@ -137,6 +170,7 @@ export interface IpcContext {
   github: GithubIntegrationService;
   githubPulls: GithubPullsService;
   githubActions: GithubActionsService;
+  deployments: DeploymentService;
   /** Supplied by the Electron layer; see src/main/index.ts. */
   readAppInfo: () => Promise<AppInfo>;
   /** Opens the OS folder picker. Cancelling is a normal outcome, not an error. */
@@ -559,6 +593,79 @@ export function buildHandlerDefinitions(context: IpcContext): IpcHandlerDefiniti
       channel: IPC_CHANNELS.githubGetHealth,
       schema: githubRepositoryInputSchema,
       handle: (input) => context.githubActions.getHealth(input)
+    }),
+
+    defineHandler({
+      channel: IPC_CHANNELS.environmentsList,
+      schema: environmentListInputSchema,
+      handle: (input) => listEnvironments(db, input.projectId)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.environmentsCreate,
+      schema: environmentCreateInputSchema,
+      handle: (input) => createEnvironment(db, input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.environmentsUpdate,
+      schema: environmentUpdateInputSchema,
+      handle: (input) => updateEnvironment(db, input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.environmentsReorder,
+      schema: environmentReorderInputSchema,
+      handle: (input) => reorderEnvironments(db, input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.environmentsDelete,
+      schema: environmentIdInputSchema,
+      handle: (input) => deleteEnvironment(db, input)
+    }),
+
+    defineHandler({
+      channel: IPC_CHANNELS.deployTargetsList,
+      schema: deployTargetListInputSchema,
+      handle: (input) => listDeployTargets(db, input.projectId)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.deployTargetsCreate,
+      schema: deployTargetCreateInputSchema,
+      handle: (input) => createDeployTarget(db, input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.deployTargetsUpdate,
+      schema: deployTargetUpdateInputSchema,
+      handle: (input) => updateDeployTarget(db, input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.deployTargetsDelete,
+      schema: deployTargetIdInputSchema,
+      handle: (input) => deleteDeployTarget(db, input)
+    }),
+
+    defineHandler({
+      channel: IPC_CHANNELS.deploymentsStart,
+      schema: deploymentStartInputSchema,
+      handle: (input) => context.deployments.start(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.deploymentsList,
+      schema: deploymentListInputSchema,
+      handle: (input) => context.deployments.list(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.deploymentsGet,
+      schema: deploymentIdInputSchema,
+      handle: (input) => context.deployments.get(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.deploymentsLog,
+      schema: deploymentIdInputSchema,
+      handle: (input) => context.deployments.readLog(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.deploymentsWorkflowInputs,
+      schema: deploymentWorkflowInputsInputSchema,
+      handle: (input) => context.deployments.listWorkflowInputs(input)
     })
   ];
 }
