@@ -1,6 +1,6 @@
 # Steward — instrucciones para Claude
 
-Steward es un workspace de escritorio centrado en proyectos para DevOps: un proyecto agrupa varios repositorios, entornos e integraciones, y cada proyecto tiene sus propias pestañas (Git primero; terminal, SSH, GitHub Actions y despliegues después). Electron + TypeScript + React + Vite + Zustand + Zod, persistencia local en SQLite (`node:sqlite`, sin servidor). El plan completo está en `docs/plan.md`; el estado actual, en `README.md`. Tras M7, la hoja de ruta M8–M13 (Docker, PM2, MongoDB, Redis, monitoreo, cloud) está en `docs/superpowers/specs/2026-10-23-m8-m13-roadmap-design.md`, con una spec por milestone junto a ella.
+Steward es un workspace de escritorio centrado en proyectos para DevOps: un proyecto agrupa varios repositorios, entornos e integraciones, y cada proyecto tiene sus propias pestañas (Git primero; terminal, SSH, GitHub Actions y despliegues después). Electron + TypeScript + React + Vite + Zustand + Zod, persistencia local en SQLite (`node:sqlite`, sin servidor). El plan completo está en `docs/plan.md`; el estado actual, en `README.md`. Tras M7, la hoja de ruta M8–M13 (Docker, MongoDB, Redis, monitoreo, cloud; M9, PM2, se canceló porque PM2 Plus es de pago) está en `docs/superpowers/specs/2026-10-23-m8-m13-roadmap-design.md`, con una spec por milestone junto a ella.
 
 ## Reglas obligatorias
 
@@ -52,7 +52,7 @@ Flujo: el renderer llama funciones con nombre de `window.steward` → el preload
 
 ## Seguridad (no negociable)
 - `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`. Sin canal genérico `invoke(channel, payload)` ni `runCommand(string)`.
-- Procesos hijos solo vía `src/main/exec/run.ts` (y `exec/stream.ts` cuando exista): ejecutable + array de argumentos, nunca `shell: true`, nunca strings concatenados. Nombres de rama, rutas y mensajes son datos no confiables. Comandos remotos por SSH (Docker, PM2): plantilla fija por operación, valores validados con regex estricta y entrecomillados; nunca texto libre.
+- Procesos hijos solo vía `src/main/exec/run.ts` (y `exec/stream.ts` cuando exista): ejecutable + array de argumentos, nunca `shell: true`, nunca strings concatenados. Nombres de rama, rutas y mensajes son datos no confiables. Comandos remotos por SSH (Docker): plantilla fija por operación, valores validados con regex estricta y entrecomillados; nunca texto libre.
 - Clientes de red (MongoDB, Redis, Grafana/Loki/Prometheus/Sentry, AWS, Cloudflare, DNS/TLS) solo en `src/main/`. El renderer nunca abre sockets. Hosts y URLs salen siempre de una conexión guardada, no de un parámetro libre del canal; toda operación con timeout y tope de tamaño de respuesta; clientes cerrados al borrar la conexión/proyecto y en `will-quit`.
 - Conexiones de datos y cloud: URIs con contraseña, tokens y access keys van en `secret-store`, nunca en SQLite ni al renderer (que solo ve "guardado"). Certificados TLS por ruta. Una conexión de entorno protegido nace en **solo lectura**, y el bloqueo se aplica en main en cada canal de escritura (`CONNECTION_READ_ONLY`). Las escrituras se registran en `executions` sin contenido de documentos/valores.
 - Excepción documentada al "sin canal genérico": la consola de Redis (`redis:execute`, array de argumentos al servidor Redis ya conectado, con denylist y confirmaciones). No hay ni habrá equivalente para el sistema operativo.

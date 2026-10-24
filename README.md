@@ -5,7 +5,7 @@
 **One workspace for code, pipelines and deployments — per project.**
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue?style=flat-square)](LICENSE)
-[![Status](https://img.shields.io/badge/status-milestone%208-orange?style=flat-square)](CHANGELOG.md)
+[![Status](https://img.shields.io/badge/status-milestone%2010-orange?style=flat-square)](CHANGELOG.md)
 [![Electron](https://img.shields.io/badge/Electron-45-47848F?style=flat-square&logo=electron&logoColor=white)](https://www.electronjs.org/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
@@ -32,9 +32,10 @@ Steward is a desktop app organised around **projects**, not repositories. A proj
 | ✅ | **GitHub — pull requests**: connect a project with a personal access token (encrypted with your OS keyring, per project; or import it once from `gh`), list a repository's pull requests by state and create new ones after a confirmation step |
 | ✅ | **GitHub — Actions**: a repository's workflows and runs with status and conclusion, jobs and steps per run, and the end of any job's log as plain text; workflow health is shown separately from the connection |
 | ✅ | **Deployments**: environments (protected ones make you type their name before a deploy), deploy targets that run a fixed command over SSH or start a GitHub Actions workflow with its own inputs, and a history that says what confirmed each result (exit code or GitHub) and shows the output; when Steward cannot be sure how a deploy ended it says *unknown* instead of guessing |
+| ✅ | **MongoDB**: connect to local, internal, by-IP and Atlas databases (TLS, authentication, protected environments start read-only), browse and query in shell syntax, view documents as a list, JSON or a table, insert / edit / delete without losing BSON types, aggregations with per-stage preview, indexes, schema analysis, validation, import and export |
 | ✅ | **Docker**: containers, images, volumes, networks and Compose projects of a project, on this machine or on one of its SSH servers. Start / stop / restart, live logs, CPU and memory, a shell inside a container (opens in the Terminal tab), pull and prune; secrets in a container's environment never reach the screen, and destructive actions on a protected server make you type the name |
 
-Next on the roadmap (designed, not built yet): PM2, a MongoDB client, a Redis client, monitoring with Grafana / Loki / Prometheus, and cloud / domain checks for AWS and Cloudflare. See `docs/superpowers/specs/2026-10-23-m8-m13-roadmap-design.md`.
+Next on the roadmap (designed, not built yet): a Redis client, monitoring with Grafana / Loki / Prometheus, and cloud / domain checks for AWS and Cloudflare. See `docs/superpowers/specs/2026-10-23-m8-m13-roadmap-design.md`.
 
 Destructive actions (discard, force-delete a branch, abort a merge) always ask first and say exactly what is lost. Push never forces.
 

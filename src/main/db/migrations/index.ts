@@ -483,6 +483,72 @@ const m015: Migration = {
   `
 };
 
+/**
+ * Version 16 was a PM2 migration that ran on some machines while that milestone was being built, and then
+ * the milestone was cancelled. A database that already recorded it keeps it; a database that did not simply
+ * gets this empty step. Either way the real change is m017, which also cleans up what the PM2 one left.
+ */
+const m016: Migration = {
+  version: 16,
+  name: 'reserved-for-the-cancelled-pm2-milestone',
+  sql: 'SELECT 1;'
+};
+
+/**
+ * Data connections (MongoDB now, Redis next). The row holds only what is not secret: the URI with its
+ * password, and any key passphrase, live encrypted in the secret store under this row's id. A connection
+ * can belong to an environment; one in a protected environment starts read-only.
+ *
+ * It also removes the leftovers of the cancelled PM2 milestone (its table and its tab rows), which are
+ * harmless on a database that never had them.
+ */
+const m017: Migration = {
+  version: 17,
+  name: 'data-connections-and-mongodb-tab',
+  sql: `
+    DROP TABLE IF EXISTS pm2_targets;
+    DELETE FROM workspace_tabs WHERE tab_key = 'pm2';
+
+    CREATE TABLE data_connections (
+      id                TEXT NOT NULL PRIMARY KEY,
+      project_id        TEXT NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+      environment_id    TEXT REFERENCES environments (id) ON DELETE SET NULL,
+      kind              TEXT NOT NULL CHECK (kind IN ('mongodb', 'redis')),
+      name              TEXT NOT NULL,
+      host_display      TEXT NOT NULL,
+      options_json      TEXT NOT NULL,
+      read_only         INTEGER NOT NULL DEFAULT 0 CHECK (read_only IN (0, 1)),
+      last_connected_at TEXT,
+      created_at        TEXT NOT NULL,
+      updated_at        TEXT NOT NULL,
+      UNIQUE (project_id, kind, name)
+    );
+
+    CREATE INDEX idx_data_connections_project ON data_connections (project_id, kind);
+
+    CREATE TABLE mongo_saved_queries (
+      id            TEXT NOT NULL PRIMARY KEY,
+      connection_id TEXT NOT NULL REFERENCES data_connections (id) ON DELETE CASCADE,
+      namespace     TEXT NOT NULL,
+      name          TEXT NOT NULL,
+      kind          TEXT NOT NULL CHECK (kind IN ('find', 'aggregate')),
+      body_json     TEXT NOT NULL,
+      created_at    TEXT NOT NULL
+    );
+
+    CREATE INDEX idx_mongo_saved_queries ON mongo_saved_queries (connection_id, namespace);
+
+    INSERT INTO workspace_tabs (id, project_id, tab_key, position, visible, pinned, source, integration_id, updated_at)
+      SELECT lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-4' || substr(hex(randomblob(2)), 2) ||
+                   '-a' || substr(hex(randomblob(2)), 2) || '-' || hex(randomblob(6))),
+             p.id, 'mongodb',
+             COALESCE((SELECT MAX(position) FROM workspace_tabs WHERE project_id = p.id), -1) + 1,
+             1, 0, 'builtin', NULL, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+        FROM projects p
+       WHERE NOT EXISTS (SELECT 1 FROM workspace_tabs t WHERE t.project_id = p.id AND t.tab_key = 'mongodb');
+  `
+};
+
 export const MIGRATIONS: readonly Migration[] = [
   m001,
   m002,
@@ -498,7 +564,9 @@ export const MIGRATIONS: readonly Migration[] = [
   m012,
   m013,
   m014,
-  m015
+  m015,
+  m016,
+  m017
 ];
 
 export const LATEST_SCHEMA_VERSION = MIGRATIONS.reduce((max, m) => Math.max(max, m.version), 0);

@@ -86,7 +86,7 @@ SDK v3 modular con `@aws-sdk/credential-providers` (`fromIni`, `fromSSO`). Un cl
 
 - registro `CNAME`/`ALIAS` que apunta a un `DNSName` de ELB o a un dominio de CloudFront → ese recurso;
 - registro `A` o IP resuelta que coincide con una IP pública/Elastic de EC2 → esa instancia;
-- IP o dominio de una instancia o registro que coincide con `ssh_hosts.ip_address`/`domain` → ese servidor, con enlaces a sus pestañas **Docker** (M8) y **PM2** (M9);
+- IP o dominio de una instancia o registro que coincide con `ssh_hosts.ip_address`/`domain` → ese servidor, con enlace a su pestaña **Docker** (M8);
 - IPs de Cloudflare conocidas (resueltas, no listas codificadas) → "proxy Cloudflare".
 
 La UI lo muestra en columnas (listas conectadas, sin grafo de fuerzas) y marca lo que **no se pudo clasificar** en vez de inventarlo.
@@ -121,7 +121,7 @@ La UI lo muestra en columnas (listas conectadas, sin grafo de fuerzas) y marca l
 
 1. **13.1** Dominios y checks DNS/TLS/HTTP (sin credenciales), planificador mientras la app está abierta, historial y pills.
 2. **13.2** Cuentas AWS y Cloudflare, inventario de solo lectura y CloudWatch.
-3. **13.3** Topología y enlaces a Docker/PM2/SSH.
+3. **13.3** Topología y enlaces a Docker/SSH.
 4. **13.4** Edición de DNS (Route 53 y Cloudflare) con vista previa y confirmación.
 5. **13.5** Checks TCP/ping, tarjeta en el Overview, y servicios extra de AWS (ECS, RDS) si se piden.
 
@@ -132,7 +132,7 @@ La UI lo muestra en columnas (listas conectadas, sin grafo de fuerzas) y marca l
 3. Cerrar Steward y reabrir: el historial persiste; los checks se reanudan; la UI avisa de que solo corren con la app abierta.
 4. Cuenta AWS con perfil (y con SSO): *Test* muestra la cuenta; con SSO caducado aparece el botón de login; con permisos faltantes el error dice qué permiso. Ver instancias, balanceadores, zonas y certificados reales; comprobar que la política mínima basta.
 5. Cuenta Cloudflare con token mínimo: zonas y registros; token sin `Zone:Read` da `CLOUD_ACCESS_DENIED` claro.
-6. Topología: un dominio con ALB + EC2 aparece encadenado; una IP que no se reconoce queda como "no clasificada"; el enlace a un servidor SSH propio abre su pestaña Docker/PM2.
+6. Topología: un dominio con ALB + EC2 aparece encadenado; una IP que no se reconoce queda como "no clasificada"; el enlace a un servidor SSH propio abre su pestaña Docker.
 7. Métricas de CloudWatch coherentes con la consola de AWS para la misma ventana.
 8. Edición de DNS (13.4, en un registro de prueba): la vista previa muestra antes/después; en un entorno protegido pide el hostname exacto; tras aplicar, la relectura coincide; `executions` conserva el registro anterior; cancelar no cambia nada.
 9. Comprobar en devtools y en el `.db` que no hay access keys ni tokens, y que un perfil de AWS no guarda secretos.

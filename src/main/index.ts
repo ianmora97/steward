@@ -8,6 +8,7 @@ import { getGitVersion } from './services/git.service';
 import { createDeploymentService } from './services/deployment.service';
 import { createDockerExec } from './services/docker-exec';
 import { createDockerService, type DockerService } from './services/docker.service';
+import { createMongoService, type MongoService } from './services/mongo.service';
 import { createGithubActionsService } from './services/github-actions.service';
 import { createGithubApi } from './services/github-api';
 import { createGithubIntegrationService } from './services/github-integration.service';
@@ -23,6 +24,7 @@ let mainWindow: BrowserWindow | null = null;
 let database: StewardDatabase | null = null;
 let terminal: TerminalService | null = null;
 let docker: DockerService | null = null;
+let mongo: MongoService | null = null;
 
 function databaseFilePath(): string {
   // An override keeps development and manual testing off the real database.
@@ -161,6 +163,41 @@ async function pickKeyFile(): Promise<DirectoryPick> {
   return { cancelled: false, localPath: validateExistingFile(chosen).path };
 }
 
+/** The file dialogs MongoDB needs: TLS certificates, and a file to import. Only paths leave this function. */
+async function pickMongoFile(purpose: 'tlsCa' | 'tlsCertificate' | 'import'): Promise<string | null> {
+  const titles = {
+    tlsCa: 'Choose the CA certificate file',
+    tlsCertificate: 'Choose the client certificate / key file',
+    import: 'Choose a file to import'
+  } as const;
+  const filters =
+    purpose === 'import'
+      ? [
+          { name: 'JSON, JSON Lines or CSV', extensions: ['json', 'ndjson', 'jsonl', 'csv'] },
+          { name: 'All files', extensions: ['*'] }
+        ]
+      : [
+          { name: 'Certificates and keys', extensions: ['pem', 'crt', 'cer', 'key', 'p12'] },
+          { name: 'All files', extensions: ['*'] }
+        ];
+  const options = { title: titles[purpose], properties: ['openFile' as const, 'dontAddToRecent' as const], filters };
+  const result =
+    mainWindow === null ? await dialog.showOpenDialog(options) : await dialog.showOpenDialog(mainWindow, options);
+  const chosen = result.filePaths[0];
+  return result.canceled || chosen === undefined ? null : chosen;
+}
+
+async function chooseSavePath(defaultName: string, label: string, extensions: string[]): Promise<string | null> {
+  const options = {
+    title: 'Export to…',
+    defaultPath: join(app.getPath('documents'), defaultName),
+    filters: [{ name: label, extensions }]
+  };
+  const result =
+    mainWindow === null ? await dialog.showSaveDialog(options) : await dialog.showSaveDialog(mainWindow, options);
+  return result.canceled || result.filePath === '' ? null : result.filePath;
+}
+
 function createWindow(): BrowserWindow {
   const window = new BrowserWindow({
     width: 1280,
@@ -243,10 +280,12 @@ function startup(): void {
     emitExit: (event) => sendToWindow(TERMINAL_EVENTS.exit, event)
   });
 
+  // One encrypted store for every secret: GitHub tokens and database connections each live under their own id.
+  const secrets = createSecretStore({ directory: join(app.getPath('userData'), 'secrets'), safeStorage });
   const githubApi = createGithubApi();
   const github = createGithubIntegrationService({
     db: database.db,
-    secrets: createSecretStore({ directory: join(app.getPath('userData'), 'secrets'), safeStorage }),
+    secrets,
     api: githubApi
   });
   const githubPulls = createGithubPullsService({
@@ -269,6 +308,12 @@ function startup(): void {
     emitLogEnd: (event) => sendToWindow(DOCKER_EVENTS.logEnd, event)
   });
 
+  mongo = createMongoService({
+    db: database.db,
+    secrets,
+    dialogs: { pickFile: pickMongoFile, chooseSavePath }
+  });
+
   registerIpcHandlers({
     database,
     terminal,
@@ -278,6 +323,7 @@ function startup(): void {
     githubActions,
     deployments,
     docker,
+    mongo,
     readAppInfo,
     pickDirectory,
     pickKeyFile
@@ -315,6 +361,7 @@ if (!app.requestSingleInstanceLock()) {
   app.on('will-quit', () => {
     terminal?.shutdown();
     docker?.shutdown();
+    void mongo?.shutdown();
     try {
       database?.db.close();
     } catch (error) {
