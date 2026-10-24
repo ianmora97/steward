@@ -32,6 +32,16 @@ const PATHS = {
       <line x1="6" x2="6.01" y1="18" y2="18" />
     </>
   ),
+  pullRequest: (
+    <>
+      <circle cx="6" cy="6" r="3" />
+      <circle cx="6" cy="18" r="3" />
+      <circle cx="18" cy="18" r="3" />
+      <line x1="6" x2="6" y1="9" y2="15" />
+      <path d="M18 15V9a3 3 0 0 0-3-3h-3" />
+      <polyline points="14 4 12 6 14 8" />
+    </>
+  ),
   actions: (
     <>
       <circle cx="12" cy="12" r="10" />

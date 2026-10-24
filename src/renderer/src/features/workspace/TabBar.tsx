@@ -6,6 +6,7 @@ const TAB_LABELS: Record<TabKey, string> = {
   git: 'Git',
   terminal: 'Terminal',
   ssh: 'VPC',
+  github: 'GitHub',
   actions: 'Actions',
   deployments: 'Deployments',
   settings: 'Workspace'
@@ -15,6 +16,7 @@ const TAB_ICONS: Record<TabKey, IconName> = {
   git: 'git',
   terminal: 'terminal',
   ssh: 'ssh',
+  github: 'pullRequest',
   actions: 'actions',
   deployments: 'deployments',
   settings: 'settings'

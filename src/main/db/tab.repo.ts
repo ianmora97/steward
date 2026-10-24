@@ -81,6 +81,19 @@ export function updateTabVisibility(
     .changes;
 }
 
+export function setTabIntegration(
+  db: SqlDatabase,
+  projectId: string,
+  tabKey: TabKey,
+  integrationId: string | null,
+  updatedAt: string
+): void {
+  db.prepare(
+    `UPDATE workspace_tabs SET integration_id = :integration_id, updated_at = :updated_at
+      WHERE project_id = :project_id AND tab_key = :tab_key`
+  ).run({ project_id: projectId, tab_key: tabKey, integration_id: integrationId, updated_at: updatedAt });
+}
+
 export function deleteTabsByProject(db: SqlDatabase, projectId: string): number {
   return db.prepare('DELETE FROM workspace_tabs WHERE project_id = :project_id').run({
     project_id: projectId

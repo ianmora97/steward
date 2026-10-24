@@ -29,7 +29,8 @@ Steward is a desktop app organised around **projects**, not repositories. A proj
 | ✅ | **Terminal**: real shells per project (several tabs, split view, rename, copy / paste, kept alive while you navigate), shell configurable per project, capped session logs |
 | ✅ | **Overview** home screen with every project, search and a collapsible sidebar |
 | ✅ | **SSH**: saved hosts through your system `ssh`, host-key review (nothing trusted automatically), one-shot remote commands with exit code / stdout / stderr, remote shells in the terminal, connection and last-command status shown separately |
-| 🔜 | GitHub PRs and Actions (M6) · Deployments (M7) |
+| ✅ | **GitHub — pull requests**: connect a project with a personal access token (encrypted with your OS keyring, per project; or import it once from `gh`), list a repository's pull requests by state and create new ones after a confirmation step |
+| 🔜 | GitHub Actions (M6.5) · Deployments (M7) |
 
 Destructive actions (discard, force-delete a branch, abort a merge) always ask first and say exactly what is lost. Push never forces.
 

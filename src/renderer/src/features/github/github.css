@@ -1,0 +1,152 @@
+.panel.ghpage {
+  gap: 14px;
+  max-width: 880px;
+}
+
+.ghpage__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.ghpage__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-size: 24px;
+  font-weight: 650;
+}
+
+.ghconnect {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ghconnect__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ghaccount {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ghpulls-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ghpulls-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.ghpulls-card__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ghpulls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ghpulls__list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.ghpull {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+}
+
+.ghpull + .ghpull {
+  border-top: 1px solid var(--border);
+}
+
+.ghpull__main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ghpull__title {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ghpull__title:hover {
+  text-decoration: underline;
+}
+
+.ghpull__number {
+  color: var(--text-dim);
+  font-weight: 500;
+}
+
+.ghpull__meta {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.ghpull__badges {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.ghcreate {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ghcreate__branches {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.ghcreate__body {
+  resize: vertical;
+}
+
+.ghcreate__draft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.ghcreate__summary ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}

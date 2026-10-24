@@ -44,6 +44,8 @@ interface AppState {
   moveTab: (tabKey: TabKey, direction: -1 | 1) => Promise<void>;
   setTabVisibility: (tabKey: TabKey, visible: boolean) => Promise<void>;
   restoreTabs: () => Promise<void>;
+  /** Re-reads the tab list, e.g. after an integration added or removed its tab. */
+  refreshTabs: (activate?: TabKey) => Promise<void>;
 }
 
 const api = () => window.steward;
@@ -232,6 +234,23 @@ export const useAppStore = create<AppState>((set, get) => {
 
       const tabs = await unwrap(api().tabs.restoreDefaults({ projectId }));
       if (tabs !== null) set({ tabs, activeTabKey: tabs.filter((t) => t.visible)[0]?.tabKey ?? null });
+    },
+
+    refreshTabs: async (activate) => {
+      const projectId = get().selectedProjectId;
+      if (projectId === null) return;
+
+      const tabs = await unwrap(api().tabs.list({ projectId }));
+      if (tabs === null || get().selectedProjectId !== projectId) return;
+      const visible = tabs.filter((tab) => tab.visible);
+      const current = get().activeTabKey;
+      const target =
+        activate !== undefined && visible.some((tab) => tab.tabKey === activate)
+          ? activate
+          : current !== null && visible.some((tab) => tab.tabKey === current)
+            ? current
+            : (visible[0]?.tabKey ?? null);
+      set({ tabs, activeTabKey: target });
     }
   };
 });

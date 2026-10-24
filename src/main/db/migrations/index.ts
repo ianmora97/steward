@@ -268,6 +268,51 @@ const m009: Migration = {
   `
 };
 
-export const MIGRATIONS: readonly Migration[] = [m001, m002, m003, m004, m005, m006, m007, m008, m009];
+/**
+ * Provider connections, one per project and kind. There is deliberately no
+ * secret column: a token lives in an encrypted file under userData, and this
+ * row only says whether it worked last time and who it belongs to.
+ */
+const m010: Migration = {
+  version: 10,
+  name: 'integrations',
+  sql: `
+    CREATE TABLE integrations (
+      id                    TEXT NOT NULL PRIMARY KEY,
+      project_id            TEXT NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+      kind                  TEXT NOT NULL CHECK (kind IN ('github')),
+      connection_status     TEXT NOT NULL
+                              CHECK (connection_status IN ('unconfigured', 'connected', 'auth_error', 'unreachable')),
+      connection_checked_at TEXT,
+      last_error            TEXT,
+      config_json           TEXT NOT NULL,
+      created_at            TEXT NOT NULL,
+      updated_at            TEXT NOT NULL,
+      UNIQUE (project_id, kind)
+    );
+  `
+};
+
+/**
+ * The GitHub tab is where a project connects to GitHub, so it must exist before
+ * any connection does. Same shape as m006: added after each project's last tab,
+ * visible, and left alone where one already exists.
+ */
+const m011: Migration = {
+  version: 11,
+  name: 'github-tab-for-existing-projects',
+  sql: `
+    INSERT INTO workspace_tabs (id, project_id, tab_key, position, visible, pinned, source, integration_id, updated_at)
+      SELECT lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-4' || substr(hex(randomblob(2)), 2) ||
+                   '-a' || substr(hex(randomblob(2)), 2) || '-' || hex(randomblob(6))),
+             p.id, 'github',
+             COALESCE((SELECT MAX(position) FROM workspace_tabs WHERE project_id = p.id), -1) + 1,
+             1, 0, 'builtin', NULL, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+        FROM projects p
+       WHERE NOT EXISTS (SELECT 1 FROM workspace_tabs t WHERE t.project_id = p.id AND t.tab_key = 'github');
+  `
+};
+
+export const MIGRATIONS: readonly Migration[] = [m001, m002, m003, m004, m005, m006, m007, m008, m009, m010, m011];
 
 export const LATEST_SCHEMA_VERSION = MIGRATIONS.reduce((max, m) => Math.max(max, m.version), 0);

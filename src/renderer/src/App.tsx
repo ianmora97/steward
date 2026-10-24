@@ -5,6 +5,7 @@ import { Overview } from './features/overview/Overview';
 import { NewProjectModal } from './features/projects/NewProjectModal';
 import { ProjectSidebar } from './features/projects/ProjectSidebar';
 import { GitPanel } from './features/git/GitPanel';
+import { GithubPanel } from './features/github/GithubPanel';
 import { SshPanel } from './features/ssh/SshPanel';
 import { TerminalPanel } from './features/terminal/TerminalPanel';
 import { PendingPanel } from './features/workspace/PendingPanel';
@@ -33,11 +34,13 @@ function PanelFor({ tabKey }: { tabKey: TabKey | null }): React.JSX.Element {
       return <TerminalPanel />;
     case 'ssh':
       return <SshPanel />;
+    case 'github':
+      return <GithubPanel />;
     case 'actions':
       return (
         <PendingPanel
           title="GitHub Actions"
-          milestone="Milestone 6"
+          milestone="Milestone 6.5"
           description="Workflow runs, statuses and logs, read from the GitHub API. Connection health and workflow health are reported separately."
         />
       );
