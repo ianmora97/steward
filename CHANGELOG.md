@@ -11,6 +11,10 @@ Categories: **Added** · **Changed** · **Fixed** · **Removed** · **Security**
 ## [Unreleased]
 
 ### Added
+- **M6.5** Actions view inside the GitHub tab (switch between *Pull requests* and *Actions*): the repository's workflow runs with status and conclusion, branch, event, commit, author and duration, filterable by workflow and loaded 30 at a time.
+- **M6.5** Open a run to see its jobs and steps with their results, and *View log* on a job to read the end of its log (up to the last 200 KB) as plain text — colour codes and anything that looks like a token are removed. Very large logs and logs GitHub has already deleted (after 90 days) say so instead of failing.
+- **M6.5** Two separate signals at the top of Actions: *Connection* and *Workflows* (healthy, degraded, failing or unknown, from the latest 30 runs). A failing workflow shows as failing while the connection still reads connected. *Refresh* re-reads everything.
+- **M6.5** A token without permission for Actions gets a hint (fine-grained tokens need *Actions: Read*; classic tokens need `repo`) instead of a generic error.
 - **M6** GitHub tab: connect a project to GitHub with a personal access token. Steward checks it with GitHub before saving anything and shows who you are connected as and the token's scopes. Each project has its own connection.
 - **M6** *Import from gh CLI* connects with the token your `gh` is logged in with. It only runs when you click it; without `gh`, or without a login, Steward says so.
 - **M6** Pull requests: pick one of the project's repositories that has a `github.com` remote and see its pull requests (open, closed or all) with branches, author, draft / merged badges and a link to open each on GitHub. Long lists load 30 at a time.
@@ -88,6 +92,7 @@ Categories: **Added** · **Changed** · **Fixed** · **Removed** · **Security**
 - **M2** Loose equality in the Git toolbar flagged by the new lint rules.
 
 ### Removed
+- **M6.5** The empty "Actions" tab placeholder: Actions now lives inside the GitHub tab.
 - **Tooling** All automated tests (Vitest unit and integration suites, the end-to-end smoke test) and their scripts and CI steps. Testing is manual.
 - **Tooling** `graphify-out/` and the Obsidian `vault/` are no longer tracked; they stay local and are ignored by Git.
 

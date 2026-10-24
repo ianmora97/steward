@@ -8,6 +8,7 @@ import { Icon } from '../../components/Icon';
 import { useAppStore } from '../../stores/app.store';
 import { useGithubStore } from '../../stores/github.store';
 import { ConnectForm } from './ConnectForm';
+import { ActionsView } from './ActionsView';
 import { CreatePullModal } from './CreatePullModal';
 import { PullList } from './PullList';
 import './github.css';
@@ -27,6 +28,9 @@ export function GithubPanel(): React.JSX.Element {
   const pulls = useGithubStore((state) => state.pulls);
   const hasNext = useGithubStore((state) => state.hasNext);
   const loadingPulls = useGithubStore((state) => state.loadingPulls);
+  const view = useGithubStore((state) => state.view);
+  const setView = useGithubStore((state) => state.setView);
+  const loadActions = useGithubStore((state) => state.loadActions);
   const loadStatus = useGithubStore((state) => state.loadStatus);
   const connect = useGithubStore((state) => state.connect);
   const importFromGh = useGithubStore((state) => state.importFromGh);
@@ -59,6 +63,12 @@ export function GithubPanel(): React.JSX.Element {
     if (stillValid) return;
     void selectRepository(projectId, githubRepositories[0]?.id ?? null);
   }, [projectId, connected, githubRepositories, repositoryId, selectRepository]);
+
+  // Actions are read when the view opens and whenever the repository changes while it is open.
+  useEffect(() => {
+    if (projectId === null || !connected || view !== 'actions' || repositoryId === null) return;
+    void loadActions(projectId);
+  }, [projectId, connected, view, repositoryId, loadActions]);
 
   if (projectId === null) {
     return <EmptyState title="No project selected" description="Pick a project to connect GitHub." />;
@@ -131,7 +141,26 @@ export function GithubPanel(): React.JSX.Element {
       {connected && (
         <div className="card ghpulls-card">
           <div className="ghpulls-card__head">
-            <h3 className="card__title">Pull requests</h3>
+            <div className="ghview" role="tablist" aria-label="GitHub view">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={view === 'pulls'}
+                className={`ghview__button${view === 'pulls' ? ' is-active' : ''}`}
+                onClick={() => setView('pulls')}
+              >
+                Pull requests
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={view === 'actions'}
+                className={`ghview__button${view === 'actions' ? ' is-active' : ''}`}
+                onClick={() => setView('actions')}
+              >
+                Actions
+              </button>
+            </div>
             <div className="ghpulls-card__controls">
               <select
                 className="field__input"
@@ -150,26 +179,30 @@ export function GithubPanel(): React.JSX.Element {
                   );
                 })}
               </select>
-              <select
-                className="field__input"
-                aria-label="Pull request state"
-                value={pullsState}
-                onChange={(event) => void setPullsState(projectId, event.target.value as GithubPullState)}
-              >
-                {STATE_FILTERS.map((state) => (
-                  <option key={state} value={state}>
-                    {state}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="button"
-                className="button button--primary"
-                disabled={selected === null}
-                onClick={() => setCreating(true)}
-              >
-                New pull request
-              </button>
+              {view === 'pulls' && (
+                <>
+                  <select
+                    className="field__input"
+                    aria-label="Pull request state"
+                    value={pullsState}
+                    onChange={(event) => void setPullsState(projectId, event.target.value as GithubPullState)}
+                  >
+                    {STATE_FILTERS.map((state) => (
+                      <option key={state} value={state}>
+                        {state}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    className="button button--primary"
+                    disabled={selected === null}
+                    onClick={() => setCreating(true)}
+                  >
+                    New pull request
+                  </button>
+                </>
+              )}
             </div>
           </div>
 
@@ -179,6 +212,8 @@ export function GithubPanel(): React.JSX.Element {
                 ? 'This project has no repositories yet.'
                 : 'None of this project’s repositories has a github.com remote.'}
             </p>
+          ) : view === 'actions' ? (
+            <ActionsView projectId={projectId} />
           ) : (
             <PullList
               pulls={pulls}

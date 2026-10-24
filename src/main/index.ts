@@ -5,6 +5,7 @@ import { openStewardDatabase, type StewardDatabase } from './db/connection';
 import { registerIpcHandlers } from './ipc/register';
 import { validateExistingDirectory, validateExistingFile } from './security/paths';
 import { getGitVersion } from './services/git.service';
+import { createGithubActionsService } from './services/github-actions.service';
 import { createGithubApi } from './services/github-api';
 import { createGithubIntegrationService } from './services/github-integration.service';
 import { createGithubPullsService } from './services/github-pulls.service';
@@ -251,12 +252,15 @@ function startup(): void {
     openExternal: (url) => shell.openExternal(url)
   });
 
+  const githubActions = createGithubActionsService({ db: database.db, github, api: githubApi });
+
   registerIpcHandlers({
     database,
     terminal,
     ssh,
     github,
     githubPulls,
+    githubActions,
     readAppInfo,
     pickDirectory,
     pickKeyFile
