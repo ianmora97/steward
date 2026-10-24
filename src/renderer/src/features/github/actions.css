@@ -1,0 +1,189 @@
+.ghactions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ghactions__status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.ghactions__refresh {
+  margin-left: auto;
+}
+
+.ghactions__filter {
+  align-self: flex-start;
+}
+
+.ghchip--success {
+  color: var(--ok, #3fb950);
+}
+
+.ghchip--failure {
+  color: var(--danger, #f85149);
+}
+
+.ghchip--running {
+  color: var(--warn, #d29922);
+}
+
+.ghchip--neutral {
+  color: var(--text-muted);
+}
+
+.ghrun + .ghrun {
+  border-top: 1px solid var(--border);
+}
+
+.ghrun__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ghrun__row:hover {
+  background: var(--bg-raised);
+}
+
+.ghrun__main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ghrun__title {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.ghdetail {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 12px 12px 32px;
+}
+
+.ghdetail__bar {
+  display: flex;
+}
+
+.ghjob {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ghjob__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ghjob__name {
+  font-weight: 600;
+}
+
+.ghjob__time {
+  margin-right: auto;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.ghsteps {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0 0 0 12px;
+  list-style: none;
+}
+
+.ghstep {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.ghstep__state {
+  margin-left: auto;
+  color: var(--text-muted);
+}
+
+.ghdot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  flex-shrink: 0;
+}
+
+.ghdot--success {
+  background: var(--ok, #3fb950);
+}
+
+.ghdot--failure {
+  background: var(--danger, #f85149);
+}
+
+.ghdot--running {
+  background: var(--warn, #d29922);
+}
+
+.ghlog__body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ghlog__text {
+  max-height: 60vh;
+  margin: 0;
+  padding: 10px 12px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.ghview {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+}
+
+.ghview__button {
+  padding: 4px 12px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+.ghview__button.is-active {
+  background: var(--bg-raised);
+  color: var(--text);
+  font-weight: 600;
+}
