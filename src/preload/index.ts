@@ -90,6 +90,18 @@ const api: StewardApi = {
     deleteProfile: (input) => invoke(IPC_CHANNELS.terminalDeleteProfile, input),
     onData: (listener) => subscribe<TerminalDataEvent>(TERMINAL_EVENTS.data, listener),
     onExit: (listener) => subscribe<TerminalExitEvent>(TERMINAL_EVENTS.exit, listener)
+  },
+  ssh: {
+    list: (input) => invoke(IPC_CHANNELS.sshList, input),
+    create: (input) => invoke(IPC_CHANNELS.sshCreate, input),
+    update: (input) => invoke(IPC_CHANNELS.sshUpdate, input),
+    remove: (input) => invoke(IPC_CHANNELS.sshRemove, input),
+    test: (input) => invoke(IPC_CHANNELS.sshTest, input),
+    scanHostKey: (input) => invoke(IPC_CHANNELS.sshScanHostKey, input),
+    trustHostKey: (input) => invoke(IPC_CHANNELS.sshTrustHostKey, input),
+    runCommand: (input) => invoke(IPC_CHANNELS.sshRunCommand, input),
+    listExecutions: (input) => invoke(IPC_CHANNELS.sshListExecutions, input),
+    pickKeyFile: () => invoke(IPC_CHANNELS.sshPickKeyFile)
   }
 };
 

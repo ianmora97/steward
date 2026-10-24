@@ -173,6 +173,101 @@ const m004: Migration = {
   `
 };
 
-export const MIGRATIONS: readonly Migration[] = [m001, m002, m003, m004];
+/**
+ * SSH hosts belong to a project. No key material, password or passphrase is
+ * stored: authentication is whatever the system `ssh` resolves (agent, default
+ * keys, ~/.ssh/config), so `host` may be a config alias. Connection state is
+ * live and is not persisted; every remote run is an `executions` row with
+ * `context = 'remote'` pointing here through `ssh_host_id`.
+ */
+const m005: Migration = {
+  version: 5,
+  name: 'ssh-hosts',
+  sql: `
+    CREATE TABLE ssh_hosts (
+      id         TEXT NOT NULL PRIMARY KEY,
+      project_id TEXT NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+      name       TEXT NOT NULL,
+      host       TEXT NOT NULL,
+      port       INTEGER,
+      username   TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      UNIQUE (project_id, name)
+    );
+
+    CREATE INDEX idx_ssh_hosts_project ON ssh_hosts (project_id);
+
+    ALTER TABLE executions ADD COLUMN ssh_host_id TEXT REFERENCES ssh_hosts (id) ON DELETE SET NULL;
+
+    CREATE INDEX idx_executions_ssh_host ON executions (ssh_host_id, started_at);
+  `
+};
+
+/**
+ * The SSH tab shipped with M5 but was never seeded, so projects created before
+ * it have no way to reach it. Adds it after their last tab, visible; projects
+ * that already have one are left alone.
+ */
+const m006: Migration = {
+  version: 6,
+  name: 'ssh-tab-for-existing-projects',
+  sql: `
+    INSERT INTO workspace_tabs (id, project_id, tab_key, position, visible, pinned, source, integration_id, updated_at)
+      SELECT lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-4' || substr(hex(randomblob(2)), 2) ||
+                   '-a' || substr(hex(randomblob(2)), 2) || '-' || hex(randomblob(6))),
+             p.id, 'ssh',
+             COALESCE((SELECT MAX(position) FROM workspace_tabs WHERE project_id = p.id), -1) + 1,
+             1, 0, 'builtin', NULL, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+        FROM projects p
+       WHERE NOT EXISTS (SELECT 1 FROM workspace_tabs t WHERE t.project_id = p.id AND t.tab_key = 'ssh');
+  `
+};
+
+/**
+ * Optional private-key file per SSH host, passed to `ssh -i`. Only the path is
+ * stored; Steward never reads the key, so no secret enters the database.
+ */
+const m007: Migration = {
+  version: 7,
+  name: 'ssh-identity-file',
+  sql: `ALTER TABLE ssh_hosts ADD COLUMN identity_file TEXT;`
+};
+
+/**
+ * Servers are described, not just reachable: which environment they belong to
+ * (free text, so "Prod" and "Stage" are the user's words), where they run, and
+ * the public names that identify them. All optional and informational; none of
+ * it changes how `ssh` connects.
+ */
+const m008: Migration = {
+  version: 8,
+  name: 'ssh-host-metadata',
+  sql: `
+    ALTER TABLE ssh_hosts ADD COLUMN environment TEXT;
+    ALTER TABLE ssh_hosts ADD COLUMN provider    TEXT;
+    ALTER TABLE ssh_hosts ADD COLUMN region      TEXT;
+    ALTER TABLE ssh_hosts ADD COLUMN domain      TEXT;
+    ALTER TABLE ssh_hosts ADD COLUMN ip_address  TEXT;
+    ALTER TABLE ssh_hosts ADD COLUMN description TEXT;
+  `
+};
+
+/**
+ * A connection belongs to a VPC (or network): its name, id and address range
+ * describe where the server sits and are shown in the connection route.
+ * Informational only; none of it is passed to `ssh`.
+ */
+const m009: Migration = {
+  version: 9,
+  name: 'ssh-host-vpc',
+  sql: `
+    ALTER TABLE ssh_hosts ADD COLUMN vpc_name TEXT;
+    ALTER TABLE ssh_hosts ADD COLUMN vpc_id   TEXT;
+    ALTER TABLE ssh_hosts ADD COLUMN vpc_cidr TEXT;
+  `
+};
+
+export const MIGRATIONS: readonly Migration[] = [m001, m002, m003, m004, m005, m006, m007, m008, m009];
 
 export const LATEST_SCHEMA_VERSION = MIGRATIONS.reduce((max, m) => Math.max(max, m.version), 0);

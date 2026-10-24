@@ -53,6 +53,18 @@ import type {
   TerminalWriteInput
 } from '../schemas/terminal';
 import type {
+  SshCommandResult,
+  SshCreateInput,
+  SshHost,
+  SshHostIdInput,
+  SshListExecutionsInput,
+  SshListInput,
+  SshRunCommandInput,
+  SshScanResult,
+  SshTrustInput,
+  SshUpdateInput
+} from '../schemas/ssh';
+import type {
   ReorderTabsInput,
   SetTabVisibilityInput,
   WorkspaceTab
@@ -116,7 +128,18 @@ export const IPC_CHANNELS = {
   terminalSetSettings: 'terminal:setSettings',
   terminalListProfiles: 'terminal:listProfiles',
   terminalSaveProfile: 'terminal:saveProfile',
-  terminalDeleteProfile: 'terminal:deleteProfile'
+  terminalDeleteProfile: 'terminal:deleteProfile',
+
+  sshList: 'ssh:list',
+  sshCreate: 'ssh:create',
+  sshUpdate: 'ssh:update',
+  sshRemove: 'ssh:remove',
+  sshTest: 'ssh:test',
+  sshScanHostKey: 'ssh:scanHostKey',
+  sshTrustHostKey: 'ssh:trustHostKey',
+  sshRunCommand: 'ssh:runCommand',
+  sshListExecutions: 'ssh:listExecutions',
+  sshPickKeyFile: 'ssh:pickKeyFile'
 } as const;
 
 /**
@@ -216,5 +239,19 @@ export interface StewardApi {
     /** Returns an unsubscribe function. The Electron event object never reaches the renderer. */
     onData: (listener: (event: TerminalDataEvent) => void) => () => void;
     onExit: (listener: (event: TerminalExitEvent) => void) => () => void;
+  };
+  ssh: {
+    list: (input: SshListInput) => Promise<StewardResult<SshHost[]>>;
+    create: (input: SshCreateInput) => Promise<StewardResult<SshHost>>;
+    update: (input: SshUpdateInput) => Promise<StewardResult<SshHost>>;
+    remove: (input: SshHostIdInput) => Promise<StewardResult<{ id: string }>>;
+    /** Connects without prompts and reports the connection state; never throws a connection problem as an error. */
+    test: (input: SshHostIdInput) => Promise<StewardResult<SshHost>>;
+    scanHostKey: (input: SshHostIdInput) => Promise<StewardResult<SshScanResult>>;
+    trustHostKey: (input: SshTrustInput) => Promise<StewardResult<SshHost>>;
+    runCommand: (input: SshRunCommandInput) => Promise<StewardResult<SshCommandResult>>;
+    listExecutions: (input: SshListExecutionsInput) => Promise<StewardResult<Execution[]>>;
+    /** Opens the OS file picker for a private key. Only the chosen path comes back, never the file's content. */
+    pickKeyFile: () => Promise<StewardResult<DirectoryPick>>;
   };
 }

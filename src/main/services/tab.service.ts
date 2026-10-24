@@ -25,6 +25,7 @@ interface TabDefinition {
 const DEFAULT_TABS: readonly TabDefinition[] = [
   { tabKey: 'git', pinned: true },
   { tabKey: 'terminal', pinned: false },
+  { tabKey: 'ssh', pinned: false },
   { tabKey: 'settings', pinned: false }
 ];
 

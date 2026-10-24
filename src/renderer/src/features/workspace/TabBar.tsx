@@ -5,7 +5,7 @@ import { useAppStore } from '../../stores/app.store';
 const TAB_LABELS: Record<TabKey, string> = {
   git: 'Git',
   terminal: 'Terminal',
-  ssh: 'SSH',
+  ssh: 'VPC',
   actions: 'Actions',
   deployments: 'Deployments',
   settings: 'Workspace'

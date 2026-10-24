@@ -1,4 +1,5 @@
 import { createWriteStream, mkdirSync, type WriteStream } from 'node:fs';
+import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { spawn as spawnPty, type IPty } from 'node-pty';
 import {
@@ -20,9 +21,11 @@ import type { SqlDatabase } from '../db/driver';
 import { insertExecution, updateExecutionFinish } from '../db/execution.repo';
 import { nowIso, uuidv7 } from '../db/id';
 import { findRepositoryById } from '../db/repository.repo';
+import { findSshHost } from '../db/ssh-host.repo';
 import { runCommand } from '../exec/run';
 import { validateExistingDirectory } from '../security/paths';
 import { redactSecrets } from './git-errors';
+import { resolveSshExecutable, sshDestination, sshOptionArgs } from './ssh-args';
 import { resolveProfile } from './terminal-shell';
 import { requireProject } from './project.service';
 
@@ -32,6 +35,8 @@ const FLUSH_INTERVAL_MS = 8;
 export interface TerminalServiceDeps {
   db: SqlDatabase;
   logDirectory: string;
+  /** Steward's own known_hosts, shared with the SSH service so a shell trusts exactly what the user approved. */
+  knownHostsFile: string;
   emitData: (event: TerminalDataEvent) => void;
   emitExit: (event: TerminalExitEvent) => void;
 }
@@ -45,6 +50,7 @@ export interface TerminalService {
   attach: (input: TerminalSessionIdInput) => TerminalAttachResult;
   closeByProject: (projectId: string) => void;
   closeByRepository: (repositoryId: string) => void;
+  closeBySshHost: (sshHostId: string) => void;
   shutdown: () => void;
 }
 
@@ -162,12 +168,53 @@ export function createTerminalService(deps: TerminalServiceDeps): TerminalServic
     }
   }
 
-  function create(input: TerminalCreateInput): TerminalSession {
-    requireProject(db, input.projectId);
-    const repository = findRepositoryById(db, input.repositoryId);
+  interface Launch {
+    repositoryId: string | null;
+    sshHostId: string | null;
+    file: string;
+    args: string[];
+    /** The shell or `user@host` shown in the Activity history and the tab. */
+    label: string;
+    cwd: string;
+    profileName: string;
+  }
+
+  function resolveLaunch(input: TerminalCreateInput): Launch {
+    if (input.sshHostId !== undefined) {
+      const host = findSshHost(db, input.sshHostId);
+      if (host === null || host.projectId !== input.projectId) {
+        throw new StewardServiceError('NOT_FOUND', 'that SSH host is not part of this project');
+      }
+      const destination = sshDestination(host);
+      return {
+        repositoryId: null,
+        sshHostId: host.id,
+        file: resolveSshExecutable(),
+        // Interactive: no BatchMode, so a password or passphrase can be typed into the terminal itself.
+        args: [...sshOptionArgs(host, { knownHostsFile: deps.knownHostsFile, batch: false }), '--', destination],
+        label: destination,
+        cwd: homedir(),
+        profileName: `SSH · ${host.name}`
+      };
+    }
+    const repository = input.repositoryId === undefined ? null : findRepositoryById(db, input.repositoryId);
     if (repository === null || repository.projectId !== input.projectId) {
       throw new StewardServiceError('NOT_FOUND', 'that repository is not part of this project');
     }
+    const shell = resolveProfile(db, input.projectId, input.profileId);
+    return {
+      repositoryId: repository.id,
+      sshHostId: null,
+      file: shell.file,
+      args: shell.args,
+      label: shell.file,
+      cwd: validateExistingDirectory(repository.localPath).path,
+      profileName: shell.name
+    };
+  }
+
+  function create(input: TerminalCreateInput): TerminalSession {
+    requireProject(db, input.projectId);
     if (runningCount() >= TERMINAL_MAX_SESSIONS) {
       throw new StewardServiceError(
         'TERMINAL_LIMIT',
@@ -175,8 +222,9 @@ export function createTerminalService(deps: TerminalServiceDeps): TerminalServic
       );
     }
 
-    const cwd = validateExistingDirectory(repository.localPath).path;
-    const shell = resolveProfile(db, input.projectId, input.profileId);
+    const launch = resolveLaunch(input);
+    const { cwd } = launch;
+    const shell = { file: launch.file, args: launch.args, name: launch.profileName };
 
     const id = uuidv7();
     const executionId = uuidv7();
@@ -186,12 +234,13 @@ export function createTerminalService(deps: TerminalServiceDeps): TerminalServic
     insertExecution(db, {
       id: executionId,
       projectId: input.projectId,
-      repositoryId: repository.id,
-      kind: 'local_command',
-      context: 'local',
+      repositoryId: launch.repositoryId,
+      kind: launch.sshHostId === null ? 'local_command' : 'ssh_shell',
+      context: launch.sshHostId === null ? 'local' : 'remote',
       command: shell.file,
-      args: shell.args,
-      cwd,
+      // For a remote shell the ssh flags are fixed policy; what matters in the history is where it connected.
+      args: launch.sshHostId === null ? shell.args : [launch.label],
+      cwd: launch.sshHostId === null ? cwd : null,
       status: 'running',
       exitCode: null,
       confirmedByUser: false,
@@ -200,7 +249,8 @@ export function createTerminalService(deps: TerminalServiceDeps): TerminalServic
       durationMs: null,
       errorCode: null,
       errorMessage: null,
-      logPath
+      logPath,
+      sshHostId: launch.sshHostId
     });
 
     const env: Record<string, string> = {};
@@ -227,6 +277,13 @@ export function createTerminalService(deps: TerminalServiceDeps): TerminalServic
         errorMessage: 'the shell could not be started'
       });
       console.error('[steward] terminal spawn failed:', error);
+      if (launch.sshHostId !== null) {
+        throw new StewardServiceError(
+          'SSH_NOT_FOUND',
+          'The OpenSSH client could not be started',
+          'Install OpenSSH (on Windows: Settings → Optional features → OpenSSH Client) and make sure `ssh` is on your PATH.'
+        );
+      }
       throw new StewardServiceError('SPAWN_FAILED', 'the shell could not be started', shell.file);
     }
 
@@ -245,11 +302,12 @@ export function createTerminalService(deps: TerminalServiceDeps): TerminalServic
     const session: TerminalSession = {
       id,
       projectId: input.projectId,
-      repositoryId: repository.id,
+      repositoryId: launch.repositoryId,
+      sshHostId: launch.sshHostId,
       executionId,
       shell: shell.file,
       profileName: shell.name,
-      cwd,
+      cwd: launch.sshHostId === null ? cwd : launch.label,
       status: 'running',
       exitCode: null,
       truncated: false,
@@ -329,6 +387,7 @@ export function createTerminalService(deps: TerminalServiceDeps): TerminalServic
     attach,
     closeByProject: (projectId) => closeWhere((live) => live.session.projectId === projectId),
     closeByRepository: (repositoryId) => closeWhere((live) => live.session.repositoryId === repositoryId),
+    closeBySshHost: (sshHostId) => closeWhere((live) => live.session.sshHostId === sshHostId),
     shutdown: () => {
       for (const live of sessions.values()) {
         if (live.session.status === 'running') {

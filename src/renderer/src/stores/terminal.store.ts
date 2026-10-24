@@ -18,6 +18,8 @@ interface TerminalState {
 
   load: (projectId: string) => Promise<void>;
   create: (projectId: string, repositoryId: string, profileId?: string) => Promise<void>;
+  /** Opens a shell on a saved SSH host. Returns whether it started, so the caller can switch to the Terminal tab. */
+  createRemote: (projectId: string, sshHostId: string) => Promise<boolean>;
   close: (projectId: string, sessionId: string) => Promise<void>;
   setActive: (projectId: string, sessionId: string) => void;
   rename: (sessionId: string, title: string) => void;
@@ -74,6 +76,24 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
       },
       activeByProject: { ...state.activeByProject, [projectId]: session.id }
     }));
+  },
+
+  createRemote: async (projectId, sshHostId) => {
+    const result = await window.steward.terminal.create({ projectId, sshHostId, cols: 80, rows: 24 });
+    if (!result.success) {
+      set({ error: result.error });
+      return false;
+    }
+    const session = result.data;
+    set((state) => ({
+      error: null,
+      sessionsByProject: {
+        ...state.sessionsByProject,
+        [projectId]: [...(state.sessionsByProject[projectId] ?? []), session]
+      },
+      activeByProject: { ...state.activeByProject, [projectId]: session.id }
+    }));
+    return true;
   },
 
   close: async (projectId, sessionId) => {

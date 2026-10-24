@@ -11,6 +11,18 @@ Categories: **Added** · **Changed** · **Fixed** · **Removed** · **Security**
 ## [Unreleased]
 
 ### Added
+- **M5** Connections are grouped by environment (Production, Staging, Dev… in your own words; known names keep a prod → stage → dev order, ungrouped last).
+- **M5** Each connection records its VPC (name, id, CIDR), and optionally its provider (AWS, DigitalOcean, Google Cloud, Azure, Hetzner, Linode, Vultr, on-premises, other), region, domain, IP address and a description. They are informational and shown on its card.
+- **M5** SSH tab: save hosts per project (name, host or `~/.ssh/config` alias, optional user and port) and use them through your system `ssh`, so your agent, keys and config apply. Steward never stores keys or passwords.
+- **M5** Host-key review: an unknown host is never trusted automatically. Steward shows its fingerprints and trusts it only if you click *Trust this host*; declining saves nothing. If the key was swapped between review and trust, nothing is saved. Trusted keys live in Steward's own `known_hosts`, not yours.
+- **M5** *Test connection* reports distinct outcomes: connected, unreachable, timed out, authentication failed, host not trusted and host key changed — each with a hint.
+- **M5** Run one-shot commands on a host (timeout 10 s to 5 min) and see exit code, stdout and stderr; every run is recorded as a remote entry in the Activity history with its output saved to a log file.
+- **M5** Connect through a domain *or* an IP address (pick one); a `~/.ssh/config` alias also works as the domain.
+- **M5** Pick a private key (`.pem`) per host with a file browser. Steward stores only the path and passes it to `ssh -i` (with `IdentitiesOnly`); it never reads or stores the key. The key is used by connection tests, commands and shells alike.
+- **M5** *Copy ssh command* on each host: the exact `ssh -i … -p … user@host` line to paste in any terminal.
+- **M5** Clear messages when ssh refuses a key because its permissions are too open or its file is unreadable.
+- **M5** Two separate statuses per host: connection (can Steward reach it) and last command (healthy or failing), so a reachable host whose last command failed shows both.
+- **M5** *Open shell* starts an interactive `ssh` session in the Terminal tab, marked with an SSH icon and an amber banner saying everything typed runs on the remote machine. Password prompts work inside the terminal.
 - **M4.5** New home screen: an Overview of all your projects with search, summary cards (projects, repositories, open terminals, Git version) and one card per project showing its repositories and when it last changed. Steward opens on it instead of jumping into the last project.
 - **M4.5** New project dialog, opened from the Overview or the sidebar `+`.
 - **M4.5** Icons on every project tab (Git, Terminal, SSH, Actions, Deployments, Workspace) and in the sidebar.
@@ -46,6 +58,10 @@ Categories: **Added** · **Changed** · **Fixed** · **Removed** · **Security**
 - **M4** Tooling: `node-pty` (pseudo-terminals) and `@xterm/xterm` added; the native module is unpacked from the app archive when packaging.
 
 ### Changed
+- **M5** The SSH tab is labelled **VPC** in the project tab bar.
+- **M5** Project cards in the Overview show counts instead of one pill per repository: *GitHub (n)*, *Repositories (n)* for non-GitHub ones (hover for the names), and *VPC (n)* for the project's saved connections.
+- **M5** SSH tab redesigned as **VPC connections**: a *Saved connections* list on the left (search, environment filter, collapsible groups with Production highlighted, per-connection status) and a detail editor on the right with *Configuration* and *Session history* tabs, a connection route (this machine → VPC → server), SSH session status, sessions active on other connections, and *Save changes* / *Connect via SSH* in the footer.
+- **M5** SSH dialogs (add/edit host, host-key review) are wider so fingerprints and paths stay on one line.
 - **M4.5** Commit details are a compact raised card (title, author, date, short hash, parents, file and line totals); the file list below scrolls on its own. Email, full hash and the committer line are gone (hover for the full hash and email).
 - **M4.5** Git changes: the commit message box stays pinned at the bottom while only the file lists scroll; the graph is taller; the diff area appears only after you pick a file.
 - **M4.5** The sidebar collapses to an icon strip (button next to the logo) and remembers its state.
@@ -57,6 +73,8 @@ Categories: **Added** · **Changed** · **Fixed** · **Removed** · **Security**
 - **M1** Database uses Node's built-in `node:sqlite` instead of `better-sqlite3`, so there is no native module or C++ toolchain to install. It sits behind the `SqlDatabase` interface in `src/main/db/driver.ts`.
 
 ### Fixed
+- **M5** *Open shell* failed on Windows with "File not found"; Steward now starts `ssh` by its full path.
+- **M5** The SSH tab now appears: new projects get it, and existing projects get it added after their last tab on first launch.
 - **M4.5** Copy and paste in the terminal: Ctrl+C copies when text is selected (otherwise it still interrupts), Ctrl+Shift+C copies, Ctrl+V / Ctrl+Shift+V pastes, and right-click copies the selection or pastes.
 - **M4.5** Dropdown arrows are now vertically centred with space to the right edge.
 - **M3** Scrolling: the root layout grid grew with its content and clipped the workspace, so long views (branches, file lists) could not be scrolled. Regions now scroll on their own.
