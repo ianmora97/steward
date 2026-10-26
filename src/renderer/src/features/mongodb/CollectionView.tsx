@@ -34,11 +34,14 @@ export function CollectionView({
   connection,
   db,
   collection,
+  onBack,
   onError
 }: {
   connection: MongoConnection;
   db: string;
   collection: string;
+  /** Back to the list of the database's collections. */
+  onBack: () => void;
   onError: (error: StewardError) => void;
 }): React.JSX.Element {
   const [tab, setTab] = useState<Tab>('documents');
@@ -65,10 +68,13 @@ export function CollectionView({
       <header className="mgcollection__head">
         <div>
           <h3 className="mgcollection__title">
-            <span className="card__hint">{db}.</span>
+            <button type="button" className="mgcollection__crumb" onClick={onBack} title={`All collections in ${db}`}>
+              {db}
+            </button>
+            <span className="mgcollection__sep">/</span>
             {collection}
           </h3>
-          <p className="card__hint">
+          <p className="card__hint mgcollection__stats">
             {stats === null
               ? 'Reading statistics…'
               : `${stats.documentCount ?? '—'} documents · ${size(stats.size)} · avg ${size(stats.avgObjSize)} · storage ${size(stats.storageSize)} · ${stats.indexCount ?? '—'} indexes (${size(stats.totalIndexSize)})`}
@@ -84,7 +90,7 @@ export function CollectionView({
         ))}
       </nav>
 
-      <div className="mgcollection__body">
+      <div className={`mgcollection__body${tab === 'documents' ? ' mgcollection__body--fill' : ''}`}>
         {tab === 'documents' && (
           <DocumentsView connection={connection} db={db} collection={collection} onError={onError} onChanged={() => setStatsKey((value) => value + 1)} />
         )}

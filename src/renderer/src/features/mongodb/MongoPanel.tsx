@@ -9,6 +9,7 @@ import { Pill } from '../../components/Pill';
 import { useAppStore } from '../../stores/app.store';
 import { CollectionView } from './CollectionView';
 import { ConnectionDialog } from './ConnectionDialog';
+import { DatabaseView } from './DatabaseView';
 import { Explorer, type Namespace } from './Explorer';
 import './mongo.css';
 
@@ -19,6 +20,8 @@ export function MongoPanel(): React.JSX.Element {
   const [connections, setConnections] = useState<MongoConnection[] | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [namespace, setNamespace] = useState<Namespace | null>(null);
+  const [database, setDatabase] = useState<string | null>(null);
+  const [listVersion, setListVersion] = useState(0);
   const [dialog, setDialog] = useState<Dialog>(null);
   const [removing, setRemoving] = useState<MongoConnection | null>(null);
   const [error, setError] = useState<StewardError | null>(null);
@@ -52,6 +55,7 @@ export function MongoPanel(): React.JSX.Element {
     });
     setSelectedId(saved.id);
     setNamespace(null);
+    setDatabase(null);
     setDialog(null);
   }
 
@@ -66,41 +70,40 @@ export function MongoPanel(): React.JSX.Element {
     if (selectedId === target.id) {
       setSelectedId(null);
       setNamespace(null);
+      setDatabase(null);
     }
   }
+
+  const activeDb = namespace?.db ?? database;
 
   return (
     <div className="panel dppage mgpage">
       {error !== null && <ErrorBanner error={error} onDismiss={() => setError(null)} />}
 
-      <header className="dppage__head">
-        <div>
-          <h2 className="dppage__title">MongoDB</h2>
-          <p className="dppage__subtitle">
-            Browse, query and edit databases: local, on your network, by IP, or on Atlas. Credentials are stored encrypted and never shown again.
-          </p>
-        </div>
-        <div className="dktarget">
+      <header className="mghead">
+        <h2 className="mghead__title">
+          <Icon name="database" size={22} />
+          MongoDB
+        </h2>
+        <div className="mghead__actions">
           {connections !== null && connections.length > 0 && connection !== null && (
-            <label className="field">
-              <span className="field__label">Connection</span>
-              <select
-                className="field__input"
-                value={connection.id}
-                onChange={(event) => {
-                  setSelectedId(event.target.value);
-                  setNamespace(null);
-                }}
-                aria-label="MongoDB connection"
-              >
-                {connections.map((candidate) => (
-                  <option key={candidate.id} value={candidate.id}>
-                    {candidate.name}
-                    {candidate.environmentName === null ? '' : ` · ${candidate.environmentName}`}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <select
+              className="field__input mghead__select"
+              value={connection.id}
+              onChange={(event) => {
+                setSelectedId(event.target.value);
+                setNamespace(null);
+                setDatabase(null);
+              }}
+              aria-label="MongoDB connection"
+            >
+              {connections.map((candidate) => (
+                <option key={candidate.id} value={candidate.id}>
+                  {candidate.name}
+                  {candidate.environmentName === null ? '' : ` · ${candidate.environmentName}`}
+                </option>
+              ))}
+            </select>
           )}
           <button type="button" className="button button--primary" onClick={() => setDialog({ kind: 'new' })}>
             <Icon name="plus" size={14} /> New connection
@@ -130,9 +133,12 @@ export function MongoPanel(): React.JSX.Element {
               </Pill>
             )}
             {connection.environmentName !== null && (
-              <Pill tone={connection.protectedEnvironment ? 'warning' : 'neutral'} icon={connection.protectedEnvironment ? 'shield' : 'tag'}>
+              <Pill
+                tone={connection.protectedEnvironment ? 'warning' : 'neutral'}
+                icon={connection.protectedEnvironment ? 'shield' : 'tag'}
+                title={connection.protectedEnvironment ? 'Protected environment' : undefined}
+              >
                 {connection.environmentName}
-                {connection.protectedEnvironment ? ' (protected)' : ''}
               </Pill>
             )}
             {connection.readOnly ? (
@@ -160,19 +166,43 @@ export function MongoPanel(): React.JSX.Element {
 
           <div className="mglayout">
             <aside className="mgside">
-              <Explorer key={connection.id} connection={connection} selected={namespace} onSelect={setNamespace} onError={setError} />
+              <Explorer
+                key={connection.id}
+                connection={connection}
+                selected={namespace}
+                selectedDb={activeDb}
+                onSelect={setNamespace}
+                onSelectDatabase={(db) => {
+                  setDatabase(db);
+                  setNamespace(null);
+                }}
+                onCollectionsChanged={() => setListVersion((value) => value + 1)}
+                onError={setError}
+              />
             </aside>
             <section className="mgmain">
-              {namespace === null ? (
-                <EmptyState title="Pick a collection" description="Open a database on the left and choose a collection to see its documents." />
-              ) : (
+              {namespace !== null ? (
                 <CollectionView
                   key={`${connection.id}:${namespace.db}.${namespace.collection}`}
                   connection={connection}
                   db={namespace.db}
                   collection={namespace.collection}
+                  onBack={() => {
+                    setDatabase(namespace.db);
+                    setNamespace(null);
+                  }}
                   onError={setError}
                 />
+              ) : database !== null ? (
+                <DatabaseView
+                  key={`${connection.id}:${database}:${listVersion}`}
+                  connection={connection}
+                  db={database}
+                  onOpen={(collection) => setNamespace({ db: database, collection })}
+                  onError={setError}
+                />
+              ) : (
+                <EmptyState title="Pick a database" description="Choose a database on the left to see its collections." />
               )}
             </section>
           </div>

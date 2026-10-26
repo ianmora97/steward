@@ -89,6 +89,8 @@ Categories: **Added** · **Changed** · **Fixed** · **Removed** · **Security**
 - **M4** Tooling: `node-pty` (pseudo-terminals) and `@xterm/xterm` added; the native module is unpacked from the app archive when packaging.
 
 ### Changed
+- **M10** The MongoDB tab now fits the window: the header, query bar and tabs stay put and only the database tree and the document list scroll. The header is tidier (icon, no intro text, more room between elements), and the database's own name in a collection's title takes you back to its collections.
+- **M10** Clicking a database shows all its collections on the main screen as cards with document count and size, not only in the tree on the left; click a card to open it.
 - **M7** A server's environment is now picked from the project's environments instead of typed as free text (with *New environment…* in the same list). Servers already grouped as "Prod", "prod " or "Stage" keep their grouping: each distinct name became an environment.
 - **M6.6** GitHub tab reorganised: who you are connected as (with token scopes) sits in the header, and each view has a single toolbar with repository, filter, refresh and *New pull request*. Pull requests and runs show branch, author and relative time as light chips; run steps use status icons.
 - **M6.6** The *Workspace* tab is now *Settings*, always last and aligned to the right edge of the tab bar; the other tabs keep their left-to-right order, which can still be rearranged.
