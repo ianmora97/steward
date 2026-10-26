@@ -10,7 +10,7 @@ export interface Namespace {
   collection: string;
 }
 
-function formatSize(bytes: number | null): string {
+export function formatSize(bytes: number | null): string {
   if (bytes === null) return '';
   if (bytes < 1024) return `${bytes} B`;
   const units = ['KB', 'MB', 'GB', 'TB'];
@@ -29,12 +29,20 @@ type Dropping = { kind: 'database'; db: string } | { kind: 'collection'; db: str
 export function Explorer({
   connection,
   selected,
+  selectedDb,
   onSelect,
+  onSelectDatabase,
+  onCollectionsChanged,
   onError
 }: {
   connection: MongoConnection;
   selected: Namespace | null;
+  /** Database whose collections the main pane shows (also set while one of its collections is open). */
+  selectedDb: string | null;
   onSelect: (namespace: Namespace | null) => void;
+  onSelectDatabase: (db: string | null) => void;
+  /** A collection was created or dropped here, so any list of them elsewhere is stale. */
+  onCollectionsChanged: () => void;
   onError: (error: StewardError) => void;
 }): React.JSX.Element {
   const [databases, setDatabases] = useState<MongoDatabaseInfo[] | null>(null);
@@ -73,11 +81,13 @@ export function Explorer({
     [connection.id, onError]
   );
 
+  /** A first click opens the database and shows its collections; clicking the one already shown folds it. */
   async function toggle(db: string): Promise<void> {
     const next = new Set(open);
-    if (next.has(db)) next.delete(db);
+    if (next.has(db) && selected === null && selectedDb === db) next.delete(db);
     else {
       next.add(db);
+      onSelectDatabase(db);
       if (collections[db] === undefined) await loadCollections(db);
     }
     setOpen(next);
@@ -92,6 +102,7 @@ export function Explorer({
     setCreating(null);
     setNewName('');
     await loadCollections(db);
+    onCollectionsChanged();
     setOpen((current) => new Set(current).add(db));
     onSelect({ db, collection: result.data.collection });
   }
@@ -136,7 +147,7 @@ export function Explorer({
           const list = (collections[database.name] ?? []).filter((collection) => needle === '' || database.name.toLowerCase().includes(needle) || collection.name.toLowerCase().includes(needle));
           return (
             <li key={database.name}>
-              <div className="mgtree__row mgtree__row--db">
+              <div className={`mgtree__row mgtree__row--db${selected === null && selectedDb === database.name ? ' mgtree__row--active' : ''}`}>
                 <button type="button" className="mgtree__label" onClick={() => void toggle(database.name)}>
                   <Icon name={isOpen ? 'chevronDown' : 'chevronRight'} size={14} />
                   <span className="mgtree__name">{database.name}</span>
@@ -224,8 +235,9 @@ export function Explorer({
             const dropped = dropping;
             setDropping(null);
             if (selected !== null && selected.db === dropped.db && (dropped.kind === 'database' || selected.collection === dropped.collection)) onSelect(null);
+            if (dropped.kind === 'database' && selectedDb === dropped.db) onSelectDatabase(null);
             if (dropped.kind === 'database') setRefresh((value) => value + 1);
-            else void loadCollections(dropped.db);
+            else void loadCollections(dropped.db).then(onCollectionsChanged);
           }}
           onCancel={() => setDropping(null)}
         />

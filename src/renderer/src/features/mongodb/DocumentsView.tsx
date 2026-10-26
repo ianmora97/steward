@@ -261,6 +261,7 @@ export function DocumentsView({
 
   return (
     <section className="mgdocsview">
+      <div className="mgdocsview__top">
       <form
         className="mgquery"
         onSubmit={(event) => {
@@ -434,16 +435,19 @@ export function DocumentsView({
           </details>
         )}
       </div>
+      </div>
 
-      {notice !== null && <p className="card__hint">{notice}</p>}
-      {explain !== null && <ExplainPanel summary={explain} onClose={() => setExplain(null)} />}
-      {page?.data?.truncated === true && <p className="card__hint">The response was cut to stay under 4 MB. Use a narrower filter or fewer fields.</p>}
+      <div className="mgdocsview__results">
+        {notice !== null && <p className="card__hint">{notice}</p>}
+        {explain !== null && <ExplainPanel summary={explain} onClose={() => setExplain(null)} />}
+        {page?.data?.truncated === true && <p className="card__hint">The response was cut to stay under 4 MB. Use a narrower filter or fewer fields.</p>}
 
-      {loading && page === null ? (
-        <p className="card__hint">Loading…</p>
-      ) : (
-        <DocumentResults documents={documents} mode={mode} actions={actions} readOnly={readOnly} />
-      )}
+        {loading && page === null ? (
+          <p className="card__hint">Loading…</p>
+        ) : (
+          <DocumentResults documents={documents} mode={mode} actions={actions} readOnly={readOnly} />
+        )}
+      </div>
 
       {editing !== null && (
         <DocumentEditor

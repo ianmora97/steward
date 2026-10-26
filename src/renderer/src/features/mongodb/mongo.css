@@ -1,12 +1,51 @@
+/* The tab fits the window like the Git tab: only the regions that grow scroll. */
+.workspace__body:has(.mgpage) {
+  overflow: hidden;
+  padding-bottom: 14px;
+}
+
 .panel.mgpage {
+  gap: 20px;
+  height: 100%;
+  min-height: 0;
   max-width: none;
+}
+
+.mghead {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 24px;
+}
+
+.mghead__title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  font-size: 22px;
+  font-weight: 650;
+}
+
+.mghead__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mghead__select {
+  width: auto;
+  min-width: 220px;
 }
 
 .mgconnbar {
   display: flex;
+  flex: none;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 10px;
+  gap: 10px 12px;
 }
 
 .mgconnbar__host {
@@ -18,24 +57,27 @@
 
 .mglayout {
   display: grid;
+  flex: 1;
   grid-template-columns: 290px minmax(0, 1fr);
-  gap: 16px;
-  align-items: start;
+  grid-template-rows: minmax(0, 1fr);
+  gap: 20px;
+  min-height: 0;
 }
 
 .mgside {
-  position: sticky;
-  top: 0;
-  max-height: calc(100vh - 260px);
+  min-height: 0;
   overflow: auto;
-  padding: 10px;
+  padding: 12px;
   background: var(--bg-raised);
   border: 1px solid var(--border);
   border-radius: var(--radius);
 }
 
 .mgmain {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
+  min-height: 0;
 }
 
 /* explorer */
@@ -122,17 +164,63 @@
 }
 
 /* collection */
+.mgcollection {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.mgcollection__head,
+.mgcollection__tabs {
+  flex: none;
+}
+
 .mgcollection__head {
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 
 .mgcollection__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin: 0;
   font-size: 18px;
 }
 
+.mgcollection__crumb {
+  padding: 0;
+  color: var(--text-muted);
+  font: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.mgcollection__crumb:hover {
+  color: var(--text);
+  text-decoration: underline;
+}
+
+.mgcollection__sep {
+  color: var(--text-muted);
+}
+
+.mgcollection__stats {
+  margin: 4px 0 0;
+}
+
 .mgcollection__body {
-  padding-top: 12px;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding-top: 16px;
+}
+
+.mgcollection__body--fill {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .mgdocsview,
@@ -142,7 +230,96 @@
 .mgvalidation {
   display: flex;
   flex-direction: column;
+  gap: 14px;
+}
+
+.mgdocsview {
+  flex: 1;
+  min-height: 0;
+}
+
+.mgdocsview__top {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.mgdocsview__results {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
   gap: 12px;
+  min-height: 0;
+  padding-right: 4px;
+  overflow: auto;
+}
+
+/* database: all its collections */
+.mgdb {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+}
+
+.mgdb__head {
+  flex: none;
+}
+
+.mgdb__head .card__hint {
+  margin: 4px 0 0;
+}
+
+.mgdb__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 12px;
+  align-content: start;
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: 0 4px 0 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.mgdb__card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  padding: 14px 16px;
+  color: inherit;
+  text-align: left;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.mgdb__card:hover {
+  border-color: var(--accent, #5b8def);
+}
+
+.mgdb__name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-weight: 600;
+}
+
+.mgdb__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 18px;
+}
+
+.mgdb__meta .card__hint {
+  margin: 0;
 }
 
 /* query bar */
@@ -495,10 +672,6 @@
 @media (max-width: 1100px) {
   .mglayout {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .mgside {
-    position: static;
-    max-height: 320px;
+    grid-template-rows: 260px minmax(0, 1fr);
   }
 }
