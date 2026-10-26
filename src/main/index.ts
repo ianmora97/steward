@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 import { BrowserWindow, app, dialog, safeStorage, shell } from 'electron';
-import { DOCKER_EVENTS, REDIS_EVENTS, TERMINAL_EVENTS, UI_EVENTS, type AppInfo, type DirectoryPick } from '@shared/types/ipc';
+import { DOCKER_EVENTS, OBSERVABILITY_EVENTS, REDIS_EVENTS, TERMINAL_EVENTS, UI_EVENTS, type AppInfo, type DirectoryPick } from '@shared/types/ipc';
 import { openStewardDatabase, type StewardDatabase } from './db/connection';
 import { registerIpcHandlers } from './ipc/register';
 import { validateExistingDirectory, validateExistingFile } from './security/paths';
@@ -9,6 +9,7 @@ import { createDeploymentService } from './services/deployment.service';
 import { createDockerExec } from './services/docker-exec';
 import { createDockerService, type DockerService } from './services/docker.service';
 import { createMongoService, type MongoService } from './services/mongo.service';
+import { createObservabilityService, type ObservabilityService } from './services/observability.service';
 import { createRedisService, type RedisService } from './services/redis.service';
 import { createGithubActionsService } from './services/github-actions.service';
 import { createGithubApi } from './services/github-api';
@@ -28,6 +29,7 @@ let terminal: TerminalService | null = null;
 let docker: DockerService | null = null;
 let mongo: MongoService | null = null;
 let redis: RedisService | null = null;
+let observability: ObservabilityService | null = null;
 let ui: UiSettingsService | null = null;
 
 function databaseFilePath(): string {
@@ -191,7 +193,23 @@ async function pickMongoFile(purpose: 'tlsCa' | 'tlsCertificate' | 'import'): Pr
   return result.canceled || chosen === undefined ? null : chosen;
 }
 
-/** The file dialogs Redis needs: the TLS CA, client certificate and client key. Only paths leave this function. */
+/** The file dialog Monitoring needs: the CA that signed a server's certificate. Only the path leaves this function. */
+async function pickObservabilityFile(_purpose: 'ca'): Promise<string | null> {
+  const options = {
+    title: 'Choose the CA certificate file',
+    properties: ['openFile' as const, 'dontAddToRecent' as const],
+    filters: [
+      { name: 'Certificates', extensions: ['pem', 'crt', 'cer'] },
+      { name: 'All files', extensions: ['*'] }
+    ]
+  };
+  const result =
+    mainWindow === null ? await dialog.showOpenDialog(options) : await dialog.showOpenDialog(mainWindow, options);
+  const chosen = result.filePaths[0];
+  return result.canceled || chosen === undefined ? null : chosen;
+}
+
+/** The file dialogs Redis needs:the TLS CA, client certificate and client key. Only paths leave this function. */
 async function pickRedisFile(purpose: 'tlsCa' | 'tlsCert' | 'tlsKey'): Promise<string | null> {
   const titles = {
     tlsCa: 'Choose the CA certificate file',
@@ -263,6 +281,8 @@ function createWindow(): BrowserWindow {
   });
   // A reload leaves the page with no memory of its Pub/Sub subscriptions, so they would hold a slot for nothing.
   window.webContents.on('did-start-loading', () => void redis?.endSubscriptions());
+  // The same for a live log tail: with no page to show it, it would poll Loki for nothing.
+  window.webContents.on('did-start-loading', () => observability?.endLive());
   hardenNavigation(window);
 
   if (isDev && rendererDevUrl !== undefined) {
@@ -359,6 +379,16 @@ function startup(): void {
     emitSubscriptionEnd: (event) => sendToWindow(REDIS_EVENTS.subscriptionEnd, event)
   });
 
+  observability = createObservabilityService({
+    db: database.db,
+    secrets,
+    dialogs: { pickFile: pickObservabilityFile },
+    docker,
+    openExternal: (url) => shell.openExternal(url),
+    emitLogs: (event) => sendToWindow(OBSERVABILITY_EVENTS.logs, event),
+    emitLogsEnd: (event) => sendToWindow(OBSERVABILITY_EVENTS.logsEnd, event)
+  });
+
   ui = createUiSettingsService({
     db: database.db,
     apply: (zoom) => mainWindow?.webContents.setZoomFactor(zoom / 100),
@@ -376,6 +406,7 @@ function startup(): void {
     docker,
     mongo,
     redis,
+    observability,
     ui,
     readAppInfo,
     pickDirectory,
@@ -416,6 +447,7 @@ if (!app.requestSingleInstanceLock()) {
     docker?.shutdown();
     void mongo?.shutdown();
     void redis?.shutdown();
+    observability?.shutdown();
     try {
       database?.db.close();
     } catch (error) {

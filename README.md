@@ -37,11 +37,12 @@ Steward is a desktop app organised around **projects**, not repositories. A proj
 
 | ✅ | **Redis**: standalone, Sentinel and Cluster connections (password, ACL user, TLS; protected environments start read-only), a key browser that pages with `SCAN` and never runs `KEYS`, every data type (strings, hashes, lists, sets, sorted sets, streams, RedisJSON) with text / JSON / hex / base64 views, editing with expiry kept, bulk delete by pattern with a re-checked count, a `redis-cli`-style workbench with a denylist, a live dashboard, slow log, clients, memory analysis by sample, and Pub/Sub |
 
+| ✅ | **Monitoring**: connect Grafana, Loki, Prometheus and Sentry to a project (read-only; tokens stored encrypted, a private CA file or an explicit "do not verify" per source). Dashboards and active alerts from Grafana; PromQL with graphs, a table, scrape targets and alerts; LogQL with a label-based selector builder, a volume histogram, level colours, a filter and a **live tail** that never repeats or skips a line; Sentry issues with the latest stack trace. Loki and Prometheus can be reached directly or through a Grafana you already connected. **Investigate** puts a service's deploys, alerts, signal charts, error logs, container state, Sentry issues and a before/after table for every deploy on one page |
 | ✅ | **One consistent interface**: the same buttons, badges, cards, fields and bars on every screen; a toast for what you just did; placeholders while a view loads and a spinner (with *Saving…*, *Deleting…*…) on the button you pressed; smooth transitions; and a zoom of 80–150 % (Ctrl +, Ctrl −, Ctrl 0, or *Settings → General*) with layouts that fold when there is little room |
 
 A project's tab bar holds **Git** (with GitHub's pull requests and Actions as sections) and **Terminal**; other services are added with the **+** and taken off with the **×**. Project **Settings** has General, Services, Integrations and Workspace sections, and the home screen shows each project's configured services as status badges plus the five latest activities (the rest one click away).
 
-Next on the roadmap (designed, not built yet): monitoring with Grafana / Loki / Prometheus, and cloud / domain checks for AWS and Cloudflare. See `docs/superpowers/specs/2026-10-23-m8-m13-roadmap-design.md`.
+Next on the roadmap (designed, not built yet): cloud / domain checks for AWS and Cloudflare. See `docs/superpowers/specs/2026-10-23-m8-m13-roadmap-design.md`.
 
 Destructive actions (discard, force-delete a branch, abort a merge) always ask first and say exactly what is lost. Push never forces.
 
@@ -55,6 +56,7 @@ See the [CHANGELOG](CHANGELOG.md) for what changed in each step.
 | npm | ≥ 9 | Dependency install |
 | Git | ≥ 2.39 | Steward orchestrates the installed Git |
 | Docker | any recent | Optional: the Docker tab runs the `docker` CLI you have installed (locally, or on your servers) |
+| Grafana / Loki / Prometheus / Sentry | any recent | Optional: the Monitoring tab talks to your own servers over HTTP(S) with a read-only token (Grafana: a service account with the *Viewer* role) |
 
 No database server. The terminal uses `node-pty`, which ships prebuilt binaries for Windows and macOS; on Linux, `npm install` compiles it, so `python3`, `make` and a C++ compiler must be installed.
 

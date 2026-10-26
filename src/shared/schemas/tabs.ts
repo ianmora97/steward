@@ -6,7 +6,7 @@ import { idSchema, isoTimestampSchema } from './common';
  * project; integration tabs are inserted when their integration is configured.
  * Hiding a tab keeps its row so it can be restored later.
  */
-export const tabKeySchema = z.enum(['git', 'terminal', 'ssh', 'github', 'deployments', 'docker', 'mongodb', 'redis', 'settings']);
+export const tabKeySchema = z.enum(['git', 'terminal', 'ssh', 'github', 'deployments', 'docker', 'mongodb', 'redis', 'monitoring', 'settings']);
 
 export const tabSourceSchema = z.enum(['builtin', 'integration']);
 
@@ -51,7 +51,7 @@ export const PINNED_TAB_KEYS: readonly TabKey[] = ['git', 'terminal'];
  * Services a project adds when it needs them (the **+** on the tab bar) and removes when it does not.
  * `github` is not one of them: its pull requests and Actions live inside the Git tab.
  */
-export const OPTIONAL_TAB_KEYS: readonly TabKey[] = ['ssh', 'deployments', 'docker', 'mongodb', 'redis'];
+export const OPTIONAL_TAB_KEYS: readonly TabKey[] = ['ssh', 'deployments', 'docker', 'mongodb', 'redis', 'monitoring'];
 
 /** What each optional tab is for, shown in the **+** menu. */
 export const TAB_DESCRIPTIONS: Partial<Record<TabKey, string>> = {
@@ -59,7 +59,8 @@ export const TAB_DESCRIPTIONS: Partial<Record<TabKey, string>> = {
   deployments: 'Environments, deploy targets and history',
   docker: 'Containers, images and Compose',
   mongodb: 'Browse and edit MongoDB databases',
-  redis: 'Browse keys, run commands, watch a Redis'
+  redis: 'Browse keys, run commands, watch a Redis',
+  monitoring: 'Logs, metrics and troubleshooting from Grafana, Loki and Prometheus'
 };
 
 /** Tabs available before any integration is configured. */

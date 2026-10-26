@@ -115,6 +115,40 @@ import {
   redisSlowlogResetInputSchema
 } from '@shared/schemas/redis';
 import {
+  grafanaDashboardsInputSchema,
+  grafanaSourceInputSchema,
+  investigateInputSchema,
+  lokiLabelValuesInputSchema,
+  lokiLiveStartInputSchema,
+  lokiLiveStopInputSchema,
+  lokiQueryInputSchema,
+  lokiSourceInputSchema,
+  lokiVolumeInputSchema,
+  observabilityOpenUrlInputSchema,
+  observabilityPickFileInputSchema,
+  observabilityServiceCreateInputSchema,
+  observabilityServiceIdInputSchema,
+  observabilityServiceListInputSchema,
+  observabilityServiceUpdateInputSchema,
+  observabilitySignalCreateInputSchema,
+  observabilitySignalIdInputSchema,
+  observabilitySignalListInputSchema,
+  observabilitySignalPreviewInputSchema,
+  observabilitySignalReorderInputSchema,
+  observabilitySignalUpdateInputSchema,
+  observabilitySourceCreateInputSchema,
+  observabilitySourceDraftInputSchema,
+  observabilitySourceIdInputSchema,
+  observabilitySourceListInputSchema,
+  observabilitySourceUpdateInputSchema,
+  prometheusMetricNamesInputSchema,
+  prometheusQueryInputSchema,
+  prometheusRangeInputSchema,
+  prometheusSourceInputSchema,
+  sentryEventInputSchema,
+  sentryIssuesInputSchema
+} from '@shared/schemas/observability';
+import {
   environmentCreateInputSchema,
   environmentIdInputSchema,
   environmentListInputSchema,
@@ -216,6 +250,7 @@ import {
 import type { DeploymentService } from '../services/deployment.service';
 import type { DockerService } from '../services/docker.service';
 import type { MongoService } from '../services/mongo.service';
+import type { ObservabilityService } from '../services/observability.service';
 import type { RedisService } from '../services/redis.service';
 import type { UiSettingsService } from '../services/ui-settings.service';
 import { createOverviewService } from '../services/overview.service';
@@ -252,6 +287,7 @@ export interface IpcContext {
   docker: DockerService;
   mongo: MongoService;
   redis: RedisService;
+  observability: ObservabilityService;
   ui: UiSettingsService;
   /** Supplied by the Electron layer; see src/main/index.ts. */
   readAppInfo: () => Promise<AppInfo>;
@@ -370,6 +406,7 @@ export function buildHandlerDefinitions(context: IpcContext): IpcHandlerDefiniti
         // Connections cascade away with the project, but their encrypted secrets and open clients would stay.
         await context.mongo.purgeProject(input.id);
         await context.redis.purgeProject(input.id);
+        context.observability.purgeProject(input.id);
         // The row would cascade away, but the encrypted token file would stay behind.
         context.github.purgeProject(input.id);
         return deleteProject(db, input.id);
@@ -1192,6 +1229,182 @@ export function buildHandlerDefinitions(context: IpcContext): IpcHandlerDefiniti
       channel: IPC_CHANNELS.redisPubsubPublish,
       schema: redisPubsubPublishInputSchema,
       handle: (input) => context.redis.publish(input)
+    }),
+
+    defineHandler({
+      channel: IPC_CHANNELS.observabilitySourcesList,
+      schema: observabilitySourceListInputSchema,
+      handle: (input) => context.observability.listSources(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.observabilitySourcesCreate,
+      schema: observabilitySourceCreateInputSchema,
+      handle: (input) => context.observability.createSource(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.observabilitySourcesUpdate,
+      schema: observabilitySourceUpdateInputSchema,
+      handle: (input) => context.observability.updateSource(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.observabilitySourcesDelete,
+      schema: observabilitySourceIdInputSchema,
+      handle: (input) => context.observability.removeSource(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.observabilitySourcesTest,
+      schema: observabilitySourceIdInputSchema,
+      handle: (input) => context.observability.testSource(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.observabilitySourcesTestDraft,
+      schema: observabilitySourceDraftInputSchema,
+      handle: (input) => context.observability.testDraft(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.observabilityPickFile,
+      schema: observabilityPickFileInputSchema,
+      handle: (input) => context.observability.pickFile(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.observabilityOpenUrl,
+      schema: observabilityOpenUrlInputSchema,
+      handle: (input) => context.observability.openUrl(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.observabilityGrafanaDashboards,
+      schema: grafanaDashboardsInputSchema,
+      handle: (input) => context.observability.grafanaDashboards(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.observabilityGrafanaDatasources,
+      schema: grafanaSourceInputSchema,
+      handle: (input) => context.observability.grafanaDatasources(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.observabilityGrafanaAlerts,
+      schema: grafanaSourceInputSchema,
+      handle: (input) => context.observability.grafanaAlerts(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.observabilityPrometheusQuery,
+      schema: prometheusQueryInputSchema,
+      handle: (input) => context.observability.prometheusQuery(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.observabilityPrometheusRange,
+      schema: prometheusRangeInputSchema,
+      handle: (input) => context.observability.prometheusRange(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.observabilityPrometheusTargets,
+      schema: prometheusSourceInputSchema,
+      handle: (input) => context.observability.prometheusTargets(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.observabilityPrometheusAlerts,
+      schema: prometheusSourceInputSchema,
+      handle: (input) => context.observability.prometheusAlerts(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.observabilityPrometheusMetricNames,
+      schema: prometheusMetricNamesInputSchema,
+      handle: (input) => context.observability.prometheusMetricNames(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.observabilityLokiLabels,
+      schema: lokiSourceInputSchema,
+      handle: (input) => context.observability.lokiLabels(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.observabilityLokiLabelValues,
+      schema: lokiLabelValuesInputSchema,
+      handle: (input) => context.observability.lokiLabelValues(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.observabilityLokiQuery,
+      schema: lokiQueryInputSchema,
+      handle: (input) => context.observability.lokiQuery(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.observabilityLokiVolume,
+      schema: lokiVolumeInputSchema,
+      handle: (input) => context.observability.lokiVolume(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.observabilityLokiStartLive,
+      schema: lokiLiveStartInputSchema,
+      handle: (input) => context.observability.lokiStartLive(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.observabilityLokiStopLive,
+      schema: lokiLiveStopInputSchema,
+      handle: (input) => context.observability.lokiStopLive(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.observabilityServicesList,
+      schema: observabilityServiceListInputSchema,
+      handle: (input) => context.observability.listServices(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.observabilityServicesCreate,
+      schema: observabilityServiceCreateInputSchema,
+      handle: (input) => context.observability.createService(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.observabilityServicesUpdate,
+      schema: observabilityServiceUpdateInputSchema,
+      handle: (input) => context.observability.updateService(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.observabilityServicesDelete,
+      schema: observabilityServiceIdInputSchema,
+      handle: (input) => context.observability.removeService(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.observabilitySignalsList,
+      schema: observabilitySignalListInputSchema,
+      handle: (input) => context.observability.listSignals(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.observabilitySignalsCreate,
+      schema: observabilitySignalCreateInputSchema,
+      handle: (input) => context.observability.createSignal(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.observabilitySignalsUpdate,
+      schema: observabilitySignalUpdateInputSchema,
+      handle: (input) => context.observability.updateSignal(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.observabilitySignalsDelete,
+      schema: observabilitySignalIdInputSchema,
+      handle: (input) => context.observability.removeSignal(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.observabilitySignalsReorder,
+      schema: observabilitySignalReorderInputSchema,
+      handle: (input) => context.observability.reorderSignals(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.observabilitySignalsPreview,
+      schema: observabilitySignalPreviewInputSchema,
+      handle: (input) => context.observability.previewSignal(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.observabilityInvestigate,
+      schema: investigateInputSchema,
+      handle: (input) => context.observability.investigate(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.observabilitySentryIssues,
+      schema: sentryIssuesInputSchema,
+      handle: (input) => context.observability.sentryIssues(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.observabilitySentryEvent,
+      schema: sentryEventInputSchema,
+      handle: (input) => context.observability.sentryEvent(input)
     })
   ];
 }
