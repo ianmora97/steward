@@ -1,4 +1,6 @@
 import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { Button } from './Button';
 import { useExitAnimation } from './useExitAnimation';
 
 /**
@@ -30,7 +32,7 @@ export function ConfirmDialog({
     return () => window.removeEventListener('keydown', onKey);
   }, [onCancel, requestClose]);
 
-  return (
+  return createPortal(
     <div className={`dialog__backdrop${closing ? ' is-closing' : ''}`} onClick={cancel}>
       <div
         className="dialog"
@@ -44,18 +46,15 @@ export function ConfirmDialog({
         </h3>
         <div className="dialog__body">{children}</div>
         <div className="dialog__actions">
-          <button type="button" className="button" onClick={cancel} autoFocus>
+          <Button onClick={cancel} autoFocus>
             Cancel
-          </button>
-          <button
-            type="button"
-            className="button button--danger"
-            onClick={() => requestClose(onConfirm)}
-          >
+          </Button>
+          <Button variant="danger" onClick={() => requestClose(onConfirm)}>
             {confirmLabel}
-          </button>
+          </Button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -4,6 +4,8 @@ import type { StewardError, StewardResult } from '@shared/types/result';
 import { ErrorBanner } from '../../components/ErrorBanner';
 import { Modal } from '../../components/Modal';
 import { useGithubStore } from '../../stores/github.store';
+import { Button } from '../../components/Button';
+import { Loading } from '../../components/Loading';
 
 /** Shows the end of a job log as plain text. The text is never interpreted as HTML. */
 export function JobLogModal({
@@ -63,7 +65,7 @@ export function JobLogModal({
         {unavailable && (
           <p className="card__hint">The log is not available (GitHub deletes logs after 90 days).</p>
         )}
-        {error === null && log === null && <p className="card__hint">Loading log…</p>}
+        {error === null && log === null && <Loading variant="line" lines={6} label="Loading log…" />}
         {log !== null && log.tooLarge && (
           <p className="card__hint">This log is too large to show here. Open the job on GitHub.</p>
         )}
@@ -80,13 +82,13 @@ export function JobLogModal({
       </div>
       <div className="dialog__actions">
         {jobUrl !== '' && (
-          <button type="button" className="button" onClick={() => openUrl(jobUrl)}>
+          <Button onClick={() => openUrl(jobUrl)}>
             Open on GitHub
-          </button>
+          </Button>
         )}
-        <button type="button" className="button button--primary" onClick={onClose}>
+        <Button variant="primary" onClick={onClose}>
           Close
-        </button>
+        </Button>
       </div>
     </Modal>
   );

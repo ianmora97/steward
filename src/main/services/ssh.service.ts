@@ -148,6 +148,7 @@ export function createSshService(deps: SshServiceDeps): SshService {
       identityFile: record.identityFile,
       environmentId: record.environmentId,
       environment: record.environmentName,
+      environmentIcon: record.environmentIcon,
       provider: record.provider,
       region: record.region,
       domain: record.domain,
@@ -171,14 +172,14 @@ export function createSshService(deps: SshServiceDeps): SshService {
     return path === null ? null : validateExistingFile(path).path;
   }
 
-  /** The environment's name, only if it belongs to the same project: a mismatch looks like "not found". */
-  function environmentNameFor(projectId: string, environmentId: string | null): string | null {
-    if (environmentId === null) return null;
+  /** The environment's name and icon, only if it belongs to the same project: a mismatch looks like "not found". */
+  function environmentFor(projectId: string, environmentId: string | null): { environmentName: string | null; environmentIcon: string | null } {
+    if (environmentId === null) return { environmentName: null, environmentIcon: null };
     const environment = findEnvironmentById(db, environmentId);
     if (environment === null || environment.projectId !== projectId) {
       throw new StewardServiceError('NOT_FOUND', 'that environment no longer exists');
     }
-    return environment.name;
+    return { environmentName: environment.name, environmentIcon: environment.icon };
   }
 
   function assertNameFree(projectId: string, name: string, exceptId: string | null): void {
@@ -401,7 +402,7 @@ export function createSshService(deps: SshServiceDeps): SshService {
         username: input.username,
         identityFile: keyPath(input.identityFile),
         environmentId: input.environmentId,
-        environmentName: environmentNameFor(input.projectId, input.environmentId),
+        ...environmentFor(input.projectId, input.environmentId),
         provider: input.provider,
         region: input.region,
         domain: input.domain,
@@ -428,7 +429,7 @@ export function createSshService(deps: SshServiceDeps): SshService {
         username: input.username,
         identityFile: keyPath(input.identityFile),
         environmentId: input.environmentId,
-        environmentName: environmentNameFor(existing.projectId, input.environmentId),
+        ...environmentFor(existing.projectId, input.environmentId),
         provider: input.provider,
         region: input.region,
         domain: input.domain,

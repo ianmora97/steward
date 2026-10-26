@@ -1,8 +1,11 @@
+import { createPortal } from 'react-dom';
 import { useEffect, useState } from 'react';
 import type { RedisConnection, RedisCountResult } from '@shared/schemas/redis';
 import type { StewardError } from '@shared/types/result';
 import { useExitAnimation } from '../../components/useExitAnimation';
 import { formatCount } from './redis-meta';
+import { Button } from '../../components/Button';
+import { toast } from '../../stores/toast.store';
 
 /**
  * Deleting by pattern shows how many keys match first, and deletes only if that number is still true when
@@ -51,13 +54,16 @@ export function PatternDeleteDialog({
       ...(needsName ? { confirmName: typed } : {})
     });
     setBusy(false);
-    if (result.success) onDone(result.data.deleted);
+    if (result.success) {
+      toast.success(`${formatCount(result.data.deleted)} keys deleted`);
+      onDone(result.data.deleted);
+    }
     else setProblem(result.error);
   }
 
   const ready = count !== null && count.count > 0 && (!needsName || typed === connection.name);
 
-  return (
+  return createPortal(
     <div className={`dialog__backdrop${closing ? ' is-closing' : ''}`} onClick={() => requestClose(onCancel)}>
       <div className="dialog" role="alertdialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
         <h3 className="dialog__title">Delete keys matching {pattern}?</h3>
@@ -87,14 +93,13 @@ export function PatternDeleteDialog({
           )}
         </div>
         <div className="dialog__actions">
-          <button type="button" className="button" onClick={() => requestClose(onCancel)}>
+          <Button onClick={() => requestClose(onCancel)}>
             Cancel
-          </button>
-          <button type="button" className="button button--danger" disabled={!ready || busy} onClick={() => void confirm()}>
-            {busy ? 'Deleting…' : 'Delete keys'}
-          </button>
+          </Button>
+          <Button variant="danger" loading={busy} loadingLabel="Deleting…" disabled={!ready || busy} onClick={() => void confirm()}>Delete keys</Button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

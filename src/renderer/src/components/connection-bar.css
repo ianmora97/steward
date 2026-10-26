@@ -1,0 +1,144 @@
+/* ConnectionBar: the slim header of a connected service. Geometry comes from the Redis bar, the reference. */
+.connbar {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px var(--space-3);
+  min-height: 40px;
+  padding: var(--space-1) 6px var(--space-1) 14px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.connbar__dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  background: var(--text-muted);
+  border-radius: 50%;
+}
+
+.connbar__dot--up {
+  background: var(--ok);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 22%, transparent);
+}
+
+.connbar__dot--down {
+  background: var(--danger);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger) 22%, transparent);
+}
+
+.connbar__title {
+  max-width: 340px;
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 20px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.connbar__meta {
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  line-height: 20px;
+  white-space: nowrap;
+}
+
+.connbar__spacer {
+  flex: 1;
+}
+
+.connbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.listrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: var(--control-h-lg);
+  padding: 9px 6px;
+  color: inherit;
+  font-family: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+}
+
+button.listrow {
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease-out);
+}
+
+button.listrow:hover,
+.listrow--selected {
+  background: var(--bg-sunken);
+}
+
+.listrow__icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-h-sm);
+  height: var(--control-h-sm);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border-radius: var(--radius-sm);
+}
+
+.listrow__text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.listrow__title {
+  overflow: hidden;
+  font-size: var(--font-size-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.listrow__title--mono {
+  font-family: var(--font-mono);
+}
+
+.listrow__meta {
+  overflow: hidden;
+  color: var(--text-dim);
+  font-size: var(--font-size-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.listrow__badges,
+.listrow__actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.listrows > li:last-child .listrow,
+.listrows > .listrow:last-child {
+  border-bottom: 0;
+}
+
+.listrows {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}

@@ -9,7 +9,9 @@ import type {
 import type { StewardError } from '@shared/types/result';
 import { Icon } from '../../components/Icon';
 import { Modal } from '../../components/Modal';
-import { Pill } from '../../components/Pill';
+import { Badge } from '../../components/Badge';
+import { Button } from '../../components/Button';
+import { toast } from '../../stores/toast.store';
 
 type Mode = 'uri' | 'form';
 type AuthMechanism = MongoConnectionOptions['authMechanism'];
@@ -39,17 +41,13 @@ function FilePicker({
       <span className="field__label">{label}</span>
       <span className="mgfilepick">
         <input className="field__input" value={value} onChange={(event) => onChange(event.target.value)} placeholder="Not set" spellCheck={false} />
-        <button
-          type="button"
-          className="button button--small"
-          onClick={() =>
+        <Button size="sm" onClick={() =>
             void window.steward.mongo.pickFile({ purpose }).then((result) => {
               if (result.success && !result.data.cancelled && result.data.value !== null) onChange(result.data.value);
             })
-          }
-        >
+          }>
           Browse…
-        </button>
+        </Button>
       </span>
     </label>
   );
@@ -92,6 +90,7 @@ export function ConnectionDialog({
   const [readOnlyChoice, setReadOnlyChoice] = useState<boolean | null>(existing?.readOnly ?? null);
   const [allowWrites, setAllowWrites] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<MongoTestResult | null>(null);
   const [problem, setProblem] = useState<StewardError | null>(null);
 
@@ -136,6 +135,7 @@ export function ConnectionDialog({
 
   async function test(): Promise<void> {
     setBusy(true);
+    setTesting(true);
     setProblem(null);
     setTestResult(null);
     const result =
@@ -148,6 +148,7 @@ export function ConnectionDialog({
             options: currentOptions()
           });
     setBusy(false);
+    setTesting(false);
     if (result.success) setTestResult(result.data);
     else setProblem(result.error);
   }
@@ -179,7 +180,10 @@ export function ConnectionDialog({
             ...(tlsKeyPassword === '' ? {} : { tlsKeyPassword })
           });
     setBusy(false);
-    if (result.success) onSaved(result.data);
+    if (result.success) {
+      toast.success(existing === null ? 'Connection added' : 'Connection saved');
+      onSaved(result.data);
+    }
     else setProblem(result.error);
   }
 
@@ -367,9 +371,9 @@ export function ConnectionDialog({
         </div>
 
         {testResult !== null && (
-          <Pill tone="success" icon="checkCircle">
+          <Badge tone="success" icon="checkCircle">
             Connected · MongoDB {testResult.serverVersion} · {testResult.latencyMs} ms · {testResult.topology}
-          </Pill>
+          </Badge>
         )}
         {problem !== null && (
           <div className="banner banner--error" role="alert">
@@ -379,16 +383,14 @@ export function ConnectionDialog({
         )}
 
         <div className="dialog__actions">
-          <button type="button" className="button" onClick={() => void test()} disabled={busy || !secretReady}>
-            {busy ? 'Working…' : 'Test connection'}
-          </button>
+          <Button loading={testing} loadingLabel="Testing…" disabled={!secretReady} onClick={() => void test()}>Test connection</Button>
           <span className="dpitem__spacer" />
-          <button type="button" className="button" onClick={onClose}>
+          <Button onClick={onClose}>
             Cancel
-          </button>
-          <button type="button" className="button button--primary" disabled={!canSave} onClick={() => void save()}>
+          </Button>
+          <Button variant="primary" disabled={!canSave} onClick={() => void save()}>
             {existing === null ? 'Save connection' : 'Save changes'}
-          </button>
+          </Button>
         </div>
       </div>
     </Modal>

@@ -1,7 +1,6 @@
-import type { ActivityEntry } from '@shared/schemas/overview';
 import type { TabKey } from '@shared/schemas/tabs';
 import type { IconName } from '../../components/Icon';
-import type { PillTone } from '../../components/Pill';
+import { EXECUTION_STATUS } from '../../components/execution-status';
 
 /** Where an entry in the activity list belongs, so clicking it opens the right tab of its project. */
 export const ACTIVITY_KIND: Record<string, { label: string; icon: IconName; tab: TabKey }> = {
@@ -17,14 +16,7 @@ export function activityKind(kind: string): { label: string; icon: IconName; tab
   return ACTIVITY_KIND[kind] ?? { label: 'Activity', icon: 'pulse', tab: 'git' };
 }
 
-export const ACTIVITY_STATUS: Record<ActivityEntry['status'], { tone: PillTone; label: string }> = {
-  succeeded: { tone: 'success', label: 'Done' },
-  failed: { tone: 'failure', label: 'Failed' },
-  timed_out: { tone: 'warning', label: 'Timed out' },
-  cancelled: { tone: 'neutral', label: 'Cancelled' },
-  running: { tone: 'running', label: 'Running' },
-  pending: { tone: 'running', label: 'Waiting' }
-};
+export const ACTIVITY_STATUS = EXECUTION_STATUS;
 
 const UNITS: Array<[Intl.RelativeTimeFormatUnit, number]> = [
   ['year', 31_536_000],

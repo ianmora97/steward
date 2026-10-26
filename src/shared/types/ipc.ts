@@ -1,5 +1,6 @@
 import type { StewardResult } from './result';
 import type { ActivityEntry, OverviewProject } from '../schemas/overview';
+import type { SetZoomInput, ZoomState } from '../schemas/ui';
 import type {
   CreateProjectInput,
   ListProjectsInput,
@@ -253,6 +254,8 @@ export const IPC_CHANNELS = {
   appGetInfo: 'app:getInfo',
   overviewSummary: 'overview:summary',
   overviewActivity: 'overview:activity',
+  uiGetZoom: 'ui:getZoom',
+  uiSetZoom: 'ui:setZoom',
 
   projectsList: 'projects:list',
   projectsCreate: 'projects:create',
@@ -453,6 +456,10 @@ export const REDIS_EVENTS = {
   subscriptionEnd: 'redis:subscription-end'
 } as const;
 
+export const UI_EVENTS = {
+  zoomChanged: 'ui:zoomChanged'
+} as const;
+
 export type IpcChannel =(typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS];
 
 export interface AppInfo {
@@ -483,6 +490,12 @@ export interface DirectoryPick {
 export interface StewardApi {
   app: {
     getInfo: () => Promise<StewardResult<AppInfo>>;
+  };
+  ui: {
+    getZoom: () => Promise<StewardResult<ZoomState>>;
+    setZoom: (input: SetZoomInput) => Promise<StewardResult<ZoomState>>;
+    /** Fires when the zoom changes without the renderer asking (Ctrl +, − and 0). */
+    onZoomChanged: (listener: (event: ZoomState) => void) => () => void;
   };
   overview: {
     /** What each project has configured, from stored data only (no network). */

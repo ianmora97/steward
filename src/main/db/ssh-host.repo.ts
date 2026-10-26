@@ -13,6 +13,7 @@ export interface SshHostRecord {
   environmentId: string | null;
   /** Read-only: resolved from `environments` when the record is loaded, never written back. */
   environmentName: string | null;
+  environmentIcon: string | null;
   provider: SshProvider | null;
   region: string | null;
   domain: string | null;
@@ -35,6 +36,7 @@ interface SshHostRow {
   identity_file: string | null;
   environment_id: string | null;
   environment_name: string | null;
+  environment_icon: string | null;
   provider: SshProvider | null;
   region: string | null;
   domain: string | null;
@@ -58,6 +60,7 @@ function toRecord(row: SshHostRow): SshHostRecord {
     identityFile: row.identity_file,
     environmentId: row.environment_id,
     environmentName: row.environment_name,
+    environmentIcon: row.environment_icon,
     provider: row.provider,
     region: row.region,
     domain: row.domain,
@@ -92,7 +95,7 @@ function toParams(host: SshHostRecord): Record<string, string | number | null> {
   };
 }
 
-const SELECT_HOST = `SELECT h.*, e.name AS environment_name
+const SELECT_HOST = `SELECT h.*, e.name AS environment_name, e.icon AS environment_icon
                         FROM ssh_hosts h LEFT JOIN environments e ON e.id = h.environment_id`;
 
 export function listSshHosts(db: SqlDatabase, projectId: string): SshHostRecord[] {

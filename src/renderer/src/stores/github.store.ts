@@ -13,6 +13,7 @@ import type {
 } from '@shared/schemas/github';
 import type { StewardError, StewardResult } from '@shared/types/result';
 import { useAppStore } from './app.store';
+import { toast } from './toast.store';
 
 /**
  * GitHub tab state. The token is typed into a form and sent once; nothing here
@@ -219,19 +220,26 @@ export const useGithubStore = create<GithubState>((set, get) => {
 
     connect: async (projectId, token) => {
       const connected = await run(projectId, api().github.connect({ projectId, token }));
-      if (connected) await useAppStore.getState().refreshTabs('github');
+      if (connected) {
+        toast.success('GitHub connected');
+        await useAppStore.getState().refreshTabs('github');
+      }
       return connected;
     },
 
     importFromGh: async (projectId) => {
       const connected = await run(projectId, api().github.importFromGh({ projectId }));
-      if (connected) await useAppStore.getState().refreshTabs('github');
+      if (connected) {
+        toast.success('GitHub connected from the gh CLI');
+        await useAppStore.getState().refreshTabs('github');
+      }
       return connected;
     },
 
     disconnect: async (projectId) => {
       const done = await run(projectId, api().github.disconnect({ projectId }));
       if (done) {
+        toast.success('GitHub disconnected');
         actionsEpoch++;
         set({ repositoryId: null, pulls: [], page: 1, hasNext: false, workflowId: null, ...EMPTY_ACTIONS });
         await useAppStore.getState().refreshTabs();
@@ -270,6 +278,7 @@ export const useGithubStore = create<GithubState>((set, get) => {
           return null;
         }
         set({ error: null });
+        toast.success(`Pull request #${result.data.number} created`);
         return result.data;
       } catch (cause) {
         set({ error: unreachableError(cause) });

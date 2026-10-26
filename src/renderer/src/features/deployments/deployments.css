@@ -1,5 +1,5 @@
 .panel.dppage {
-  gap: 16px;
+  gap: var(--space-4);
   max-width: 960px;
 }
 
@@ -8,13 +8,13 @@
   flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px 24px;
+  gap: var(--space-3) var(--space-6);
 }
 
 .dprow {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .dpmono {
@@ -26,27 +26,27 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .dpcolumns {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 16px;
+  gap: var(--space-4);
   align-items: start;
 }
 
 .dpcolumn {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .dpcolumn__title {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin: 0 0 4px;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-1);
   font-size: 15px;
   font-weight: 650;
 }
@@ -55,7 +55,7 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: 12px 14px;
+  padding: var(--space-3) 14px;
   background: var(--bg-raised);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -68,7 +68,7 @@
 .dptarget__head {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .dptarget__name {
@@ -85,20 +85,20 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  margin-top: 4px;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
 }
 
 .dptarget__last {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .dpsummary {
   display: grid;
   grid-template-columns: max-content 1fr;
-  gap: 8px 16px;
+  gap: var(--space-2) var(--space-4);
   margin: 0;
 }
 
@@ -113,7 +113,7 @@
 
 .dpcommand {
   margin: 0;
-  padding: 8px 10px;
+  padding: var(--space-2) 10px;
   background: var(--bg-sunken);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -155,7 +155,7 @@
 .dpdetail {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 0 14px 14px;
 }
 
@@ -173,13 +173,13 @@
 .dplog {
   max-height: 320px;
   margin: 0;
-  padding: 10px 12px;
+  padding: 10px var(--space-3);
   overflow: auto;
   background: var(--bg-sunken);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
-  font-size: 12.5px;
+  font-size: var(--font-size-sm);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
@@ -187,8 +187,8 @@
 .dpinputs {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 12px 14px;
+  gap: var(--space-3);
+  padding: var(--space-3) 14px;
   background: var(--bg-sunken);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -205,21 +205,21 @@
 }
 
 .dppage__subtitle {
-  margin: 4px 0 0;
+  margin: var(--space-1) 0 0;
   color: var(--text-muted);
 }
 
 .dpsection {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .dpsection__bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .dpsection__bar .card__hint {
@@ -229,7 +229,7 @@
 .dplist {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -238,7 +238,7 @@
 .dpitem {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 10px 14px;
   background: var(--bg-raised);
   border: 1px solid var(--border);
@@ -262,10 +262,78 @@
 .dpcheck {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: var(--space-2);
   color: var(--text-muted);
 }
 
 .dpcheck input {
-  margin-top: 4px;
+  margin-top: var(--space-1);
+}
+
+/* Environment icons ---------------------------------------------------------- */
+
+.envicons {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.envicons__preview,
+.envmark {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  color: var(--env, var(--text-muted));
+  background: color-mix(in srgb, var(--env, var(--text-muted)) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--env, var(--text-muted)) 38%, transparent);
+  border-radius: var(--radius-md);
+}
+
+.envicons__preview {
+  width: 42px;
+  height: 42px;
+}
+
+.envmark {
+  width: 28px;
+  height: 28px;
+}
+
+.envicons__grid {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 132px;
+  padding: 2px;
+  overflow-y: auto;
+}
+
+.envicon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  color: var(--text-muted);
+  background: var(--bg);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+
+.envicon:hover {
+  color: var(--text);
+  transform: translateY(-1px);
+}
+
+.envicon--on {
+  color: var(--env, var(--accent));
+  background: color-mix(in srgb, var(--env, var(--accent)) 14%, transparent);
+  border-color: var(--env, var(--accent));
 }

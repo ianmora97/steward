@@ -11,9 +11,12 @@ import type { StewardError } from '@shared/types/result';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { EmptyState } from '../../components/EmptyState';
 import { Icon } from '../../components/Icon';
-import { Pill } from '../../components/Pill';
+import { Badge } from '../../components/Badge';
 import { useRedisStore } from '../../stores/redis.store';
 import { formatBytes, formatCount, formatDuration, typeLabel } from './redis-meta';
+import { Button } from '../../components/Button';
+import { toast } from '../../stores/toast.store';
+import { Loading } from '../../components/Loading';
 
 type Section = 'dashboard' | 'slowlog' | 'clients' | 'memory' | 'config';
 
@@ -99,7 +102,7 @@ function Dashboard({ connection, onError }: { connection: RedisConnection; onErr
     [snapshots]
   );
 
-  if (latest === undefined) return <p className="card__hint">Reading the server…</p>;
+  if (latest === undefined) return <Loading lines={4} label="Reading the server…" />;
 
   const lookups = latest.keyspaceHits + latest.keyspaceMisses;
   const hitRate = lookups === 0 ? null : (latest.keyspaceHits / lookups) * 100;
@@ -108,13 +111,13 @@ function Dashboard({ connection, onError }: { connection: RedisConnection; onErr
   return (
     <div className="rddash">
       <div className="rddash__bar">
-        <Pill tone={latest.role === 'master' ? 'success' : 'warning'}>{latest.role}</Pill>
+        <Badge tone={latest.role === 'master' ? 'success' : 'warning'}>{latest.role}</Badge>
         <span className="card__hint">Redis {latest.version} · up {formatDuration(latest.uptimeSeconds)}</span>
-        {failing && <Pill tone="failure" icon="alert">Not answering; trying again</Pill>}
+        {failing && <Badge tone="failure" icon="alert">Not answering; trying again</Badge>}
         <span className="dpitem__spacer" />
-        <button type="button" className="button button--small" onClick={() => clearInfo(connection.id)}>
+        <Button size="sm" onClick={() => clearInfo(connection.id)}>
           Clear samples
-        </button>
+        </Button>
       </div>
 
       <div className="rdtiles">
@@ -161,14 +164,14 @@ function SlowLog({ connection, writable, onError }: { connection: RedisConnectio
       <div className="rdsection__bar">
         <span className="card__hint">The 128 most recent commands that took longer than the server's slowlog-log-slower-than.</span>
         <span className="dpitem__spacer" />
-        <button type="button" className="button button--small" onClick={() => setVersion((value) => value + 1)}>
+        <Button size="sm" onClick={() => setVersion((value) => value + 1)}>
           <Icon name="refresh" size={14} /> Refresh
-        </button>
-        <button type="button" className="button button--small button--danger-text" disabled={!writable || entries === null || entries.length === 0} title={writable ? undefined : 'Read-only connection'} onClick={() => setResetting(true)}>
+        </Button>
+        <Button size="sm" dangerText disabled={!writable || entries === null || entries.length === 0} title={writable ? undefined : 'Read-only connection'} onClick={() => setResetting(true)}>
           Reset
-        </button>
+        </Button>
       </div>
-      {entries === null && <p className="card__hint">Reading the slow log…</p>}
+      {entries === null && <Loading variant="line" lines={4} label="Reading the slow log…" />}
       {entries !== null && entries.length === 0 && <p className="card__hint">The slow log is empty.</p>}
       {entries !== null && entries.length > 0 && (
         <table className="rdtable">
@@ -193,8 +196,10 @@ function SlowLog({ connection, writable, onError }: { connection: RedisConnectio
           onConfirm={() => {
             setResetting(false);
             void window.steward.redis.resetSlowlog({ connectionId: connection.id, confirmed: true }).then((result) => {
-              if (result.success) setVersion((value) => value + 1);
-              else onError(result.error);
+              if (result.success) {
+                toast.success('Slow log reset');
+                setVersion((value) => value + 1);
+              } else onError(result.error);
             });
           }}
         >
@@ -229,9 +234,9 @@ function Clients({ connection, onError }: { connection: RedisConnection; onError
       <div className="rdsection__bar">
         <span className="card__hint">{clients === null ? 'Reading clients…' : `${clients.length} client${clients.length === 1 ? '' : 's'} connected`}</span>
         <span className="dpitem__spacer" />
-        <button type="button" className="button button--small" onClick={() => setVersion((value) => value + 1)}>
+        <Button size="sm" onClick={() => setVersion((value) => value + 1)}>
           <Icon name="refresh" size={14} /> Refresh
-        </button>
+        </Button>
       </div>
       {clients !== null && clients.length > 0 && (
         <table className="rdtable">
@@ -287,7 +292,7 @@ function Config({ connection, onError }: { connection: RedisConnection; onError:
         </label>
         <span className="card__hint">Read only. Passwords are hidden. Change a setting from the Workbench with CONFIG SET.</span>
       </div>
-      {entries === null && <p className="card__hint">Reading the configuration…</p>}
+      {entries === null && <Loading variant="line" lines={5} label="Reading the configuration…" />}
       {entries !== null && visible.length === 0 && <p className="card__hint">{entries.length === 0 ? 'The server did not return its configuration (CONFIG may be disabled).' : 'No settings match.'}</p>}
       {visible.length > 0 && (
         <table className="rdtable">
@@ -361,9 +366,7 @@ function MemoryAnalysis({ connection, onError }: { connection: RedisConnection; 
           <span className="field__label">Pattern</span>
           <input className="field__input" value={pattern} onChange={(event) => setPattern(event.target.value)} placeholder="*" spellCheck={false} />
         </label>
-        <button type="button" className="button button--primary" disabled={busy} onClick={() => void analyze()}>
-          {busy ? 'Measuring…' : 'Analyze'}
-        </button>
+        <Button variant="primary" loading={busy} loadingLabel="Measuring…" onClick={() => void analyze()}>Analyze</Button>
       </div>
       {report === null ? (
         <EmptyState title="Where is the memory going?" description="Steward measures a sample of keys with MEMORY USAGE and groups them by prefix and type. It is an estimate of the sample, not an inventory." />

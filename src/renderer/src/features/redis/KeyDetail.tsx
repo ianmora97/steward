@@ -11,11 +11,15 @@ import type { StewardError, StewardResult } from '@shared/types/result';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { Icon } from '../../components/Icon';
 import { Modal } from '../../components/Modal';
-import { Pill } from '../../components/Pill';
+import { Badge } from '../../components/Badge';
 import { EditDialog, type FieldSpec } from './EditDialog';
 import { secondsUntil } from './ExpiryField';
 import { formatBytes, formatCount, formatDuration, formatTtl, typeLabel, typeTone } from './redis-meta';
 import { ValueView } from './ValueView';
+import { IconButton } from '../../components/IconButton';
+import { Button } from '../../components/Button';
+import { toast } from '../../stores/toast.store';
+import { Loading } from '../../components/Loading';
 
 /** What is open over the key: a form for one change, a confirmation, or a value shown in full. */
 type Dialog =
@@ -61,13 +65,9 @@ function RowActions({ editable, onEdit, onDelete }: { editable: boolean; onEdit?
   return (
     <span className="rdrow__actions">
       {onEdit !== undefined && (
-        <button type="button" className="iconbutton" title={editable ? 'Edit' : 'Read-only, or not text'} aria-label="Edit" disabled={!editable} onClick={onEdit}>
-          <Icon name="edit" size={14} />
-        </button>
+        <IconButton icon="edit" label={editable ? 'Edit' : 'Read-only, or not text'} disabled={!editable} size={14} onClick={onEdit} />
       )}
-      <button type="button" className="iconbutton" title="Remove" aria-label="Remove" disabled={!editable && onEdit === undefined} onClick={onDelete}>
-        <Icon name="trash" size={14} />
-      </button>
+      <IconButton icon="trash" label="Remove" disabled={!editable && onEdit === undefined} size={14} onClick={onDelete} />
     </span>
   );
 }
@@ -134,7 +134,10 @@ export function KeyDetail({
   }
 
   function write(op: RedisWriteOp): Promise<StewardResult<unknown>> {
-    return window.steward.redis.writeKey({ connectionId: connection.id, key: keyName, op });
+    return window.steward.redis.writeKey({ connectionId: connection.id, key: keyName, op }).then((result) => {
+      if (result.success) toast.success('Key updated');
+      return result;
+    });
   }
 
   function edit(spec: Omit<Extract<Dialog, { kind: 'edit' }>, 'kind'>): void {
@@ -284,9 +287,9 @@ export function KeyDetail({
         return (
           <>
             <div className="rdbody__tools">
-              <button type="button" className="button button--small" disabled={!editable} title={editable ? undefined : current.truncated ? 'Too large to edit here' : text === null ? 'Binary value' : 'Read-only connection'} onClick={() => editString(text ?? '')}>
+              <Button size="sm" disabled={!editable} title={editable ? undefined : current.truncated ? 'Too large to edit here' : text === null ? 'Binary value' : 'Read-only connection'} onClick={() => editString(text ?? '')}>
                 <Icon name="edit" size={14} /> Edit
-              </button>
+              </Button>
               <span className="card__hint">{formatBytes(current.length)}</span>
             </div>
             <ValueView encoded={current.value} {...(current.truncated ? { notice: `Showing the first ${formatBytes(current.value.length)} of ${formatBytes(current.length)}` } : {})} />
@@ -297,9 +300,9 @@ export function KeyDetail({
         return (
           <>
             <div className="rdbody__tools">
-              <button type="button" className="button button--small" disabled={!writable} onClick={() => hashField(null, '')}>
+              <Button size="sm" disabled={!writable} onClick={() => hashField(null, '')}>
                 <Icon name="plus" size={14} /> Add field
-              </button>
+              </Button>
               <span className="card__hint">{formatCount(current.entries.length)} of {formatCount(current.total)} fields</span>
             </div>
             <table className="rdtable">
@@ -332,12 +335,12 @@ export function KeyDetail({
         return (
           <>
             <div className="rdbody__tools">
-              <button type="button" className="button button--small" disabled={!writable} onClick={() => listPush('left')}>
+              <Button size="sm" disabled={!writable} onClick={() => listPush('left')}>
                 <Icon name="plus" size={14} /> Push to head
-              </button>
-              <button type="button" className="button button--small" disabled={!writable} onClick={() => listPush('right')}>
+              </Button>
+              <Button size="sm" disabled={!writable} onClick={() => listPush('right')}>
                 <Icon name="plus" size={14} /> Push to tail
-              </button>
+              </Button>
               <span className="card__hint">{formatCount(current.items.length)} of {formatCount(current.total)} items</span>
             </div>
             <table className="rdtable">
@@ -371,9 +374,9 @@ export function KeyDetail({
         return (
           <>
             <div className="rdbody__tools">
-              <button type="button" className="button button--small" disabled={!writable} onClick={setAdd}>
+              <Button size="sm" disabled={!writable} onClick={setAdd}>
                 <Icon name="plus" size={14} /> Add member
-              </button>
+              </Button>
               <span className="card__hint">{formatCount(current.members.length)} of {formatCount(current.total)} members</span>
             </div>
             <table className="rdtable">
@@ -393,9 +396,9 @@ export function KeyDetail({
         return (
           <>
             <div className="rdbody__tools">
-              <button type="button" className="button button--small" disabled={!writable} onClick={() => zsetEdit(null, null)}>
+              <Button size="sm" disabled={!writable} onClick={() => zsetEdit(null, null)}>
                 <Icon name="plus" size={14} /> Add member
-              </button>
+              </Button>
               <span className="card__hint">{formatCount(current.members.length)} of {formatCount(current.total)} members, lowest score first</span>
             </div>
             <table className="rdtable">
@@ -427,12 +430,12 @@ export function KeyDetail({
         return (
           <>
             <div className="rdbody__tools">
-              <button type="button" className="button button--small" disabled={!writable} onClick={streamAdd}>
+              <Button size="sm" disabled={!writable} onClick={streamAdd}>
                 <Icon name="plus" size={14} /> Add entry
-              </button>
-              <button type="button" className="button button--small" onClick={() => void loadStream()}>
+              </Button>
+              <Button size="sm" onClick={() => void loadStream()}>
                 Groups and consumers
-              </button>
+              </Button>
               <span className="card__hint">{formatCount(current.entries.length)} of {formatCount(current.total)} entries, newest first</span>
             </div>
             {stream !== null && (
@@ -491,15 +494,9 @@ export function KeyDetail({
         return (
           <>
             <div className="rdbody__tools">
-              <button
-                type="button"
-                className="button button--small"
-                disabled={!writable || !hasJson || current.truncated}
-                title={!hasJson ? 'RedisJSON is not loaded on this server' : current.truncated ? 'Too large to edit here' : undefined}
-                onClick={() => jsonEdit(current.value)}
-              >
+              <Button size="sm" disabled={!writable || !hasJson || current.truncated} title={!hasJson ? 'RedisJSON is not loaded on this server' : current.truncated ? 'Too large to edit here' : undefined} onClick={() => jsonEdit(current.value)}>
                 <Icon name="edit" size={14} /> Edit
-              </button>
+              </Button>
             </div>
             <ValueView encoded={encodeTextBase64(current.value)} {...(current.truncated ? { notice: 'Truncated at 1 MB' } : {})} />
           </>
@@ -509,7 +506,7 @@ export function KeyDetail({
     }
   }
 
-  if (loading && meta === null) return <p className="card__hint">Reading the key…</p>;
+  if (loading && meta === null) return <Loading variant="line" lines={6} label="Reading the key…" />;
   if (meta === null || page === null) return <p className="card__hint">That key could not be read.</p>;
 
   const next = 'next' in page ? page.next : null;
@@ -518,11 +515,9 @@ export function KeyDetail({
     <div className="rddetail">
       <header className="rddetail__head">
         <div className="rddetail__title">
-          <Pill tone={typeTone(meta.type)}>{typeLabel(meta.type)}</Pill>
+          <Badge tone={typeTone(meta.type)}>{typeLabel(meta.type)}</Badge>
           <h3 className="rddetail__name dpmono" title={meta.key}>{meta.key}</h3>
-          <button type="button" className="iconbutton" title="Copy the key name" aria-label="Copy the key name" onClick={() => void navigator.clipboard.writeText(meta.key)}>
-            <Icon name="file" size={14} />
-          </button>
+          <IconButton icon="file" label="Copy the key name" size={14} onClick={() => void navigator.clipboard.writeText(meta.key)} />
         </div>
         <div className="rddetail__meta">
           <span title="Time to live">
@@ -530,28 +525,26 @@ export function KeyDetail({
           </span>
           {writable && (
             <>
-              <button type="button" className="button button--small" onClick={ttlEdit}>Set expiry</button>
-              {meta.ttlMs !== null && <button type="button" className="button button--small" onClick={() => void persist()}>Persist</button>}
+              <Button size="sm" onClick={ttlEdit}>Set expiry</Button>
+              {meta.ttlMs !== null && <Button size="sm" onClick={() => void persist()}>Persist</Button>}
             </>
           )}
           {meta.encoding !== null && <span className="card__hint">encoding {meta.encoding}</span>}
           {memory === undefined ? (
-            <button type="button" className="button button--small" onClick={() => void measure()} title="MEMORY USAGE can be slow on a huge key, so it runs only when asked">
+            <Button size="sm" onClick={() => void measure()} title="MEMORY USAGE can be slow on a huge key, so it runs only when asked">
               Measure memory
-            </button>
+            </Button>
           ) : (
             <span className="card__hint">{memory === null ? 'memory unknown' : formatBytes(memory)}</span>
           )}
           <span className="dpitem__spacer" />
-          <button type="button" className="iconbutton" title="Read the key again" aria-label="Read the key again" onClick={reload}>
-            <Icon name="refresh" size={14} />
-          </button>
+          <IconButton icon="refresh" label="Read the key again" size={14} onClick={reload} />
           {writable && (
             <>
-              <button type="button" className="button button--small" onClick={() => setDialog({ kind: 'rename' })}>Rename</button>
-              <button type="button" className="button button--small button--danger-text" onClick={() => setDialog({ kind: 'delete' })}>
+              <Button size="sm" onClick={() => setDialog({ kind: 'rename' })}>Rename</Button>
+              <Button size="sm" dangerText onClick={() => setDialog({ kind: 'delete' })}>
                 <Icon name="trash" size={14} /> Delete
-              </button>
+              </Button>
             </>
           )}
         </div>
@@ -561,9 +554,7 @@ export function KeyDetail({
         {body(page)}
         {next !== null && (
           <div className="rdbrowser__more">
-            <button type="button" className="button button--small" disabled={loadingMore} onClick={() => void loadMore()}>
-              {loadingMore ? 'Loading…' : 'Load more'}
-            </button>
+            <Button size="sm" loading={loadingMore} loadingLabel="Loading…" onClick={() => void loadMore()}>Load more</Button>
           </div>
         )}
       </div>
@@ -626,6 +617,7 @@ export function KeyDetail({
             setDialog(null);
             void window.steward.redis.deleteKey({ connectionId: connection.id, key: meta.key, confirmed: true }).then((result) => {
               if (result.success) {
+                toast.success('Key deleted');
                 onChanged();
                 onGone();
               } else onError(result.error);

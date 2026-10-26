@@ -6,6 +6,11 @@ import { ErrorBanner } from '../../components/ErrorBanner';
 import { Icon } from '../../components/Icon';
 import { Modal } from '../../components/Modal';
 import { destinationOf } from './ssh-meta';
+import { Button } from '../../components/Button';
+import { Badge } from '../../components/Badge';
+import { Loading } from '../../components/Loading';
+import { EXECUTION_STATUS } from '../../components/execution-status';
+import { toast } from '../../stores/toast.store';
 
 /** The decision point for an unknown host key: nothing is trusted unless this dialog's Trust button is clicked. */
 export function HostKeyReview({
@@ -41,15 +46,17 @@ export function HostKeyReview({
       fingerprints: scan.keys.map((key) => key.fingerprint)
     });
     setBusy(false);
-    if (result.success) onDone(result.data);
-    else setError(result.error);
+    if (result.success) {
+      toast.success('Host key trusted');
+      onDone(result.data);
+    } else setError(result.error);
   }
 
   return (
     <Modal title={`Trust ${host.name}?`} className="dialog--ssh" onClose={onDecline}>
       <div className="sshreview">
         {error !== null && <ErrorBanner error={error} onDismiss={() => setError(null)} />}
-        {scan === null && error === null && <p className="card__hint">Fetching the host key…</p>}
+        {scan === null && error === null && <Loading variant="line" lines={4} label="Fetching the host key…" />}
         {scan !== null && (
           <>
             <p>
@@ -62,7 +69,7 @@ export function HostKeyReview({
             <ul className="sshreview__keys">
               {scan.keys.map((key) => (
                 <li key={`${key.type}-${key.fingerprint}`}>
-                  <span className="pill pill--dim">{key.type}</span> <code>{key.fingerprint}</code>
+                  <Badge tone="neutral">{key.type}</Badge> <code>{key.fingerprint}</code>
                 </li>
               ))}
             </ul>
@@ -70,12 +77,12 @@ export function HostKeyReview({
           </>
         )}
         <div className="dialog__actions">
-          <button type="button" className="button" onClick={onDecline}>
+          <Button onClick={onDecline}>
             Decline
-          </button>
-          <button type="button" className="button button--primary" disabled={scan === null || busy} onClick={() => void trust()}>
+          </Button>
+          <Button variant="primary" disabled={scan === null || busy} onClick={() => void trust()}>
             Trust this host
-          </button>
+          </Button>
         </div>
       </div>
     </Modal>
@@ -130,15 +137,13 @@ export function CommandRunner({ host, onRan }: { host: SshHost; onRan: () => voi
           <option value={120}>2 min</option>
           <option value={300}>5 min</option>
         </select>
-        <button type="submit" className="button button--primary" disabled={running || command.trim() === ''}>
-          {running ? 'Running…' : 'Run'}
-        </button>
+        <Button variant="primary" loading={running} loadingLabel="Running…" disabled={command.trim() === ''} type="submit">Run</Button>
       </form>
       {error !== null && <ErrorBanner error={error} onDismiss={() => setError(null)} />}
       {result !== null && (
         <div className="sshrun__result">
           <p className="activity__meta">
-            <span className={`chip chip--${result.status}`}>exit {result.exitCode}</span> {result.durationMs} ms
+            <Badge tone={EXECUTION_STATUS[result.status].tone}>exit {result.exitCode}</Badge> {result.durationMs} ms
             {result.truncated ? ' · output truncated' : ''}
           </p>
           <h4 className="sshrun__label">stdout</h4>
@@ -161,8 +166,8 @@ export function RemoteHistory({ executions }: { executions: Execution[] }): Reac
             <code className="activity__command">
               {execution.kind === 'ssh_command' ? (execution.args[1] ?? '') : execution.kind.replace('ssh_', '')}
             </code>
-            <span className={`chip chip--${execution.status}`}>{execution.status.replace('_', ' ')}</span>
-            <span className="pill pill--dim">remote</span>
+            <Badge tone={EXECUTION_STATUS[execution.status].tone}>{EXECUTION_STATUS[execution.status].label}</Badge>
+            <Badge tone="neutral">remote</Badge>
           </div>
           <p className="activity__meta">
             {new Date(execution.startedAt).toLocaleString()} · {execution.durationMs ?? '?'} ms · exit{' '}

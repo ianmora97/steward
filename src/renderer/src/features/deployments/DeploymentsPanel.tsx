@@ -13,6 +13,9 @@ import { HistoryView } from './HistoryView';
 import { TargetsView } from './TargetsView';
 import { isActive, targetDestination } from './deployment-meta';
 import './deployments.css';
+import { Loading } from '../../components/Loading';
+import { PageHeader } from '../../components/PageHeader';
+import { toast } from '../../stores/toast.store';
 
 type View = 'targets' | 'history' | 'environments';
 
@@ -109,27 +112,26 @@ export function DeploymentsPanel(): React.JSX.Element {
     <div className="panel dppage">
       {error !== null && <ErrorBanner error={error} onDismiss={() => setError(null)} />}
 
-      <header className="dppage__head">
-        <div>
-          <h2 className="dppage__title">Deployments</h2>
-          <p className="dppage__subtitle">
-            Environments, deploy targets and what was deployed where. A deployment is reported as succeeded only when
-            the provider or the exit code says so.
-          </p>
-        </div>
-        <div className="segmented" role="group" aria-label="Deployments view">
-          {(Object.keys(VIEW_LABEL) as View[]).map((value) => (
-            <button
-              key={value}
-              type="button"
-              className={`segmented__option${view === value ? ' segmented__option--active' : ''}`}
-              onClick={() => setChosenView(value)}
-            >
-              {VIEW_LABEL[value]}
-            </button>
-          ))}
-        </div>
-      </header>
+      <PageHeader
+        title="Deployments"
+        subtitle="Environments, deploy targets and what was deployed where. A deployment is reported as succeeded only when the provider or the exit code says so."
+        actions={
+          <div className="segmented" role="group" aria-label="Deployments view">
+            {(Object.keys(VIEW_LABEL) as View[]).map((value) => (
+              <button
+                key={value}
+                type="button"
+                className={`segmented__option${view === value ? ' segmented__option--active' : ''}`}
+                onClick={() => setChosenView(value)}
+              >
+                {VIEW_LABEL[value]}
+              </button>
+            ))}
+          </div>
+        }
+      />
+
+      {!loaded && <Loading lines={4} label="Loading deployments…" />}
 
       {loaded && view === 'targets' && (
         <TargetsView
@@ -164,6 +166,7 @@ export function DeploymentsPanel(): React.JSX.Element {
           destination={targetDestination(deploying, hostsById, repositoriesById)}
           onClose={() => setDeploying(null)}
           onStarted={(started) => {
+            toast.success(`Deploy of ${deploying.name} started`);
             setDeployments((current) => [started, ...current]);
             setChosenView('history');
           }}

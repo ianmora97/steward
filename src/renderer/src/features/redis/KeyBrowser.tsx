@@ -2,8 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { RedisConnection, RedisKeyEntry } from '@shared/schemas/redis';
 import type { StewardError } from '@shared/types/result';
 import { Icon } from '../../components/Icon';
-import { Pill } from '../../components/Pill';
+import { Badge } from '../../components/Badge';
 import { formatCount, formatTtl, KEY_TYPES, typeLabel, typeTone } from './redis-meta';
+import { IconButton } from '../../components/IconButton';
+import { Button } from '../../components/Button';
 
 const ROW_LIMIT = 2000;
 
@@ -192,9 +194,7 @@ export function KeyBrowser({
             </option>
           ))}
         </select>
-        <button type="button" className="iconbutton" title="Scan again" aria-label="Scan again" onClick={() => setReload((value) => value + 1)}>
-          <Icon name="refresh" size={14} />
-        </button>
+        <IconButton icon="refresh" label="Scan again" size={14} onClick={() => setReload((value) => value + 1)} />
       </form>
 
       <div className="rdbrowser__tools">
@@ -206,19 +206,10 @@ export function KeyBrowser({
           ))}
         </div>
         <span className="dpitem__spacer" />
-        <button
-          type="button"
-          className="iconbutton iconbutton--danger"
-          disabled={!writable || patternInput.trim() === ''}
-          title={writable ? (patternInput.trim() === '' ? 'Type a pattern to delete the keys that match it' : `Delete every key matching ${patternInput.trim()}`) : 'Read-only connection'}
-          aria-label="Delete keys matching the pattern"
-          onClick={() => onDeletePattern(patternInput.trim())}
-        >
-          <Icon name="trash" size={15} />
-        </button>
-        <button type="button" className="button button--small button--primary" disabled={!writable} title={writable ? 'Create a key' : 'Read-only connection'} onClick={onNewKey}>
+        <IconButton icon="trash" label={writable ? (patternInput.trim() === '' ? 'Type a pattern to delete the keys that match it' : `Delete every key matching ${patternInput.trim()}`) : 'Read-only connection'} tone="danger" disabled={!writable || patternInput.trim() === ''} onClick={() => onDeletePattern(patternInput.trim())} />
+        <Button variant="primary" size="sm" disabled={!writable} title={writable ? 'Create a key' : 'Read-only connection'} onClick={onNewKey}>
           <Icon name="plus" size={14} /> New key
-        </button>
+        </Button>
       </div>
 
       <p
@@ -252,7 +243,7 @@ export function KeyBrowser({
                 onClick={() => onSelect(row.id)}
                 title={row.entry?.key}
               >
-                <Pill tone={typeTone(row.entry?.type ?? '')}>{typeLabel(row.entry?.type ?? '')}</Pill>
+                <Badge tone={typeTone(row.entry?.type ?? '')}>{typeLabel(row.entry?.type ?? '')}</Badge>
                 <span className="rdkeys__name">{row.label}</span>
                 {row.entry?.ttlMs !== null && row.entry?.ttlMs !== undefined && <span className="card__hint">{formatTtl(row.entry.ttlMs)}</span>}
               </button>
@@ -274,9 +265,9 @@ export function KeyBrowser({
         ) : finished ? (
           keys.length > 0 && <span className="card__hint">Scan complete.</span>
         ) : (
-          <button type="button" className="button button--small" onClick={() => void loadMore()}>
+          <Button size="sm" onClick={() => void loadMore()}>
             Load more
-          </button>
+          </Button>
         )}
       </div>
     </div>

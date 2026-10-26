@@ -4,6 +4,7 @@ import type { StewardError } from '@shared/types/result';
 import { ErrorBanner } from '../../components/ErrorBanner';
 import { Modal } from '../../components/Modal';
 import { useGithubStore } from '../../stores/github.store';
+import { Button } from '../../components/Button';
 
 type Step = 'edit' | 'confirm' | 'done';
 
@@ -172,37 +173,30 @@ export function CreatePullModal({
       <div className="dialog__actions">
         {step === 'edit' && (
           <>
-            <button type="button" className="button" onClick={onClose}>
+            <Button onClick={onClose}>
               Cancel
-            </button>
-            <button type="button" className="button button--primary" disabled={!ready} onClick={() => setStep('confirm')}>
+            </Button>
+            <Button variant="primary" disabled={!ready} onClick={() => setStep('confirm')}>
               Review
-            </button>
+            </Button>
           </>
         )}
         {step === 'confirm' && (
           <>
-            <button type="button" className="button" disabled={submitting} onClick={() => setStep('edit')}>
+            <Button disabled={submitting} onClick={() => setStep('edit')}>
               Back
-            </button>
-            <button
-              type="button"
-              className="button button--primary"
-              disabled={submitting}
-              onClick={() => void submit()}
-            >
-              {submitting ? 'Creating…' : 'Create pull request'}
-            </button>
+            </Button>
+            <Button variant="primary" loading={submitting} loadingLabel="Creating…" onClick={() => void submit()}>Create pull request</Button>
           </>
         )}
         {step === 'done' && created !== null && (
           <>
-            <button type="button" className="button" onClick={() => void openUrl(created.url)}>
+            <Button onClick={() => void openUrl(created.url)}>
               Open on GitHub
-            </button>
-            <button type="button" className="button button--primary" onClick={onClose}>
+            </Button>
+            <Button variant="primary" onClick={onClose}>
               Close
-            </button>
+            </Button>
           </>
         )}
       </div>

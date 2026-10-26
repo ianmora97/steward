@@ -4,6 +4,8 @@ import type { StewardError } from '@shared/types/result';
 import { EmptyState } from '../../components/EmptyState';
 import { Icon } from '../../components/Icon';
 import { formatSize } from './Explorer';
+import { Loading } from '../../components/Loading';
+import { Badge } from '../../components/Badge';
 
 /** Every collection of one database as cards; statistics fill in one by one so a large database does not block the list. */
 export function DatabaseView({
@@ -43,7 +45,7 @@ export function DatabaseView({
     };
   }, [connection.id, db, onError]);
 
-  if (collections === null) return <p className="card__hint">Loading collections…</p>;
+  if (collections === null) return <Loading lines={4} label="Loading collections…" />;
 
   return (
     <div className="mgdb">
@@ -69,7 +71,9 @@ export function DatabaseView({
                     <span className="mgtree__name">{info.name}</span>
                   </span>
                   <span className="mgdb__meta">
-                    {info.type !== 'collection' && <span className="mgtypechip">{info.type}</span>}
+                    {info.type !== 'collection' && <Badge tone="neutral" size="sm">
+                        {info.type}
+                      </Badge>}
                     {own === undefined ? (
                       info.type === 'view' ? null : <span className="card__hint">…</span>
                     ) : (

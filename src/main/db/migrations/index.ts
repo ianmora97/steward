@@ -610,6 +610,13 @@ const m019: Migration = {
   `
 };
 
+/** An environment can carry an icon the user picks (Staging, Production, Local…). */
+const m020: Migration = {
+  version: 20,
+  name: 'environment-icon',
+  sql: `ALTER TABLE environments ADD COLUMN icon TEXT;`
+};
+
 export const MIGRATIONS: readonly Migration[] = [
   m001,
   m002,
@@ -629,7 +636,8 @@ export const MIGRATIONS: readonly Migration[] = [
   m016,
   m017,
   m018,
-  m019
+  m019,
+  m020
 ];
 
 export const LATEST_SCHEMA_VERSION = MIGRATIONS.reduce((max, m) => Math.max(max, m.version), 0);

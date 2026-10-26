@@ -1,5 +1,6 @@
 import type { z } from 'zod';
 import { emptyPayloadSchema } from '@shared/schemas/common';
+import { setZoomInputSchema } from '@shared/schemas/ui';
 import {
   createProjectInputSchema,
   listProjectsInputSchema,
@@ -216,6 +217,7 @@ import type { DeploymentService } from '../services/deployment.service';
 import type { DockerService } from '../services/docker.service';
 import type { MongoService } from '../services/mongo.service';
 import type { RedisService } from '../services/redis.service';
+import type { UiSettingsService } from '../services/ui-settings.service';
 import { createOverviewService } from '../services/overview.service';
 import type { GithubIntegrationService } from '../services/github-integration.service';
 import type { GithubActionsService } from '../services/github-actions.service';
@@ -250,6 +252,7 @@ export interface IpcContext {
   docker: DockerService;
   mongo: MongoService;
   redis: RedisService;
+  ui: UiSettingsService;
   /** Supplied by the Electron layer; see src/main/index.ts. */
   readAppInfo: () => Promise<AppInfo>;
   /** Opens the OS folder picker. Cancelling is a normal outcome, not an error. */
@@ -311,6 +314,16 @@ export function buildHandlerDefinitions(context: IpcContext): IpcHandlerDefiniti
       channel: IPC_CHANNELS.appGetInfo,
       schema: emptyPayloadSchema,
       handle: () => context.readAppInfo()
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.uiGetZoom,
+      schema: emptyPayloadSchema,
+      handle: () => ({ zoom: context.ui.getZoom() })
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.uiSetZoom,
+      schema: setZoomInputSchema,
+      handle: (input) => ({ zoom: context.ui.setZoom(input.zoom) })
     }),
     defineHandler({
       channel: IPC_CHANNELS.overviewSummary,

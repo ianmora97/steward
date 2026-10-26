@@ -2,10 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import { REDIS_PUBSUB_MAX_SUBSCRIPTIONS, type RedisConnection } from '@shared/schemas/redis';
 import { previewValue } from '@shared/redis/value-format';
 import type { StewardError } from '@shared/types/result';
-import { Icon } from '../../components/Icon';
-import { Pill } from '../../components/Pill';
+
+import { Badge } from '../../components/Badge';
 import { useRedisStore, type RedisSubscriptionView } from '../../stores/redis.store';
 import { ValueView } from './ValueView';
+import { Button } from '../../components/Button';
+import { toast } from '../../stores/toast.store';
+import { Chip } from '../../components/Chip';
 
 function words(text: string): string[] {
   return text
@@ -80,8 +83,10 @@ export function PubSub({
   async function publish(): Promise<void> {
     if (publishChannel.trim() === '') return;
     const result = await window.steward.redis.publish({ connectionId: connection.id, channel: publishChannel.trim(), message: publishMessage });
-    if (result.success) setReceivers(result.data.receivers);
-    else onError(result.error);
+    if (result.success) {
+      setReceivers(result.data.receivers);
+      toast.success(`Published to ${result.data.receivers} subscriber${result.data.receivers === 1 ? '' : 's'}`);
+    } else onError(result.error);
   }
 
   return (
@@ -101,9 +106,7 @@ export function PubSub({
           <span className="field__label">Patterns</span>
           <input className="field__input dpmono" value={patterns} onChange={(event) => setPatterns(event.target.value)} placeholder="chat:*" spellCheck={false} />
         </label>
-        <button type="submit" className="button button--primary" disabled={busy || words(channels).length + words(patterns).length === 0 || open >= REDIS_PUBSUB_MAX_SUBSCRIPTIONS}>
-          {busy ? 'Subscribing…' : 'Subscribe'}
-        </button>
+        <Button variant="primary" loading={busy} loadingLabel="Subscribing…" disabled={words(channels).length + words(patterns).length === 0 || open >= REDIS_PUBSUB_MAX_SUBSCRIPTIONS} type="submit">Subscribe</Button>
         <span className="card__hint">
           Up to {REDIS_PUBSUB_MAX_SUBSCRIPTIONS} subscriptions; each keeps the last 1000 messages and ends when you leave this tab.
         </span>
@@ -115,16 +118,26 @@ export function PubSub({
         <>
           <div className="rdpubsub__chips">
             {mine.map((subscription) => (
-              <span key={subscription.subscriptionId} className={`rdchip${selected?.subscriptionId === subscription.subscriptionId ? ' rdchip--active' : ''}`}>
-                <button type="button" className="rdchip__label dpmono" onClick={() => setSelectedId(subscription.subscriptionId)}>
-                  {subscription.label}
-                  {subscription.unseen > 0 && selected?.subscriptionId !== subscription.subscriptionId && <span className="rdchip__badge">{subscription.unseen}</span>}
-                </button>
-                {subscription.endedReason !== null && <Pill tone="neutral">Ended</Pill>}
-                <button type="button" className="iconbutton" aria-label={`Stop ${subscription.label}`} title="Stop" onClick={() => void stop(subscription)}>
-                  <Icon name="x" size={12} />
-                </button>
-              </span>
+              <Chip
+                key={subscription.subscriptionId}
+                toggle
+                selected={selected?.subscriptionId === subscription.subscriptionId}
+                onClick={() => setSelectedId(subscription.subscriptionId)}
+                onRemove={() => void stop(subscription)}
+                removeLabel="Stop"
+              >
+                <span className="dpmono">{subscription.label}</span>
+                {subscription.unseen > 0 && selected?.subscriptionId !== subscription.subscriptionId && (
+                  <Badge tone="info" size="sm">
+                    {subscription.unseen}
+                  </Badge>
+                )}
+                {subscription.endedReason !== null && (
+                  <Badge tone="neutral" size="sm">
+                    Ended
+                  </Badge>
+                )}
+              </Chip>
             ))}
           </div>
 
@@ -149,9 +162,9 @@ export function PubSub({
             <div className="rdsection__bar">
               <span className="card__hint">{messages.length} message{messages.length === 1 ? '' : 's'} kept</span>
               <span className="dpitem__spacer" />
-              <button type="button" className="button button--small" onClick={() => clearMessages(selected.subscriptionId)}>
+              <Button size="sm" onClick={() => clearMessages(selected.subscriptionId)}>
                 Clear
-              </button>
+              </Button>
             </div>
           )}
         </>
@@ -174,9 +187,9 @@ export function PubSub({
             <span className="field__label">Message</span>
             <input className="field__input dpmono" value={publishMessage} onChange={(event) => setPublishMessage(event.target.value)} disabled={!writable} spellCheck={false} />
           </label>
-          <button type="submit" className="button" disabled={!writable || publishChannel.trim() === ''} title={writable ? undefined : 'Read-only connection'}>
+          <Button disabled={!writable || publishChannel.trim() === ''} type="submit" title={writable ? undefined : 'Read-only connection'}>
             Publish
-          </button>
+          </Button>
         </div>
         {receivers !== null && <p className="card__hint">Delivered to {receivers} subscriber{receivers === 1 ? '' : 's'}.</p>}
       </form>

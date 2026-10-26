@@ -3,7 +3,7 @@ import type { GithubPullState } from '@shared/schemas/github';
 import { parseGithubRemote } from '@shared/github-remote';
 import { ErrorBanner } from '../../components/ErrorBanner';
 import { Icon } from '../../components/Icon';
-import { Pill } from '../../components/Pill';
+import { Badge } from '../../components/Badge';
 import { useAppStore } from '../../stores/app.store';
 import { useGithubStore } from '../../stores/github.store';
 import { useGitStore } from '../../stores/git.store';
@@ -12,6 +12,7 @@ import { ActionsView } from './ActionsView';
 import { CreatePullModal } from './CreatePullModal';
 import { PullList } from './PullList';
 import './github.css';
+import { Button } from '../../components/Button';
 
 const STATE_FILTERS: readonly GithubPullState[] = ['open', 'closed', 'all'];
 
@@ -106,9 +107,9 @@ export function GithubSection({ view }: { view: 'pulls' | 'actions' }): React.JS
             <p className="banner__message">Steward could not reach GitHub.</p>
             <p className="banner__details">{integration?.lastError ?? 'Check your connection.'}</p>
           </div>
-          <button type="button" className="button button--ghost" disabled={busy} onClick={() => void loadStatus(projectId)}>
+          <Button variant="ghost" disabled={busy} onClick={() => void loadStatus(projectId)}>
             Retry
-          </button>
+          </Button>
         </div>
       )}
 
@@ -118,9 +119,9 @@ export function GithubSection({ view }: { view: 'pulls' | 'actions' }): React.JS
         <div className="card ghmain">
           <div className="ghtoolbar">
             <div className="ghtoolbar__filters">
-              <Pill tone="success" icon="checkCircle" title="The account this project uses to talk to GitHub">
+              <Badge tone="success" icon="checkCircle" title="The account this project uses to talk to GitHub">
                 {integration?.login ?? 'Connected'}
-              </Pill>
+              </Badge>
 
               {view === 'pulls' ? (
                 <div className="segmented" role="group" aria-label="Pull request state">
@@ -158,17 +159,17 @@ export function GithubSection({ view }: { view: 'pulls' | 'actions' }): React.JS
 
             <div className="ghtoolbar__actions">
               {view === 'actions' ? (
-                <button type="button" className="button button--small ghbutton" disabled={loadingRuns || !ready} onClick={() => void refreshActions(projectId)}>
-                  <Icon name="refresh" size={13} /> Refresh
-                </button>
+                <Button size="sm" className="ghbutton" icon="refresh" loading={loadingRuns} loadingLabel="Refreshing…" disabled={!ready} onClick={() => void refreshActions(projectId)}>
+                  Refresh
+                </Button>
               ) : (
                 <>
-                  <button type="button" className="button button--small ghbutton" disabled={loadingPulls || !ready} onClick={() => void reloadPulls(projectId)}>
-                    <Icon name="refresh" size={13} /> Refresh
-                  </button>
-                  <button type="button" className="button button--primary button--small ghbutton" disabled={!ready} onClick={() => setCreating(true)}>
-                    <Icon name="plus" size={13} /> New pull request
-                  </button>
+                  <Button size="sm" className="ghbutton" icon="refresh" loading={loadingPulls} loadingLabel="Refreshing…" disabled={!ready} onClick={() => void reloadPulls(projectId)}>
+                    Refresh
+                  </Button>
+                  <Button variant="primary" size="sm" className="ghbutton" icon="plus" disabled={!ready} onClick={() => setCreating(true)}>
+                    New pull request
+                  </Button>
                 </>
               )}
             </div>

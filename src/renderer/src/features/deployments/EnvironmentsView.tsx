@@ -3,10 +3,14 @@ import type { Environment } from '@shared/schemas/environments';
 import type { StewardError } from '@shared/types/result';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { EmptyState } from '../../components/EmptyState';
+import { Badge } from '../../components/Badge';
 import { Icon } from '../../components/Icon';
-import { Pill } from '../../components/Pill';
+import { environmentIcon, environmentTone } from '../../components/environment-meta';
 import { EnvironmentEditor } from './EnvironmentEditor';
 import { KIND_LABEL } from './deployment-meta';
+import { Button } from '../../components/Button';
+import { IconButton } from '../../components/IconButton';
+import { toast } from '../../stores/toast.store';
 
 /** The project's environments, in the order the Targets view lists them. */
 export function EnvironmentsView({
@@ -51,6 +55,7 @@ export function EnvironmentsView({
       onError(result.error);
       return;
     }
+    toast.success('Environment deleted');
     await reload();
   }
 
@@ -61,9 +66,9 @@ export function EnvironmentsView({
           Environments group your servers and deploy targets. Protected ones make every deploy ask you to type their
           name.
         </p>
-        <button type="button" className="button button--primary" onClick={() => setEditing('new')}>
-          <Icon name="plus" size={14} /> New environment
-        </button>
+        <Button variant="primary" icon="plus" onClick={() => setEditing('new')}>
+          New environment
+        </Button>
       </div>
 
       {environments.length === 0 ? (
@@ -75,48 +80,21 @@ export function EnvironmentsView({
         <ul className="dplist">
           {environments.map((environment, index) => (
             <li key={environment.id} className="dpitem">
+              <span className="envmark" style={{ ['--env' as string]: environmentTone(environment.name) }}>
+                <Icon name={environmentIcon(environment.name, environment.icon)} size={15} />
+              </span>
               <span className="dpitem__name">{environment.name}</span>
-              <Pill tone="neutral">{KIND_LABEL[environment.kind]}</Pill>
+              <Badge tone="neutral">{KIND_LABEL[environment.kind]}</Badge>
               {environment.isProtected && (
-                <Pill tone="warning" icon="shield">
+                <Badge tone="warning" icon="shield">
                   Protected
-                </Pill>
+                </Badge>
               )}
               <span className="dpitem__spacer" />
-              <button
-                type="button"
-                className="iconbutton"
-                aria-label={`Move ${environment.name} up`}
-                disabled={index === 0}
-                onClick={() => void move(index, -1)}
-              >
-                ↑
-              </button>
-              <button
-                type="button"
-                className="iconbutton"
-                aria-label={`Move ${environment.name} down`}
-                disabled={index === environments.length - 1}
-                onClick={() => void move(index, 1)}
-              >
-                ↓
-              </button>
-              <button
-                type="button"
-                className="iconbutton"
-                aria-label={`Edit ${environment.name}`}
-                onClick={() => setEditing(environment)}
-              >
-                <Icon name="edit" size={15} />
-              </button>
-              <button
-                type="button"
-                className="iconbutton"
-                aria-label={`Delete ${environment.name}`}
-                onClick={() => setDeleting(environment)}
-              >
-                <Icon name="trash" size={15} />
-              </button>
+              <IconButton icon="chevronUp" label={`Move ${environment.name} up`} disabled={index === 0} onClick={() => void move(index, -1)} />
+              <IconButton icon="chevronDown" label={`Move ${environment.name} down`} disabled={index === environments.length - 1} onClick={() => void move(index, 1)} />
+              <IconButton icon="edit" label={`Edit ${environment.name}`} onClick={() => setEditing(environment)} />
+              <IconButton icon="trash" label={`Delete ${environment.name}`} onClick={() => setDeleting(environment)} />
             </li>
           ))}
         </ul>

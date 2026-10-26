@@ -8,15 +8,26 @@ import type {
 import type { StewardError } from '@shared/types/result';
 import { EmptyState } from '../../components/EmptyState';
 import { Icon } from '../../components/Icon';
-import { Pill } from '../../components/Pill';
+import { Badge } from '../../components/Badge';
 import { ContainerDetail } from './ContainerDetail';
 import { DestructiveDialog, type DestructiveRequest } from './DestructiveDialog';
-import { containerChip } from './docker-meta';
+import { containerBadge } from './docker-meta';
+import { Button } from '../../components/Button';
+import { IconButton } from '../../components/IconButton';
+import { Loading } from '../../components/Loading';
+import { toast } from '../../stores/toast.store';
 
 /** How often the list and the CPU/memory numbers are re-read while the window is visible. */
 const POLL_MS = 5000;
 
 type StateFilter = 'all' | 'running' | 'stopped';
+
+const ACTION_DONE: Record<string, string> = {
+  start: 'started',
+  stop: 'stopped',
+  restart: 'restarted',
+  unpause: 'unpaused'
+};
 
 export function ContainersView({
   projectId,
@@ -31,7 +42,7 @@ export function ContainersView({
   const [stats, setStats] = useState<Map<string, DockerContainerStats>>(new Map());
   const [text, setText] = useState('');
   const [stateFilter, setStateFilter] = useState<StateFilter>('all');
-  const [busyId, setBusyId] = useState<string | null>(null);
+  const [pending, setPending] = useState<{ id: string; action: DockerContainerAction } | null>(null);
   const [selected, setSelected] = useState<DockerContainer | null>(null);
   const [destructive, setDestructive] = useState<DestructiveRequest | null>(null);
   const inFlight = useRef(false);
@@ -80,15 +91,16 @@ export function ContainersView({
   }, [containers, text, stateFilter]);
 
   async function act(container: DockerContainer, action: DockerContainerAction): Promise<void> {
-    setBusyId(container.id);
+    setPending({ id: container.id, action });
     const result = await window.steward.docker.containerAction({
       projectId,
       target,
       containerId: container.id,
       action
     });
-    setBusyId(null);
+    setPending(null);
     if (!result.success) onError(result.error);
+    else toast.success(`${container.name} ${ACTION_DONE[action] ?? 'updated'}`);
     await reload();
   }
 
@@ -103,6 +115,7 @@ export function ContainersView({
         </p>
       ),
       confirmLabel: 'Remove container',
+      doneMessage: `${container.name} removed`,
       thing: 'container',
       expectedName: container.name,
       run: (confirmation) =>
@@ -117,7 +130,7 @@ export function ContainersView({
     });
   }
 
-  if (containers === null) return <p className="card__hint">Loading containers…</p>;
+  if (containers === null) return <Loading lines={5} label="Loading containers…" />;
 
   return (
     <section className="dpsection">
@@ -156,15 +169,15 @@ export function ContainersView({
       {visible.length > 0 && (
         <ul className="dklist">
           {visible.map((container) => {
-            const chip = containerChip(container.state, container.status);
+            const badge = containerBadge(container.state, container.status);
             const usage = stats.get(container.id) ?? null;
-            const busy = busyId === container.id;
+            const busy = pending?.id === container.id;
             const running = container.state === 'running';
             return (
               <li key={container.id} className="dkrow">
-                <Pill tone={chip.tone} icon={chip.icon} title={container.status}>
-                  {chip.label}
-                </Pill>
+                <Badge tone={badge.tone} icon={badge.icon} title={container.status}>
+                  {badge.label}
+                </Badge>
                 <button type="button" className="dkrow__main" onClick={() => setSelected(container)}>
                   <span className="dkrow__name">{container.name}</span>
                   <span className="dkrow__meta dpmono">{container.image}</span>
@@ -185,32 +198,23 @@ export function ContainersView({
                 <span className="dkrow__actions">
                   {running ? (
                     <>
-                      <button type="button" className="button button--small" disabled={busy} onClick={() => void act(container, 'restart')}>
+                      <Button size="sm" loading={busy && pending?.action === 'restart'} loadingLabel="Restarting…" disabled={busy} onClick={() => void act(container, 'restart')}>
                         Restart
-                      </button>
-                      <button type="button" className="button button--small" disabled={busy} onClick={() => void act(container, 'stop')}>
+                      </Button>
+                      <Button size="sm" loading={busy && pending?.action === 'stop'} loadingLabel="Stopping…" disabled={busy} onClick={() => void act(container, 'stop')}>
                         Stop
-                      </button>
+                      </Button>
                     </>
                   ) : container.state === 'paused' ? (
-                    <button type="button" className="button button--small" disabled={busy} onClick={() => void act(container, 'unpause')}>
+                    <Button size="sm" loading={busy && pending?.action === 'unpause'} loadingLabel="Unpausing…" disabled={busy} onClick={() => void act(container, 'unpause')}>
                       Unpause
-                    </button>
+                    </Button>
                   ) : (
-                    <button type="button" className="button button--small" disabled={busy} onClick={() => void act(container, 'start')}>
+                    <Button size="sm" loading={busy && pending?.action === 'start'} loadingLabel="Starting…" disabled={busy} onClick={() => void act(container, 'start')}>
                       Start
-                    </button>
+                    </Button>
                   )}
-                  <button
-                    type="button"
-                    className="iconbutton"
-                    disabled={busy || running}
-                    title={running ? 'Stop it before removing' : 'Remove'}
-                    aria-label={`Remove ${container.name}`}
-                    onClick={() => askRemove(container)}
-                  >
-                    <Icon name="trash" size={14} />
-                  </button>
+                  <IconButton icon="trash" label={running ? 'Stop it before removing' : 'Remove'} disabled={busy || running} size={14} onClick={() => askRemove(container)} />
                 </span>
               </li>
             );

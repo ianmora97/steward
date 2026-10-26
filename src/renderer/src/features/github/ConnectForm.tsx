@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Icon } from '../../components/Icon';
+import { Button } from '../../components/Button';
 
 /**
  * The token is held only in this input until it is sent, then cleared. It is
@@ -44,12 +45,12 @@ export function ConnectForm({
         />
       </label>
       <div className="ghconnect__actions">
-        <button type="submit" className="button button--primary" disabled={busy || token.trim().length === 0}>
+        <Button variant="primary" disabled={busy || token.trim().length === 0} type="submit">
           Connect
-        </button>
-        <button type="button" className="button" disabled={busy} onClick={() => void onImport()}>
+        </Button>
+        <Button disabled={busy} onClick={() => void onImport()}>
           <Icon name="terminal" size={14} /> Import from gh CLI
-        </button>
+        </Button>
       </div>
       <p className="card__hint">
         “Import from gh CLI” runs <code>gh auth token</code> once and stores that token in Steward. It only happens when

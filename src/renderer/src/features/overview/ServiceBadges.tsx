@@ -1,24 +1,24 @@
 import type { OverviewProject } from '@shared/schemas/overview';
 import type { TabKey } from '@shared/schemas/tabs';
 import type { IconName } from '../../components/Icon';
-import { Pill, type PillTone } from '../../components/Pill';
+import { Badge, type BadgeTone } from '../../components/Badge';
 
-interface ServicePill {
+interface ServiceBadge {
   key: string;
   label: string;
   icon: IconName;
-  tone: PillTone;
+  tone: BadgeTone;
   title: string;
   /** Where a click goes: a tab, or the GitHub part of Git. */
   target: { tab: TabKey } | { git: 'pulls' };
 }
 
-function dataPill(
+function dataBadge(
   key: 'mongodb' | 'redis',
   label: string,
   icon: IconName,
   data: OverviewProject['mongodb']
-): ServicePill | null {
+): ServiceBadge | null {
   if (data.total === 0) return null;
   const allReadOnly = data.readOnly === data.total;
   return {
@@ -31,12 +31,12 @@ function dataPill(
   };
 }
 
-/** What a project has configured, as one row of pills. A service nobody configured has no pill. */
-export function servicePills(project: OverviewProject): ServicePill[] {
-  const pills: ServicePill[] = [];
+/** What a project has configured, as one row of badges. A service nobody configured has no badge. */
+export function serviceBadges(project: OverviewProject): ServiceBadge[] {
+  const badges: ServiceBadge[] = [];
 
   if (project.repositories > 0) {
-    pills.push({
+    badges.push({
       key: 'repositories',
       label: `Repositories (${project.repositories})`,
       icon: 'repo',
@@ -47,9 +47,9 @@ export function servicePills(project: OverviewProject): ServicePill[] {
   }
 
   if (project.github !== 'unconfigured' || project.githubRepositories > 0) {
-    const tone: PillTone = project.github === 'connected' ? 'success' : project.github === 'auth_error' ? 'failure' : project.github === 'unreachable' ? 'warning' : 'neutral';
+    const tone: BadgeTone = project.github === 'connected' ? 'success' : project.github === 'auth_error' ? 'failure' : project.github === 'unreachable' ? 'warning' : 'neutral';
     const state = { connected: 'connected', auth_error: 'token rejected', unreachable: 'unreachable', unconfigured: 'not connected' }[project.github];
-    pills.push({
+    badges.push({
       key: 'github',
       label: `GitHub · ${state}`,
       icon: 'github',
@@ -61,8 +61,8 @@ export function servicePills(project: OverviewProject): ServicePill[] {
 
   if (project.vpc.total > 0) {
     const { vpc } = project;
-    const tone: PillTone = vpc.down > 0 ? 'failure' : vpc.attention > 0 ? 'warning' : vpc.reachable === vpc.total ? 'success' : 'neutral';
-    pills.push({
+    const tone: BadgeTone = vpc.down > 0 ? 'failure' : vpc.attention > 0 ? 'warning' : vpc.reachable === vpc.total ? 'success' : 'neutral';
+    badges.push({
       key: 'vpc',
       label: `VPC · ${vpc.reachable}/${vpc.total} reachable`,
       icon: 'ssh',
@@ -73,7 +73,7 @@ export function servicePills(project: OverviewProject): ServicePill[] {
   }
 
   if (project.deployTargets > 0) {
-    pills.push({
+    badges.push({
       key: 'deployments',
       label: `Deployments (${project.deployTargets})`,
       icon: 'deployments',
@@ -84,31 +84,31 @@ export function servicePills(project: OverviewProject): ServicePill[] {
   }
 
   if (project.tabs.includes('docker')) {
-    pills.push({ key: 'docker', label: 'Docker', icon: 'docker', tone: 'neutral', title: 'Open Docker', target: { tab: 'docker' } });
+    badges.push({ key: 'docker', label: 'Docker', icon: 'docker', tone: 'neutral', title: 'Open Docker', target: { tab: 'docker' } });
   }
 
-  const mongodb = dataPill('mongodb', 'MongoDB', 'mongodb', project.mongodb);
-  if (mongodb !== null) pills.push(mongodb);
-  const redis = dataPill('redis', 'Redis', 'database', project.redis);
-  if (redis !== null) pills.push(redis);
+  const mongodb = dataBadge('mongodb', 'MongoDB', 'mongodb', project.mongodb);
+  if (mongodb !== null) badges.push(mongodb);
+  const redis = dataBadge('redis', 'Redis', 'database', project.redis);
+  if (redis !== null) badges.push(redis);
 
-  return pills;
+  return badges;
 }
 
-export function ServicePills({
-  pills,
+export function ServiceBadges({
+  badges,
   onOpen
 }: {
-  pills: ServicePill[];
-  onOpen: (target: ServicePill['target']) => void;
+  badges: ServiceBadge[];
+  onOpen: (target: ServiceBadge['target']) => void;
 }): React.JSX.Element {
   return (
-    <div className="svcpills">
-      {pills.map((pill) => (
-        <button key={pill.key} type="button" className="svcpill" title={pill.title} onClick={() => onOpen(pill.target)}>
-          <Pill tone={pill.tone} icon={pill.icon}>
-            {pill.label}
-          </Pill>
+    <div className="svcbadges">
+      {badges.map((badge) => (
+        <button key={badge.key} type="button" className="svcbadge" title={badge.title} onClick={() => onOpen(badge.target)}>
+          <Badge tone={badge.tone} icon={badge.icon}>
+            {badge.label}
+          </Badge>
         </button>
       ))}
     </div>

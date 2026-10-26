@@ -3,6 +3,8 @@ import type { GitFileChangeKind, GitFileEntry } from '@shared/schemas/git';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { useGitStore } from '../../stores/git.store';
 import { DiffView } from './DiffView';
+import { Button } from '../../components/Button';
+import { Loading } from '../../components/Loading';
 
 const KIND_LETTER: Record<GitFileChangeKind, string> = {
   modified: 'M',
@@ -57,7 +59,7 @@ export function ChangesView(): React.JSX.Element {
   const [message, setMessage] = useState('');
   const [pendingDiscard, setPendingDiscard] = useState<GitFileEntry[] | null>(null);
 
-  if (status === null) return <p className="diff__placeholder">Loading…</p>;
+  if (status === null) return <Loading lines={5} label="Loading changes…" />;
 
   const conflicted = status.files.filter((file) => file.conflicted);
   const staged = status.files.filter((file) => !file.conflicted && file.staged !== null);
@@ -87,9 +89,9 @@ export function ChangesView(): React.JSX.Element {
                   active={selected?.path === file.path}
                   onSelect={() => void selectFile({ path: file.path, staged: false, untracked: false })}
                 >
-                  <button type="button" className="button button--small" disabled={busy} onClick={() => void stage([file.path])}>
+                  <Button size="sm" disabled={busy} onClick={() => void stage([file.path])}>
                     Mark resolved
-                  </button>
+                  </Button>
                 </FileRow>
               ))}
             </ul>
@@ -100,14 +102,9 @@ export function ChangesView(): React.JSX.Element {
           <div className="filegroup__head">
             <h3 className="filegroup__title">Staged ({staged.length})</h3>
             {staged.length > 0 && (
-              <button
-                type="button"
-                className="button button--ghost button--small"
-                disabled={busy}
-                onClick={() => void unstage(staged.map((file) => file.path))}
-              >
+              <Button variant="ghost" size="sm" disabled={busy} onClick={() => void unstage(staged.map((file) => file.path))}>
                 Unstage all
-              </button>
+              </Button>
             )}
           </div>
           {staged.length === 0 ? (
@@ -122,9 +119,9 @@ export function ChangesView(): React.JSX.Element {
                   active={selected?.path === file.path && selected.staged}
                   onSelect={() => void selectFile({ path: file.path, staged: true, untracked: false })}
                 >
-                  <button type="button" className="button button--small" disabled={busy} onClick={() => void unstage([file.path])}>
+                  <Button size="sm" disabled={busy} onClick={() => void unstage([file.path])}>
                     Unstage
-                  </button>
+                  </Button>
                 </FileRow>
               ))}
             </ul>
@@ -135,14 +132,9 @@ export function ChangesView(): React.JSX.Element {
           <div className="filegroup__head">
             <h3 className="filegroup__title">Changes ({unstaged.length})</h3>
             {unstaged.length > 0 && (
-              <button
-                type="button"
-                className="button button--ghost button--small"
-                disabled={busy}
-                onClick={() => void stage(unstaged.map((file) => file.path))}
-              >
+              <Button variant="ghost" size="sm" disabled={busy} onClick={() => void stage(unstaged.map((file) => file.path))}>
                 Stage all
-              </button>
+              </Button>
             )}
           </div>
           {unstaged.length === 0 ? (
@@ -159,17 +151,12 @@ export function ChangesView(): React.JSX.Element {
                     void selectFile({ path: file.path, staged: false, untracked: file.unstaged === 'untracked' })
                   }
                 >
-                  <button type="button" className="button button--small" disabled={busy} onClick={() => void stage([file.path])}>
+                  <Button size="sm" disabled={busy} onClick={() => void stage([file.path])}>
                     Stage
-                  </button>
-                  <button
-                    type="button"
-                    className="button button--ghost button--small button--danger-text"
-                    disabled={busy}
-                    onClick={() => setPendingDiscard([file])}
-                  >
+                  </Button>
+                  <Button variant="ghost" size="sm" dangerText disabled={busy} onClick={() => setPendingDiscard([file])}>
                     Discard
-                  </button>
+                  </Button>
                 </FileRow>
               ))}
             </ul>
@@ -193,14 +180,9 @@ export function ChangesView(): React.JSX.Element {
           placeholder={status.mergeInProgress ? 'Merge commit message' : 'Summarize what changed and why'}
         />
         <div className="row">
-          <button
-            type="button"
-            className="button button--primary"
-            disabled={busy || !canCommit}
-            onClick={() => void submit()}
-          >
+          <Button variant="primary" disabled={busy || !canCommit} onClick={() => void submit()}>
             Commit {staged.length > 0 ? `${staged.length} file${staged.length === 1 ? '' : 's'}` : ''}
-          </button>
+          </Button>
           <span className="commitbox__hint">
             {conflicted.length > 0
               ? 'Resolve conflicts first'

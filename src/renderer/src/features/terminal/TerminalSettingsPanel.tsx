@@ -2,6 +2,8 @@ import { useState } from 'react';
 import type { TerminalProfile } from '@shared/schemas/terminal';
 import type { StewardError } from '@shared/types/result';
 import { ErrorBanner } from '../../components/ErrorBanner';
+import { Button } from '../../components/Button';
+import { toast } from '../../stores/toast.store';
 
 /**
  * Shell profiles. Detected shells are read-only; custom ones are global (shared
@@ -37,6 +39,7 @@ export function TerminalSettingsPanel({
       return;
     }
     setError(null);
+    toast.success('Default shell saved');
     await onChanged();
   }
 
@@ -54,6 +57,7 @@ export function TerminalSettingsPanel({
       return;
     }
     setError(null);
+    toast.success('Shell profile added');
     setName('');
     setShellPath('');
     setShellArgs('');
@@ -67,6 +71,7 @@ export function TerminalSettingsPanel({
       return;
     }
     setError(null);
+    toast.success('Shell profile removed');
     await onChanged();
   }
 
@@ -99,9 +104,9 @@ export function TerminalSettingsPanel({
               <strong>{profile.name}</strong>
               <span className="card__hint"> {[profile.file, ...profile.args].join(' ')}</span>
             </span>
-            <button type="button" className="button button--small" onClick={() => void removeProfile(profile.id)}>
+            <Button size="sm" onClick={() => void removeProfile(profile.id)}>
               Remove
-            </button>
+            </Button>
           </div>
         ))}
       </div>
@@ -128,14 +133,9 @@ export function TerminalSettingsPanel({
           onChange={(event) => setShellArgs(event.target.value)}
         />
         <div className="termsettings__actions">
-          <button
-            type="button"
-            className="button button--primary"
-            disabled={name.trim() === '' || shellPath.trim() === ''}
-            onClick={() => void addProfile()}
-          >
+          <Button variant="primary" disabled={name.trim() === '' || shellPath.trim() === ''} onClick={() => void addProfile()}>
             Add shell
-          </button>
+          </Button>
         </div>
       </div>
     </section>

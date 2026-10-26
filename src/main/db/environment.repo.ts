@@ -7,6 +7,7 @@ interface EnvironmentRow {
   key: string;
   name: string;
   kind: Environment['kind'];
+  icon: string | null;
   rank: number;
   is_protected: number;
   created_at: string;
@@ -20,6 +21,7 @@ function toEnvironment(row: EnvironmentRow): Environment {
     key: row.key,
     name: row.name,
     kind: row.kind,
+    icon: row.icon,
     rank: row.rank,
     isProtected: row.is_protected === 1,
     createdAt: row.created_at,
@@ -63,14 +65,15 @@ export function nextEnvironmentRank(db: SqlDatabase, projectId: string): number 
 
 export function insertEnvironment(db: SqlDatabase, environment: Environment): void {
   db.prepare(
-    `INSERT INTO environments (id, project_id, key, name, kind, rank, is_protected, created_at, updated_at)
-     VALUES (:id, :project_id, :key, :name, :kind, :rank, :is_protected, :created_at, :updated_at)`
+    `INSERT INTO environments (id, project_id, key, name, kind, icon, rank, is_protected, created_at, updated_at)
+     VALUES (:id, :project_id, :key, :name, :kind, :icon, :rank, :is_protected, :created_at, :updated_at)`
   ).run({
     id: environment.id,
     project_id: environment.projectId,
     key: environment.key,
     name: environment.name,
     kind: environment.kind,
+    icon: environment.icon,
     rank: environment.rank,
     is_protected: environment.isProtected ? 1 : 0,
     created_at: environment.createdAt,
@@ -81,12 +84,13 @@ export function insertEnvironment(db: SqlDatabase, environment: Environment): vo
 export function updateEnvironmentRow(db: SqlDatabase, environment: Environment): void {
   db.prepare(
     `UPDATE environments
-        SET name = :name, kind = :kind, is_protected = :is_protected, updated_at = :updated_at
+        SET name = :name, kind = :kind, icon = :icon, is_protected = :is_protected, updated_at = :updated_at
       WHERE id = :id`
   ).run({
     id: environment.id,
     name: environment.name,
     kind: environment.kind,
+    icon: environment.icon,
     is_protected: environment.isProtected ? 1 : 0,
     updated_at: environment.updatedAt
   });

@@ -3,7 +3,11 @@ import type { MongoConnection, MongoIndex } from '@shared/schemas/mongodb';
 import type { StewardError } from '@shared/types/result';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { Icon } from '../../components/Icon';
-import { Pill } from '../../components/Pill';
+import { Badge } from '../../components/Badge';
+import { Button } from '../../components/Button';
+import { IconButton } from '../../components/IconButton';
+import { toast } from '../../stores/toast.store';
+import { Loading } from '../../components/Loading';
 
 function formatSize(bytes: number | null): string {
   if (bytes === null) return '—';
@@ -75,6 +79,7 @@ export function IndexesView({
       onError(result.error);
       return;
     }
+    toast.success('Index created');
     setCreating(false);
     setReloadKey((value) => value + 1);
   }
@@ -84,12 +89,12 @@ export function IndexesView({
       <div className="mgtoolbar">
         <strong>Indexes</strong>
         <span className="dpitem__spacer" />
-        <button type="button" className="button button--small" onClick={() => setReloadKey((value) => value + 1)}>
+        <Button size="sm" onClick={() => setReloadKey((value) => value + 1)}>
           <Icon name="refresh" size={14} /> Refresh
-        </button>
-        <button type="button" className="button button--small button--primary" disabled={connection.readOnly} title={connection.readOnly ? 'This connection is read-only' : undefined} onClick={() => setCreating((value) => !value)}>
+        </Button>
+        <Button variant="primary" size="sm" disabled={connection.readOnly} title={connection.readOnly ? 'This connection is read-only' : undefined} onClick={() => setCreating((value) => !value)}>
           <Icon name="plus" size={14} /> Create index
-        </button>
+        </Button>
       </div>
 
       {creating && (
@@ -136,18 +141,16 @@ export function IndexesView({
             </label>
           )}
           <div className="dialog__actions">
-            <button type="button" className="button" onClick={() => setCreating(false)}>
+            <Button onClick={() => setCreating(false)}>
               Cancel
-            </button>
-            <button type="submit" className="button button--primary" disabled={busy || keys.trim() === '' || (connection.protectedEnvironment && !confirmBuild)}>
-              {busy ? 'Building…' : 'Create index'}
-            </button>
+            </Button>
+            <Button variant="primary" loading={busy} loadingLabel="Building…" disabled={keys.trim() === '' || (connection.protectedEnvironment && !confirmBuild)} type="submit">Create index</Button>
           </div>
         </form>
       )}
 
       {indexes === null ? (
-        <p className="card__hint">Loading…</p>
+        <Loading lines={4} label="Loading indexes…" />
       ) : (
         <table className="mgtable">
           <thead>
@@ -166,24 +169,15 @@ export function IndexesView({
                 <td className="dpmono">{index.name}</td>
                 <td className="dpmono">{index.keys}</td>
                 <td>
-                  {index.unique && <Pill tone="info">unique</Pill>}{' '}
-                  {index.sparse && <Pill tone="neutral">sparse</Pill>}{' '}
-                  {index.partial && <Pill tone="neutral">partial</Pill>}{' '}
-                  {index.expireAfterSeconds !== null && <Pill tone="warning">TTL {index.expireAfterSeconds}s</Pill>}
+                  {index.unique && <Badge tone="info">unique</Badge>}{' '}
+                  {index.sparse && <Badge tone="neutral">sparse</Badge>}{' '}
+                  {index.partial && <Badge tone="neutral">partial</Badge>}{' '}
+                  {index.expireAfterSeconds !== null && <Badge tone="warning">TTL {index.expireAfterSeconds}s</Badge>}
                 </td>
                 <td>{formatSize(index.sizeBytes)}</td>
                 <td>{index.accesses === null ? '—' : index.accesses}</td>
                 <td>
-                  <button
-                    type="button"
-                    className="iconbutton"
-                    aria-label={`Drop index ${index.name}`}
-                    title={index.name === '_id_' ? 'The _id index cannot be dropped' : connection.readOnly ? 'This connection is read-only' : 'Drop'}
-                    disabled={index.name === '_id_' || connection.readOnly}
-                    onClick={() => setDropping(index)}
-                  >
-                    <Icon name="trash" size={14} />
-                  </button>
+                  <IconButton icon="trash" label={index.name === '_id_' ? 'The _id index cannot be dropped' : connection.readOnly ? 'This connection is read-only' : 'Drop'} disabled={index.name === '_id_' || connection.readOnly} size={14} onClick={() => setDropping(index)} />
                 </td>
               </tr>
             ))}
@@ -202,6 +196,7 @@ export function IndexesView({
             setDropping(null);
             void window.steward.mongo.dropIndex({ connectionId: connection.id, db, collection, name: target.name, confirmed: true }).then((result) => {
               if (!result.success) onError(result.error);
+              else toast.success(`Index ${target.name} dropped`);
               setReloadKey((value) => value + 1);
             });
           }}

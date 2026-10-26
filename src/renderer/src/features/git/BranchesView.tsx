@@ -2,6 +2,9 @@ import { useState } from 'react';
 import type { GitBranch } from '@shared/schemas/git';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { useGitStore } from '../../stores/git.store';
+import { Button } from '../../components/Button';
+import { Badge } from '../../components/Badge';
+import { Loading } from '../../components/Loading';
 
 function BranchRow({ branch }: { branch: GitBranch }): React.JSX.Element {
   const busy = useGitStore((state) => state.busy);
@@ -22,33 +25,21 @@ function BranchRow({ branch }: { branch: GitBranch }): React.JSX.Element {
     <li className={`branch${branch.current ? ' branch--current' : ''}`}>
       <div className="branch__main">
         <span className="branch__name">{branch.name}</span>
-        {branch.current && <span className="chip chip--primary">current</span>}
-        {branch.remote && <span className="chip">remote</span>}
-        {branch.ahead > 0 && <span className="chip">↑{branch.ahead}</span>}
-        {branch.behind > 0 && <span className="chip">↓{branch.behind}</span>}
-        {branch.upstreamGone && <span className="chip chip--warn">upstream gone</span>}
+        {branch.current && <Badge tone="info">current</Badge>}
+        {branch.remote && <Badge tone="neutral">remote</Badge>}
+        {branch.ahead > 0 && <Badge tone="neutral">↑{branch.ahead}</Badge>}
+        {branch.behind > 0 && <Badge tone="neutral">↓{branch.behind}</Badge>}
+        {branch.upstreamGone && <Badge tone="warning">upstream gone</Badge>}
         <span className="branch__sha">{branch.sha}</span>
       </div>
       <div className="branch__actions">
         {!branch.current && (
-          <button
-            type="button"
-            className="button button--small"
-            disabled={busy}
-            onClick={() => void checkout(branch.name, branch.remote)}
-          >
-            {branch.remote ? 'Check out as local' : 'Check out'}
-          </button>
+          <Button size="sm" disabled={busy} onClick={() => void checkout(branch.name, branch.remote)}>{branch.remote ? 'Check out as local' : 'Check out'}</Button>
         )}
         {!branch.current && !branch.remote && (
-          <button
-            type="button"
-            className="button button--ghost button--small button--danger-text"
-            disabled={busy}
-            onClick={() => void remove()}
-          >
+          <Button variant="ghost" size="sm" dangerText disabled={busy} onClick={() => void remove()}>
             Delete
-          </button>
+          </Button>
         )}
       </div>
 
@@ -84,7 +75,7 @@ export function BranchesView(): React.JSX.Element {
   const [name, setName] = useState('');
   const [checkout, setCheckout] = useState(true);
 
-  if (branches === null) return <p className="diff__placeholder">Loading…</p>;
+  if (branches === null) return <Loading lines={4} label="Loading branches…" />;
 
   const local = branches.branches.filter((branch) => !branch.remote);
   const remote = branches.branches.filter((branch) => branch.remote);
@@ -115,14 +106,9 @@ export function BranchesView(): React.JSX.Element {
             <input type="checkbox" checked={checkout} onChange={(event) => setCheckout(event.target.checked)} />
             Check out
           </label>
-          <button
-            type="button"
-            className="button button--primary"
-            disabled={busy || name.trim() === '' || (noCommits && !checkout)}
-            onClick={() => void create()}
-          >
+          <Button variant="primary" disabled={busy || name.trim() === '' || (noCommits && !checkout)} onClick={() => void create()}>
             Create
-          </button>
+          </Button>
         </div>
         <p className="card__hint branches__hint">
           {noCommits

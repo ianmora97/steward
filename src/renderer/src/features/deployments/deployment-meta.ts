@@ -4,7 +4,7 @@ import type { EnvironmentKind } from '@shared/schemas/environments';
 import type { Repository } from '@shared/schemas/repository';
 import type { SshHost } from '@shared/schemas/ssh';
 import type { IconName } from '../../components/Icon';
-import type { PillTone } from '../../components/Pill';
+import type { BadgeTone } from '../../components/Badge';
 import { durationLabel, sinceLabel } from '../ssh/ssh-meta';
 
 export const KIND_LABEL: Record<EnvironmentKind, string> = {
@@ -14,7 +14,7 @@ export const KIND_LABEL: Record<EnvironmentKind, string> = {
   custom: 'Custom'
 };
 
-const STATUS_CHIP: Record<DeploymentStatus, { tone: PillTone; icon: IconName; label: string }> = {
+const STATUS_CHIP: Record<DeploymentStatus, { tone: BadgeTone; icon: IconName; label: string }> = {
   requested: { tone: 'neutral', icon: 'clock', label: 'Requested' },
   in_progress: { tone: 'running', icon: 'loader', label: 'In progress' },
   succeeded: { tone: 'success', icon: 'check', label: 'Succeeded' },
@@ -23,7 +23,7 @@ const STATUS_CHIP: Record<DeploymentStatus, { tone: PillTone; icon: IconName; la
   unknown: { tone: 'warning', icon: 'alert', label: 'Unknown' }
 };
 
-export function deploymentChip(status: DeploymentStatus): { tone: PillTone; icon: IconName; label: string } {
+export function deploymentBadge(status: DeploymentStatus): { tone: BadgeTone; icon: IconName; label: string } {
   return STATUS_CHIP[status];
 }
 

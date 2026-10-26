@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import type { GithubJob } from '@shared/schemas/github';
-import { Pill } from '../../components/Pill';
+import { Badge } from '../../components/Badge';
 import { useGithubStore } from '../../stores/github.store';
 import { JobLogModal } from './JobLogModal';
 import { RunList } from './RunList';
-import { healthPill } from './run-format';
+import { healthBadge } from './run-format';
 import './actions.css';
 
 export function ActionsView({ projectId }: { projectId: string }): React.JSX.Element {
@@ -20,19 +20,19 @@ export function ActionsView({ projectId }: { projectId: string }): React.JSX.Ele
   const openUrl = useGithubStore((state) => state.openUrl);
   const [logJob, setLogJob] = useState<GithubJob | null>(null);
 
-  const workflowsHealth = healthPill(health?.status ?? 'unknown');
+  const workflowsHealth = healthBadge(health?.status ?? 'unknown');
   const permissionHint = errorCode === 'GITHUB_FAILED' || errorCode === 'GITHUB_NOT_FOUND';
   const noWorkflows = workflows.length === 0 && runs.length === 0 && !loadingRuns;
 
   return (
     <div className="ghactions">
       <div className="ghactions__status">
-        <Pill tone="success" icon="checkCircle">
+        <Badge tone="success" icon="checkCircle">
           Connected
-        </Pill>
-        <Pill tone={workflowsHealth.tone} icon={workflowsHealth.icon}>
+        </Badge>
+        <Badge tone={workflowsHealth.tone} icon={workflowsHealth.icon}>
           Workflows {workflowsHealth.label.toLowerCase()}
-        </Pill>
+        </Badge>
         {health !== null && (
           <span className="ghmeta__item">
             latest {health.basedOnRuns} runs

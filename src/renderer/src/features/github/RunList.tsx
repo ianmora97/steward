@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import type { GithubJob, GithubRun } from '@shared/schemas/github';
 import { Icon } from '../../components/Icon';
-import { Pill } from '../../components/Pill';
+import { Badge } from '../../components/Badge';
 import { RunDetail } from './RunDetail';
-import { formatDuration, formatWhen, runChip, shortSha, timeAgo } from './run-format';
+import { formatDuration, formatWhen, runBadge, shortSha, timeAgo } from './run-format';
+import { Button } from '../../components/Button';
+import { Loading } from '../../components/Loading';
 
 export function RunList({
   runs,
@@ -27,7 +29,7 @@ export function RunList({
   const [expanded, setExpanded] = useState<number | null>(null);
 
   if (runs.length === 0) {
-    return <p className="card__hint">{loading ? 'Loading runs…' : 'No workflow runs yet.'}</p>;
+    return loading ? <Loading lines={4} label="Loading runs…" /> : <p className="card__hint">No workflow runs yet.</p>;
   }
 
   function toggle(runId: number): void {
@@ -43,15 +45,15 @@ export function RunList({
     <div className="ghpulls">
       <ul className="ghpulls__list">
         {runs.map((run) => {
-          const chip = runChip(run);
+          const badge = runBadge(run);
           const open = expanded === run.id;
           const duration = run.status === 'completed' ? formatDuration(run.startedAt ?? run.createdAt, run.updatedAt) : '';
           return (
             <li key={run.id} className="ghrun">
               <button type="button" className="ghitem ghrun__row" aria-expanded={open} onClick={() => toggle(run.id)}>
-                <Pill tone={chip.tone} icon={chip.icon}>
-                  {chip.label}
-                </Pill>
+                <Badge tone={badge.tone} icon={badge.icon}>
+                  {badge.label}
+                </Badge>
                 <span className="ghitem__main">
                   <span className="ghitem__title ghitem__title--static">
                     {run.title === '' ? run.workflowName : run.title}
@@ -93,9 +95,7 @@ export function RunList({
         })}
       </ul>
       {hasNext && (
-        <button type="button" className="button" disabled={loading} onClick={onLoadMore}>
-          {loading ? 'Loading…' : 'Load more'}
-        </button>
+        <Button loading={loading} loadingLabel="Loading…" onClick={onLoadMore}>Load more</Button>
       )}
     </div>
   );

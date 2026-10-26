@@ -23,6 +23,10 @@ import { BulkDialog } from './BulkDialog';
 import { DocumentEditor } from './DocumentEditor';
 import { DocumentResults, ViewSwitch, type DocumentActions, type DocumentViewMode } from './DocumentViews';
 import { ExplainPanel } from './ExplainPanel';
+import { Button } from '../../components/Button';
+import { IconButton } from '../../components/IconButton';
+import { toast } from '../../stores/toast.store';
+import { Loading } from '../../components/Loading';
 
 const VIEW_KEY = 'steward.mongo.view';
 const LIMITS = [20, 50, 100, 500] as const;
@@ -210,7 +214,10 @@ export function DocumentsView({
       format: exportFormat
     });
     if (!result.success) onError(result.error);
-    else if (!result.data.cancelled) setNotice(`Exported ${result.data.count} documents to ${result.data.path ?? ''}.`);
+    else if (!result.data.cancelled) {
+      setNotice(`Exported ${result.data.count} documents to ${result.data.path ?? ''}.`);
+      toast.success(`Exported ${result.data.count} documents`);
+    }
   }
 
   async function importNow(): Promise<void> {
@@ -231,6 +238,8 @@ export function DocumentsView({
     setNotice(
       `Imported ${result.data.insertedCount} documents${result.data.failedCount > 0 ? `; ${result.data.failedCount} failed${result.data.firstError === null ? '' : ` (first: ${result.data.firstError})`}` : ''}.`
     );
+    if (result.data.failedCount > 0) toast.info(`Imported ${result.data.insertedCount} documents; ${result.data.failedCount} failed`);
+    else toast.success(`Imported ${result.data.insertedCount} documents`);
     reload();
   }
 
@@ -245,6 +254,7 @@ export function DocumentsView({
     });
     if (!result.success) onError(result.error);
     else {
+      toast.success('Query saved');
       setSaving(null);
       setSavedReload((value) => value + 1);
     }
@@ -281,27 +291,23 @@ export function DocumentsView({
               aria-label="Filter"
             />
           </label>
-          <button type="submit" className="button button--primary">
+          <Button variant="primary" type="submit">
             Find
-          </button>
-          <button
-            type="button"
-            className="button"
-            onClick={() => {
+          </Button>
+          <Button onClick={() => {
               setFilter('');
               setProject('');
               setSort('');
               find({ filter: '', project: '', sort: '' });
-            }}
-          >
+            }}>
             Reset
-          </button>
-          <button type="button" className="button" onClick={() => void runExplain()}>
+          </Button>
+          <Button onClick={() => void runExplain()}>
             Explain
-          </button>
-          <button type="button" className="button button--small" onClick={() => setShowOptions((value) => !value)} aria-expanded={showOptions}>
+          </Button>
+          <Button size="sm" onClick={() => setShowOptions((value) => !value)} aria-expanded={showOptions}>
             Options {showOptions ? '▴' : '▾'}
-          </button>
+          </Button>
         </div>
 
         {showOptions && (
@@ -343,32 +349,28 @@ export function DocumentsView({
           {page?.data !== null && page?.data !== undefined && !loading ? ` · ${page.data.elapsedMs} ms` : ''}
         </span>
         <span className="dpitem__spacer" />
-        <button type="button" className="iconbutton mgtoolbar__prev" aria-label="Previous page" disabled={applied.skip === 0 || loading} onClick={() => goTo(applied.skip - applied.limit)}>
-          <Icon name="chevronRight" size={14} />
-        </button>
-        <button type="button" className="iconbutton mgtoolbar__next" aria-label="Next page" disabled={!(page?.data?.hasMore ?? false) || loading} onClick={() => goTo(applied.skip + applied.limit)}>
-          <Icon name="chevronRight" size={14} />
-        </button>
-        <button type="button" className="button button--small" disabled={readOnly} title={readOnly ? 'This connection is read-only' : undefined} onClick={() => setEditing({ kind: 'insert' })}>
+        <IconButton icon="chevronRight" size={14} className="mgtoolbar__prev" label="Previous page" disabled={applied.skip === 0 || loading} onClick={() => goTo(applied.skip - applied.limit)} />
+        <IconButton icon="chevronRight" size={14} className="mgtoolbar__next" label="Next page" disabled={!(page?.data?.hasMore ?? false) || loading} onClick={() => goTo(applied.skip + applied.limit)} />
+        <Button size="sm" disabled={readOnly} title={readOnly ? 'This connection is read-only' : undefined} onClick={() => setEditing({ kind: 'insert' })}>
           <Icon name="plus" size={14} /> Insert document
-        </button>
-        <button type="button" className="button button--small" disabled={readOnly} title={readOnly ? 'This connection is read-only' : undefined} onClick={() => void importNow()}>
+        </Button>
+        <Button size="sm" disabled={readOnly} title={readOnly ? 'This connection is read-only' : undefined} onClick={() => void importNow()}>
           Import…
-        </button>
+        </Button>
         <select className="field__input mgtoolbar__format" value={exportFormat} onChange={(event) => setExportFormat(event.target.value as MongoExportFormat)} aria-label="Export format">
           <option value="json">JSON</option>
           <option value="ndjson">JSON Lines</option>
           <option value="csv">CSV</option>
         </select>
-        <button type="button" className="button button--small" onClick={() => void exportNow()}>
+        <Button size="sm" onClick={() => void exportNow()}>
           Export…
-        </button>
-        <button type="button" className="button button--small button--danger-text" disabled={readOnly} onClick={() => setBulk('delete')}>
+        </Button>
+        <Button size="sm" dangerText disabled={readOnly} onClick={() => setBulk('delete')}>
           Delete matching…
-        </button>
-        <button type="button" className="button button--small button--danger-text" disabled={readOnly} onClick={() => setBulk('update')}>
+        </Button>
+        <Button size="sm" dangerText disabled={readOnly} onClick={() => setBulk('update')}>
           Update matching…
-        </button>
+        </Button>
       </div>
 
       <div className="mgsaved">
@@ -393,9 +395,9 @@ export function DocumentsView({
           ))}
         </select>
         {saving === null ? (
-          <button type="button" className="button button--small" onClick={() => setSaving('')}>
+          <Button size="sm" onClick={() => setSaving('')}>
             Save this query
-          </button>
+          </Button>
         ) : (
           <form
             className="mgsaved__form"
@@ -405,8 +407,8 @@ export function DocumentsView({
             }}
           >
             <input className="field__input" value={saving} onChange={(event) => setSaving(event.target.value)} placeholder="Name" autoFocus />
-            <button type="submit" className="button button--small button--primary">Save</button>
-            <button type="button" className="button button--small" onClick={() => setSaving(null)}>Cancel</button>
+            <Button variant="primary" size="sm" type="submit">Save</Button>
+            <Button size="sm" onClick={() => setSaving(null)}>Cancel</Button>
           </form>
         )}
         {saved.length > 0 && (
@@ -416,19 +418,14 @@ export function DocumentsView({
               {saved.map((query) => (
                 <li key={query.id}>
                   {query.name}
-                  <button
-                    type="button"
-                    className="iconbutton"
-                    aria-label={`Delete saved query ${query.name}`}
-                    onClick={() =>
+                  <IconButton icon="trash" label={`Delete saved query ${query.name}`} size={14} onClick={() =>
                       void window.steward.mongo.deleteSavedQuery({ id: query.id }).then((result) => {
-                        if (result.success) setSavedReload((value) => value + 1);
-                        else onError(result.error);
+                        if (result.success) {
+                          toast.success('Saved query deleted');
+                          setSavedReload((value) => value + 1);
+                        } else onError(result.error);
                       })
-                    }
-                  >
-                    <Icon name="trash" size={14} />
-                  </button>
+                    } />
                 </li>
               ))}
             </ul>
@@ -443,7 +440,7 @@ export function DocumentsView({
         {page?.data?.truncated === true && <p className="card__hint">The response was cut to stay under 4 MB. Use a narrower filter or fewer fields.</p>}
 
         {loading && page === null ? (
-          <p className="card__hint">Loading…</p>
+          <Loading lines={6} label="Loading documents…" />
         ) : (
           <DocumentResults documents={documents} mode={mode} actions={actions} readOnly={readOnly} />
         )}
@@ -470,6 +467,7 @@ export function DocumentsView({
             return window.steward.mongo.insert({ connectionId: connection.id, db, collection, documents: text });
           }}
           onSaved={() => {
+            toast.success(editing.kind === 'edit' ? 'Document saved' : 'Document inserted');
             setEditing(null);
             reload();
           }}
@@ -489,6 +487,7 @@ export function DocumentsView({
             if (id === null) return;
             void window.steward.mongo.deleteOne({ connectionId: connection.id, db, collection, id, confirmed: true }).then((result) => {
               if (!result.success) onError(result.error);
+              else toast.success('Document deleted');
               reload();
             });
           }}

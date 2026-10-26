@@ -5,7 +5,7 @@
 **One workspace for code, pipelines and deployments — per project.**
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue?style=flat-square)](LICENSE)
-[![Status](https://img.shields.io/badge/status-milestone%2010-orange?style=flat-square)](CHANGELOG.md)
+[![Status](https://img.shields.io/badge/status-milestone%2011.5-orange?style=flat-square)](CHANGELOG.md)
 [![Electron](https://img.shields.io/badge/Electron-45-47848F?style=flat-square&logo=electron&logoColor=white)](https://www.electronjs.org/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
@@ -37,7 +37,9 @@ Steward is a desktop app organised around **projects**, not repositories. A proj
 
 | ✅ | **Redis**: standalone, Sentinel and Cluster connections (password, ACL user, TLS; protected environments start read-only), a key browser that pages with `SCAN` and never runs `KEYS`, every data type (strings, hashes, lists, sets, sorted sets, streams, RedisJSON) with text / JSON / hex / base64 views, editing with expiry kept, bulk delete by pattern with a re-checked count, a `redis-cli`-style workbench with a denylist, a live dashboard, slow log, clients, memory analysis by sample, and Pub/Sub |
 
-A project's tab bar holds **Git** (with GitHub's pull requests and Actions as sections) and **Terminal**; other services are added with the **+** and taken off with the **×**. Project **Settings** has General, Services, Integrations and Workspace sections, and the home screen shows each project's configured services as status pills plus recent activity.
+| ✅ | **One consistent interface**: the same buttons, badges, cards, fields and bars on every screen; a toast for what you just did; placeholders while a view loads and a spinner (with *Saving…*, *Deleting…*…) on the button you pressed; smooth transitions; and a zoom of 80–150 % (Ctrl +, Ctrl −, Ctrl 0, or *Settings → General*) with layouts that fold when there is little room |
+
+A project's tab bar holds **Git** (with GitHub's pull requests and Actions as sections) and **Terminal**; other services are added with the **+** and taken off with the **×**. Project **Settings** has General, Services, Integrations and Workspace sections, and the home screen shows each project's configured services as status badges plus the five latest activities (the rest one click away).
 
 Next on the roadmap (designed, not built yet): monitoring with Grafana / Loki / Prometheus, and cloud / domain checks for AWS and Cloudflare. See `docs/superpowers/specs/2026-10-23-m8-m13-roadmap-design.md`.
 

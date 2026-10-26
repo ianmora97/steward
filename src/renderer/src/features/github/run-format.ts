@@ -1,9 +1,9 @@
 import type { IconName } from '../../components/Icon';
-import type { PillTone } from '../../components/Pill';
+import type { BadgeTone } from '../../components/Badge';
 
 export interface RunChip {
   label: string;
-  tone: PillTone;
+  tone: BadgeTone;
   icon: IconName;
 }
 
@@ -18,7 +18,7 @@ function words(value: string): string {
  * time, so anything unrecognised falls through to a neutral chip showing the
  * raw word instead of being guessed at.
  */
-export function runChip(item: { status: string; conclusion: string | null }): RunChip {
+export function runBadge(item: { status: string; conclusion: string | null }): RunChip {
   if (item.status === 'completed') {
     switch (item.conclusion) {
       case 'success':
@@ -46,7 +46,7 @@ export function runChip(item: { status: string; conclusion: string | null }): Ru
 export type HealthStatus = 'unknown' | 'healthy' | 'degraded' | 'failing';
 
 /** Tone and icon for the overall workflow health, shared by the Actions tab button and its status line. */
-export function healthPill(status: HealthStatus): { tone: PillTone; icon: IconName; label: string } {
+export function healthBadge(status: HealthStatus): { tone: BadgeTone; icon: IconName; label: string } {
   switch (status) {
     case 'healthy':
       return { tone: 'success', icon: 'checkCircle', label: 'Healthy' };

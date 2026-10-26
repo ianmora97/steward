@@ -8,9 +8,12 @@ import type { StewardError } from '@shared/types/result';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { EmptyState } from '../../components/EmptyState';
 import { Icon } from '../../components/Icon';
-import { Pill } from '../../components/Pill';
+import { Badge } from '../../components/Badge';
 import { TargetEditor } from './TargetEditor';
-import { agoLabel, deploymentChip, isActive, targetDestination } from './deployment-meta';
+import { agoLabel, deploymentBadge, isActive, targetDestination } from './deployment-meta';
+import { Button } from '../../components/Button';
+import { IconButton } from '../../components/IconButton';
+import { toast } from '../../stores/toast.store';
 
 /** The latest deployment through a target, and the button that starts the next one. */
 function TargetFooter({
@@ -25,23 +28,21 @@ function TargetFooter({
   onDeploy: (target: DeployTarget) => void;
 }): React.JSX.Element {
   const last = deployments.find((deployment) => deployment.deployTargetId === target.id) ?? null;
-  const chip = last === null ? null : deploymentChip(last.status);
+  const badge = last === null ? null : deploymentBadge(last.status);
   const busy = last !== null && isActive(last);
   return (
     <footer className="dptarget__foot">
-      {last !== null && chip !== null ? (
+      {last !== null && badge !== null ? (
         <span className="dptarget__last">
-          <Pill tone={chip.tone} icon={chip.icon}>
-            {chip.label}
-          </Pill>
+          <Badge tone={badge.tone} icon={badge.icon}>
+            {badge.label}
+          </Badge>
           <span className="card__hint">{agoLabel(last.requestedAt, now)}</span>
         </span>
       ) : (
         <span className="card__hint">Never deployed</span>
       )}
-      <button type="button" className="button button--small" disabled={busy} onClick={() => onDeploy(target)}>
-        {busy ? 'Deploying…' : 'Deploy'}
-      </button>
+      <Button size="sm" loading={busy} loadingLabel="Deploying…" onClick={() => onDeploy(target)}>Deploy</Button>
     </footer>
   );
 }
@@ -88,6 +89,7 @@ export function TargetsView({
       onError(result.error);
       return;
     }
+    toast.success('Target deleted');
     onChanged();
   }
 
@@ -97,9 +99,9 @@ export function TargetsView({
         title="Create an environment first"
         description="A deploy target belongs to an environment such as Production or Staging."
       >
-        <button type="button" className="button button--primary" onClick={onGoToEnvironments}>
+        <Button variant="primary" onClick={onGoToEnvironments}>
           Go to Environments
-        </button>
+        </Button>
       </EmptyState>
     );
   }
@@ -108,9 +110,9 @@ export function TargetsView({
     <section className="dpsection">
       <div className="dpsection__bar">
         <p className="card__hint">What each environment can be deployed with: a command on a server, or a GitHub workflow.</p>
-        <button type="button" className="button button--primary" onClick={() => setEditing('new')}>
+        <Button variant="primary" onClick={() => setEditing('new')}>
           <Icon name="plus" size={14} /> Add target
-        </button>
+        </Button>
       </div>
 
       <div className="dpcolumns">
@@ -121,9 +123,9 @@ export function TargetsView({
               <h3 className="dpcolumn__title">
                 {environment.name}
                 {environment.isProtected && (
-                  <Pill tone="warning" icon="shield">
+                  <Badge tone="warning" icon="shield">
                     Protected
-                  </Pill>
+                  </Badge>
                 )}
               </h3>
               {inEnvironment.length === 0 && <p className="card__hint">No targets here yet.</p>}
@@ -133,27 +135,13 @@ export function TargetsView({
                     <Icon name={target.kind === 'ssh_command' ? 'ssh' : 'github'} size={16} />
                     <span className="dptarget__name">{target.name}</span>
                     {target.broken && (
-                      <Pill tone="failure" icon="alert">
+                      <Badge tone="failure" icon="alert">
                         Broken
-                      </Pill>
+                      </Badge>
                     )}
                     <span className="dpitem__spacer" />
-                    <button
-                      type="button"
-                      className="iconbutton"
-                      aria-label={`Edit ${target.name}`}
-                      onClick={() => setEditing(target)}
-                    >
-                      <Icon name="edit" size={15} />
-                    </button>
-                    <button
-                      type="button"
-                      className="iconbutton"
-                      aria-label={`Delete ${target.name}`}
-                      onClick={() => setDeleting(target)}
-                    >
-                      <Icon name="trash" size={15} />
-                    </button>
+                    <IconButton icon="edit" label={`Edit ${target.name}`} onClick={() => setEditing(target)} />
+                    <IconButton icon="trash" label={`Delete ${target.name}`} onClick={() => setDeleting(target)} />
                   </header>
                   <p className="dptarget__destination">{targetDestination(target, hostsById, repositoriesById)}</p>
                   {target.broken && (

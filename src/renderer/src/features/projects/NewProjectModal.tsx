@@ -1,10 +1,14 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
+import { Button } from '../../components/Button';
+import { Field } from '../../components/Field';
 import { Modal } from '../../components/Modal';
 import { useAppStore } from '../../stores/app.store';
 
 export function NewProjectModal({ onClose }: { onClose: () => void }): React.JSX.Element {
   const busy = useAppStore((state) => state.busy);
   const createProject = useAppStore((state) => state.createProject);
+  const nameId = useId();
+  const descriptionId = useId();
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -26,9 +30,9 @@ export function NewProjectModal({ onClose }: { onClose: () => void }): React.JSX
           A project is an application or system. It can own several repositories, environments and
           integrations.
         </p>
-        <label className="field">
-          <span className="field__label">Name</span>
+        <Field label="Name" htmlFor={nameId}>
           <input
+            id={nameId}
             className="field__input"
             value={name}
             onChange={(event) => setName(event.target.value)}
@@ -36,24 +40,22 @@ export function NewProjectModal({ onClose }: { onClose: () => void }): React.JSX
             maxLength={120}
             autoFocus
           />
-        </label>
-        <label className="field">
-          <span className="field__label">Description</span>
+        </Field>
+        <Field label="Description" htmlFor={descriptionId}>
           <input
+            id={descriptionId}
             className="field__input"
             value={description}
             onChange={(event) => setDescription(event.target.value)}
             placeholder="Optional"
             maxLength={2000}
           />
-        </label>
+        </Field>
         <div className="dialog__actions">
-          <button type="button" className="button" onClick={onClose}>
-            Cancel
-          </button>
-          <button type="submit" className="button button--primary" disabled={busy || name.trim() === ''}>
+          <Button onClick={onClose}>Cancel</Button>
+          <Button variant="primary" type="submit" loading={busy} loadingLabel="Creating…" disabled={name.trim() === ''}>
             Create project
-          </button>
+          </Button>
         </div>
       </form>
     </Modal>

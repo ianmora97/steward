@@ -2,6 +2,8 @@ import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from
 import { createPortal } from 'react-dom';
 import { Icon } from './Icon';
 import './datetime-picker.css';
+import { IconButton } from './IconButton';
+import { Button } from './Button';
 
 /**
  * The one way to pick a date or a time in Steward. Native `<input type="date | time | datetime-local">` is not
@@ -242,9 +244,7 @@ export function DateTimePicker({
           <span className="dtp-trigger__text">{value === null ? placeholder : formatPicked(value, mode)}</span>
         </button>
         {clearable && value !== null && !disabled && (
-          <button type="button" className="iconbutton dtp-trigger__clear" aria-label="Clear" title="Clear" onClick={() => onChange(null)}>
-            <Icon name="x" size={14} />
-          </button>
+          <IconButton icon="x" size={14} className="dtp-trigger__clear" label="Clear" onClick={() => onChange(null)} />
         )}
       </span>
 
@@ -263,15 +263,11 @@ export function DateTimePicker({
             {mode !== 'time' && (
               <>
                 <div className="dtp__head">
-                  <button type="button" className="iconbutton" aria-label="Previous month" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}>
-                    <Icon name="chevronLeft" size={16} />
-                  </button>
+                  <IconButton icon="chevronLeft" label="Previous month" size={16} onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))} />
                   <span id={titleId} className="dtp__title" aria-live="polite">
                     {monthTitle}
                   </span>
-                  <button type="button" className="iconbutton" aria-label="Next month" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}>
-                    <Icon name="chevronRight" size={16} />
-                  </button>
+                  <IconButton icon="chevronRight" label="Next month" size={16} onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))} />
                 </div>
                 <div className="dtp__weekdays" aria-hidden="true">
                   {WEEKDAYS.map((day) => (
@@ -314,9 +310,9 @@ export function DateTimePicker({
                 </span>
                 <TimeUnit label="minutes" value={minutes} max={59} onChange={(next) => setTime(hours, next)} />
                 {mode === 'time' && value === null && (
-                  <button type="button" className="button button--small" onClick={() => setTime(hours, minutes)}>
+                  <Button size="sm" onClick={() => setTime(hours, minutes)}>
                     Set
-                  </button>
+                  </Button>
                 )}
               </div>
             )}
@@ -343,19 +339,19 @@ export function DateTimePicker({
 
             <div className="dtp__foot">
               {mode !== 'time' && (
-                <button type="button" className="button button--ghost button--small" onClick={() => pickDay(startOfDay(new Date()))}>
+                <Button variant="ghost" size="sm" onClick={() => pickDay(startOfDay(new Date()))}>
                   Today
-                </button>
+                </Button>
               )}
               <span className="dpitem__spacer" />
               {clearable && value !== null && (
-                <button type="button" className="button button--ghost button--small" onClick={() => onChange(null)}>
+                <Button variant="ghost" size="sm" onClick={() => onChange(null)}>
                   Clear
-                </button>
+                </Button>
               )}
-              <button type="button" className="button button--primary button--small" onClick={() => setOpen(false)}>
+              <Button variant="primary" size="sm" onClick={() => setOpen(false)}>
                 Done
-              </button>
+              </Button>
             </div>
           </div>,
           document.body

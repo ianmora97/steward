@@ -1,7 +1,9 @@
 import type { GithubJob } from '@shared/schemas/github';
 import { Icon } from '../../components/Icon';
-import { Pill } from '../../components/Pill';
-import { formatDuration, runChip } from './run-format';
+import { Badge } from '../../components/Badge';
+import { formatDuration, runBadge } from './run-format';
+import { Button } from '../../components/Button';
+import { Loading } from '../../components/Loading';
 
 export function RunDetail({
   jobs,
@@ -18,30 +20,30 @@ export function RunDetail({
   return (
     <div className="ghdetail">
       <div className="ghdetail__bar">
-        <button type="button" className="button button--small ghbutton" onClick={() => onOpen(runUrl)}>
+        <Button size="sm" className="ghbutton" onClick={() => onOpen(runUrl)}>
           <Icon name="external" size={13} /> Open run on GitHub
-        </button>
+        </Button>
       </div>
-      {jobs === undefined && <p className="card__hint">Loading jobs…</p>}
+      {jobs === undefined && <Loading variant="line" lines={3} label="Loading jobs…" />}
       {jobs?.length === 0 && <p className="card__hint">This run has no jobs.</p>}
       {jobs?.map((job) => {
-        const chip = runChip(job);
+        const badge = runBadge(job);
         return (
           <div key={job.id} className="ghjob">
             <div className="ghjob__head">
-              <Pill tone={chip.tone} icon={chip.icon}>
-                {chip.label}
-              </Pill>
+              <Badge tone={badge.tone} icon={badge.icon}>
+                {badge.label}
+              </Badge>
               <span className="ghjob__name">{job.name}</span>
               <span className="ghjob__time">{formatDuration(job.startedAt, job.completedAt)}</span>
-              <button type="button" className="button button--small ghbutton" onClick={() => onViewLog(job)}>
+              <Button size="sm" className="ghbutton" onClick={() => onViewLog(job)}>
                 <Icon name="file" size={13} /> View log
-              </button>
+              </Button>
             </div>
             {job.steps.length > 0 && (
               <ul className="ghsteps">
                 {job.steps.map((step) => {
-                  const stepChip = runChip(step);
+                  const stepChip = runBadge(step);
                   return (
                     <li key={step.number} className={`ghstep ghstep--${stepChip.tone}`}>
                       <span className="ghstep__icon" title={stepChip.label}>

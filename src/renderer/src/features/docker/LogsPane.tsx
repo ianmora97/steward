@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { DockerLogEndEvent, DockerLogEvent, DockerTarget } from '@shared/schemas/docker';
 import type { StewardError } from '@shared/types/result';
+import { Button } from '../../components/Button';
 
 /** What the view keeps. Older lines are dropped; Docker still has them. */
 const MAX_LINES = 2000;
@@ -109,12 +110,10 @@ export function LogsPane({
           onChange={(event) => setFilter(event.target.value)}
           aria-label="Filter log lines"
         />
-        <button type="button" className="button button--small" onClick={() => setPaused((value) => !value)}>
-          {paused ? 'Resume' : 'Pause'}
-        </button>
-        <button type="button" className="button button--small" onClick={() => setLines([])}>
+        <Button size="sm" onClick={() => setPaused((value) => !value)}>{paused ? 'Resume' : 'Pause'}</Button>
+        <Button size="sm" onClick={() => setLines([])}>
           Clear
-        </button>
+        </Button>
       </div>
       <pre
         ref={scroller}

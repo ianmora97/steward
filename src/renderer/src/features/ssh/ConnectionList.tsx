@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { SshHost } from '@shared/schemas/ssh';
 import { Icon } from '../../components/Icon';
 import { CONNECTION_LABEL, NO_ENVIRONMENT, groupByEnvironment, isProduction } from './ssh-meta';
+import { Badge } from '../../components/Badge';
 
 /** Saved connections, grouped by environment, with search and an environment filter. */
 export function ConnectionList({
@@ -104,7 +105,7 @@ export function ConnectionList({
                             <span className="sshitem__foot">
                               <span className="sshitem__region">{host.region ?? ''}</span>
                               {active ? (
-                                <span className="sshitem__badge">SSH active</span>
+                                <Badge tone="info">SSH active</Badge>
                               ) : (
                                 <span className={`sshitem__status sshitem__status--${host.connection.state}`}>
                                   {CONNECTION_LABEL[host.connection.state]}

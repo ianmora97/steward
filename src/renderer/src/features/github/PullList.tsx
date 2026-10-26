@@ -1,9 +1,11 @@
 import type { GithubPull } from '@shared/schemas/github';
 import { Icon, type IconName } from '../../components/Icon';
-import { Pill, type PillTone } from '../../components/Pill';
+import { Badge, type BadgeTone } from '../../components/Badge';
 import { formatWhen, timeAgo } from './run-format';
+import { Button } from '../../components/Button';
+import { Loading } from '../../components/Loading';
 
-function pullBadge(pull: GithubPull): { tone: PillTone; icon: IconName; label: string } {
+function pullBadge(pull: GithubPull): { tone: BadgeTone; icon: IconName; label: string } {
   if (pull.state === 'merged') return { tone: 'merged', icon: 'merge', label: 'Merged' };
   if (pull.state === 'closed') return { tone: 'failure', icon: 'prClosed', label: 'Closed' };
   if (pull.draft) return { tone: 'neutral', icon: 'prDraft', label: 'Draft' };
@@ -24,7 +26,7 @@ export function PullList({
   onOpen: (url: string) => void;
 }): React.JSX.Element {
   if (pulls.length === 0) {
-    return <p className="card__hint">{loading ? 'Loading pull requests…' : 'No pull requests match this filter.'}</p>;
+    return loading ? <Loading lines={4} label="Loading pull requests…" /> : <p className="card__hint">No pull requests match this filter.</p>;
   }
 
   return (
@@ -34,9 +36,9 @@ export function PullList({
           const badge = pullBadge(pull);
           return (
             <li key={pull.number} className="ghitem">
-              <Pill tone={badge.tone} icon={badge.icon}>
+              <Badge tone={badge.tone} icon={badge.icon}>
                 {badge.label}
-              </Pill>
+              </Badge>
               <div className="ghitem__main">
                 <button type="button" className="ghitem__title" onClick={() => onOpen(pull.url)}>
                   {pull.title}
@@ -63,9 +65,7 @@ export function PullList({
         })}
       </ul>
       {hasNext && (
-        <button type="button" className="button" disabled={loading} onClick={onLoadMore}>
-          {loading ? 'Loading…' : 'Load more'}
-        </button>
+        <Button loading={loading} loadingLabel="Loading…" onClick={onLoadMore}>Load more</Button>
       )}
     </div>
   );

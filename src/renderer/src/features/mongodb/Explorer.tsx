@@ -4,6 +4,10 @@ import type { StewardError } from '@shared/types/result';
 import { EmptyState } from '../../components/EmptyState';
 import { Icon } from '../../components/Icon';
 import { DropDialog } from './DropDialog';
+import { Button } from '../../components/Button';
+import { IconButton } from '../../components/IconButton';
+import { toast } from '../../stores/toast.store';
+import { Loading } from '../../components/Loading';
 
 export interface Namespace {
   db: string;
@@ -99,6 +103,7 @@ export function Explorer({
       onError(result.error);
       return;
     }
+    toast.success(`Collection ${newName.trim()} created`);
     setCreating(null);
     setNewName('');
     await loadCollections(db);
@@ -110,9 +115,9 @@ export function Explorer({
   if (databases === null) {
     return failed ? (
       <EmptyState title="Could not connect" description="See the message above. Check the connection and try again.">
-        <button type="button" className="button" onClick={() => setRefresh((value) => value + 1)}>
+        <Button onClick={() => setRefresh((value) => value + 1)}>
           Try again
-        </button>
+        </Button>
       </EmptyState>
     ) : (
       <p className="card__hint">Connecting…</p>
@@ -134,9 +139,7 @@ export function Explorer({
           <Icon name="search" size={14} />
           <input className="field__input" value={filter} onChange={(event) => setFilter(event.target.value)} placeholder="Filter databases and collections" aria-label="Filter" />
         </label>
-        <button type="button" className="iconbutton" title="Refresh" aria-label="Refresh databases" onClick={() => setRefresh((value) => value + 1)}>
-          <Icon name="refresh" size={14} />
-        </button>
+        <IconButton icon="refresh" label="Refresh" size={14} onClick={() => setRefresh((value) => value + 1)} />
       </div>
 
       {visible.length === 0 && <p className="card__hint">No databases match.</p>}
@@ -154,12 +157,8 @@ export function Explorer({
                   <span className="mgtree__name">{database.name}</span>
                 </button>
                 <span className="mgtree__actions">
-                  <button type="button" className="iconbutton" title={connection.readOnly ? 'Read-only connection' : 'New collection'} aria-label={`New collection in ${database.name}`} disabled={connection.readOnly} onClick={() => setCreating(database.name)}>
-                    <Icon name="plus" size={14} />
-                  </button>
-                  <button type="button" className="iconbutton" title={connection.readOnly ? 'Read-only connection' : 'Drop database'} aria-label={`Drop database ${database.name}`} disabled={connection.readOnly} onClick={() => setDropping({ kind: 'database', db: database.name })}>
-                    <Icon name="trash" size={14} />
-                  </button>
+                  <IconButton icon="plus" label={connection.readOnly ? 'Read-only connection' : 'New collection'} disabled={connection.readOnly} size={14} onClick={() => setCreating(database.name)} />
+                  <IconButton icon="trash" label={connection.readOnly ? 'Read-only connection' : 'Drop database'} disabled={connection.readOnly} size={14} onClick={() => setDropping({ kind: 'database', db: database.name })} />
                 </span>
               </div>
 
@@ -175,12 +174,14 @@ export function Explorer({
                         }}
                       >
                         <input className="field__input" value={newName} onChange={(event) => setNewName(event.target.value)} placeholder="collection name" autoFocus spellCheck={false} />
-                        <button type="submit" className="button button--small button--primary">Create</button>
-                        <button type="button" className="button button--small" onClick={() => setCreating(null)}>Cancel</button>
+                        <Button variant="primary" size="sm" type="submit">Create</Button>
+                        <Button size="sm" onClick={() => setCreating(null)}>Cancel</Button>
                       </form>
                     </li>
                   )}
-                  {collections[database.name] === undefined && <li className="card__hint">Loading…</li>}
+                  {collections[database.name] === undefined && <li>
+                      <Loading variant="line" lines={2} label="Loading collections…" />
+                    </li>}
                   {list.map((collection) => {
                     const active = selected?.db === database.name && selected.collection === collection.name;
                     return (
@@ -191,9 +192,7 @@ export function Explorer({
                           {collection.type !== 'collection' && <span className="card__hint">{collection.type}</span>}
                         </button>
                         <span className="mgtree__actions">
-                          <button type="button" className="iconbutton" title={connection.readOnly ? 'Read-only connection' : 'Drop collection'} aria-label={`Drop collection ${collection.name}`} disabled={connection.readOnly} onClick={() => setDropping({ kind: 'collection', db: database.name, collection: collection.name })}>
-                            <Icon name="trash" size={14} />
-                          </button>
+                          <IconButton icon="trash" label={connection.readOnly ? 'Read-only connection' : 'Drop collection'} disabled={connection.readOnly} size={14} onClick={() => setDropping({ kind: 'collection', db: database.name, collection: collection.name })} />
                         </span>
                       </li>
                     );
@@ -233,6 +232,7 @@ export function Explorer({
           }
           onDone={() => {
             const dropped = dropping;
+            toast.success(dropped.kind === 'database' ? `Database ${dropped.db} dropped` : `Collection ${dropped.collection} dropped`);
             setDropping(null);
             if (selected !== null && selected.db === dropped.db && (dropped.kind === 'database' || selected.collection === dropped.collection)) onSelect(null);
             if (dropped.kind === 'database' && selectedDb === dropped.db) onSelectDatabase(null);

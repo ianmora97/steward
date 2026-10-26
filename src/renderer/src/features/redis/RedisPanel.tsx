@@ -5,7 +5,7 @@ import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { EmptyState } from '../../components/EmptyState';
 import { ErrorBanner } from '../../components/ErrorBanner';
 import { Icon } from '../../components/Icon';
-import { Pill } from '../../components/Pill';
+import { Badge } from '../../components/Badge';
 import { listenToRedisEvents, useRedisStore } from '../../stores/redis.store';
 import { useAppStore } from '../../stores/app.store';
 import '../mongodb/mongo.css';
@@ -19,6 +19,11 @@ import { PubSub } from './PubSub';
 import { formatBytes, formatCount } from './redis-meta';
 import { Workbench } from './Workbench';
 import './redis.css';
+import { Button } from '../../components/Button';
+import { IconButton } from '../../components/IconButton';
+import { toast } from '../../stores/toast.store';
+import { Loading } from '../../components/Loading';
+import { ConnectionBar } from '../../components/ConnectionBar';
 
 type View = 'browser' | 'workbench' | 'pubsub' | 'insights';
 
@@ -126,6 +131,7 @@ export function RedisPanel(): React.JSX.Element {
       setError(result.error);
       return;
     }
+    toast.success('Connection removed');
     setConnections((current) => (current ?? []).filter((candidate) => candidate.id !== target.id));
     if (selectedId === target.id) {
       setSelectedId(null);
@@ -161,88 +167,83 @@ export function RedisPanel(): React.JSX.Element {
               ))}
             </select>
           )}
-          <button type="button" className="button button--primary" onClick={() => setDialog({ kind: 'new' })}>
+          <Button variant="primary" onClick={() => setDialog({ kind: 'new' })}>
             <Icon name="plus" size={14} /> New connection
-          </button>
+          </Button>
         </div>
       </header>
 
-      {connections === null && <p className="card__hint">Loading connections…</p>}
+      {connections === null && <Loading lines={2} label="Loading connections…" />}
 
       {connections !== null && connection === null && (
         <EmptyState title="No Redis connections yet" description="Add a standalone server, a Sentinel setup or a cluster, with a password, ACL user or TLS if it needs them.">
-          <button type="button" className="button button--primary" onClick={() => setDialog({ kind: 'new' })}>
+          <Button variant="primary" onClick={() => setDialog({ kind: 'new' })}>
             New connection
-          </button>
+          </Button>
         </EmptyState>
       )}
 
       {connection !== null && (
         <>
-          <div className="rdconn">
-            <span
-              className={`rdconn__dot${status !== null ? ' rdconn__dot--up' : ''}`}
-              role="img"
-              aria-label={status !== null ? 'Connected' : 'Connecting'}
-              title={status !== null ? 'Connected' : 'Connecting…'}
-            />
-            <span className="rdconn__host dpmono" title={connection.hostDisplay}>
-              {connection.hostDisplay}
-            </span>
-            {/* The one line that matters at a glance; the rest sits in its tooltip. */}
-            <span
-              className="rdconn__meta"
-              title={
-                status === null
-                  ? undefined
-                  : `Role ${status.role} · ${status.latencyMs} ms round trip · ${formatCount(status.dbSize)} keys · ${formatBytes(status.usedMemory)} used`
-              }
-            >
-              {status === null
+          <ConnectionBar
+            status={status !== null ? 'up' : 'connecting'}
+            statusLabel={status !== null ? 'Connected' : 'Connecting'}
+            title={connection.hostDisplay}
+            // The one line that matters at a glance; the rest sits in its tooltip.
+            meta={
+              status === null
                 ? 'Connecting…'
-                : `Redis ${status.serverVersion} · ${MODE_LABEL[status.mode]}${status.mode === 'cluster' ? '' : ` · db${connection.options.database ?? 0}`}`}
-            </span>
-            {replica && (
-              <Pill tone="warning" icon="alert" title="A replica refuses writes">
-                Replica
-              </Pill>
-            )}
-            {connection.environmentName !== null && (
-              <Pill
-                tone={connection.protectedEnvironment ? 'warning' : 'neutral'}
-                icon={connection.protectedEnvironment ? 'shield' : 'tag'}
-                title={connection.protectedEnvironment ? 'Protected environment' : undefined}
-              >
-                {connection.environmentName}
-              </Pill>
-            )}
-            {!writable ? (
-              <Pill tone="success" icon="lock" title={replica && !connection.readOnly ? 'This server is a replica' : 'Steward refuses every write on this connection'}>
-                Read-only
-              </Pill>
-            ) : (
-              <Pill tone="warning" icon="edit" title="This connection can change data">
-                Can write
-              </Pill>
-            )}
-            {connection.options.tls === true && (
-              <Pill tone={connection.options.tlsAllowInvalidCertificates === true ? 'failure' : 'info'} icon={connection.options.tlsAllowInvalidCertificates === true ? 'alert' : 'lock'} title={connection.options.tlsAllowInvalidCertificates === true ? "The server's certificate is not verified" : undefined}>
-                {connection.options.tlsAllowInvalidCertificates === true ? 'Certificates not verified' : 'TLS'}
-              </Pill>
-            )}
-            <span className="dpitem__spacer" />
-            <div className="rdconn__actions">
-              <button type="button" className="iconbutton" title="Reconnect and read the server again" aria-label="Reconnect" onClick={() => setStatusKey((value) => value + 1)}>
-                <Icon name="refresh" size={15} />
-              </button>
-              <button type="button" className="iconbutton" title="Edit the connection" aria-label="Edit connection" onClick={() => setDialog({ kind: 'edit', connection })}>
-                <Icon name="edit" size={15} />
-              </button>
-              <button type="button" className="iconbutton iconbutton--danger" title="Remove the connection" aria-label="Remove connection" onClick={() => setRemoving(connection)}>
-                <Icon name="trash" size={15} />
-              </button>
-            </div>
-          </div>
+                : `Redis ${status.serverVersion} · ${MODE_LABEL[status.mode]}${status.mode === 'cluster' ? '' : ` · db${connection.options.database ?? 0}`}`
+            }
+            metaTitle={
+              status === null
+                ? undefined
+                : `Role ${status.role} · ${status.latencyMs} ms round trip · ${formatCount(status.dbSize)} keys · ${formatBytes(status.usedMemory)} used`
+            }
+            badges={
+              <>
+                {replica && (
+                  <Badge tone="warning" icon="alert" title="A replica refuses writes">
+                    Replica
+                  </Badge>
+                )}
+                {connection.environmentName !== null && (
+                  <Badge
+                    tone={connection.protectedEnvironment ? 'warning' : 'neutral'}
+                    icon={connection.protectedEnvironment ? 'shield' : 'tag'}
+                    title={connection.protectedEnvironment ? 'Protected environment' : undefined}
+                  >
+                    {connection.environmentName}
+                  </Badge>
+                )}
+                {!writable ? (
+                  <Badge tone="success" icon="lock" title={replica && !connection.readOnly ? 'This server is a replica' : 'Steward refuses every write on this connection'}>
+                    Read-only
+                  </Badge>
+                ) : (
+                  <Badge tone="warning" icon="edit" title="This connection can change data">
+                    Can write
+                  </Badge>
+                )}
+                {connection.options.tls === true && (
+                  <Badge
+                    tone={connection.options.tlsAllowInvalidCertificates === true ? 'failure' : 'info'}
+                    icon={connection.options.tlsAllowInvalidCertificates === true ? 'alert' : 'lock'}
+                    title={connection.options.tlsAllowInvalidCertificates === true ? "The server's certificate is not verified" : undefined}
+                  >
+                    {connection.options.tlsAllowInvalidCertificates === true ? 'Certificates not verified' : 'TLS'}
+                  </Badge>
+                )}
+              </>
+            }
+            actions={
+              <>
+                <IconButton icon="refresh" label="Reconnect and read the server again" onClick={() => setStatusKey((value) => value + 1)} />
+                <IconButton icon="edit" label="Edit the connection" onClick={() => setDialog({ kind: 'edit', connection })} />
+                <IconButton icon="trash" tone="danger" label="Remove the connection" onClick={() => setRemoving(connection)} />
+              </>
+            }
+          />
 
           <nav className="subtabs" aria-label="Redis views">
             {(Object.keys(VIEW_LABEL) as View[]).map((value) => (

@@ -5,7 +5,7 @@ import type { StewardError } from '@shared/types/result';
 import { EmptyState } from '../../components/EmptyState';
 import { ErrorBanner } from '../../components/ErrorBanner';
 import { Icon } from '../../components/Icon';
-import { Pill } from '../../components/Pill';
+import { Badge } from '../../components/Badge';
 import { useAppStore } from '../../stores/app.store';
 import { ComposeView } from './ComposeView';
 import { ContainersView } from './ContainersView';
@@ -13,6 +13,7 @@ import { ImagesView } from './ImagesView';
 import { ResourcesView } from './ResourcesView';
 import { targetKey } from './docker-meta';
 import './docker.css';
+import { Button } from '../../components/Button';
 
 type View = 'containers' | 'images' | 'resources' | 'compose';
 
@@ -138,9 +139,9 @@ export function DockerPanel(): React.JSX.Element {
               ))}
             </select>
           </label>
-          <button type="button" className="button" onClick={check} disabled={checking}>
+          <Button disabled={checking} onClick={check}>
             <Icon name="refresh" size={14} /> Refresh
-          </button>
+          </Button>
         </div>
       </header>
 
@@ -170,19 +171,19 @@ export function DockerPanel(): React.JSX.Element {
           description={[status.message, status.hint].filter((part) => part !== null && part !== '').join(' ')}
         >
           {status.state === 'starting' ? (
-            <Pill tone="running" icon="loader">
+            <Badge tone="running" icon="loader">
               Waiting for the Docker daemon
-            </Pill>
+            </Badge>
           ) : (
             <>
               {status.state === 'daemon_down' && isLocal && (
-                <button type="button" className="button button--primary" onClick={startDocker}>
+                <Button variant="primary" onClick={startDocker}>
                   Start Docker
-                </button>
+                </Button>
               )}
-              <button type="button" className="button" onClick={check}>
+              <Button onClick={check}>
                 Try again
-              </button>
+              </Button>
             </>
           )}
         </EmptyState>
@@ -203,9 +204,9 @@ export function DockerPanel(): React.JSX.Element {
                 </button>
               ))}
             </div>
-            <Pill tone="success" icon="checkCircle">
+            <Badge tone="success" icon="checkCircle">
               Docker {status.serverVersion ?? status.cliVersion ?? ''}
-            </Pill>
+            </Badge>
           </div>
 
           {activeView === 'containers' && (

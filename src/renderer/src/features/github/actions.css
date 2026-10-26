@@ -1,14 +1,14 @@
 .ghactions {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .ghactions__status {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 10px;
+  gap: var(--space-2) 10px;
 }
 
 /* A run is a button row that opens its jobs ---------------------------------- */
@@ -40,7 +40,7 @@
   flex: none;
   margin-top: 2px;
   color: var(--text-dim);
-  transition: transform 0.15s ease;
+  transition: transform var(--dur-fast) var(--ease-out);
 }
 
 .ghrun__chevron.is-open {
@@ -50,8 +50,8 @@
 .ghdetail {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 4px 14px 14px 110px;
+  gap: var(--space-3);
+  padding: var(--space-1) 14px 14px 110px;
   background: var(--bg-sunken);
 }
 
@@ -63,7 +63,7 @@
 .ghjob {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .ghjob__head {
@@ -87,7 +87,7 @@
   flex-direction: column;
   gap: 3px;
   margin: 0;
-  padding: 0 0 0 4px;
+  padding: 0 0 0 var(--space-1);
   list-style: none;
 }
 
@@ -95,7 +95,7 @@
   --step-color: var(--text-dim);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   color: var(--text-muted);
   font-size: 12px;
 }
@@ -122,18 +122,18 @@
 .ghlog__body {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .ghlog__text {
   max-height: 60vh;
   margin: 0;
-  padding: 10px 12px;
+  padding: 10px var(--space-3);
   overflow: auto;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--bg);
-  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
   line-height: 1.45;
   white-space: pre-wrap;

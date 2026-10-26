@@ -1,0 +1,123 @@
+/* Badge: a read-only label with a tone, an icon and a short text. Chip: a label you can select or remove. */
+.badge {
+  --badge-fg: var(--tone-neutral-fg);
+  --badge-bg: var(--tone-neutral-bg);
+  --badge-border: var(--tone-neutral-border);
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px 2px 6px;
+  border: 1px solid var(--badge-border);
+  border-radius: var(--radius-pill);
+  background: var(--badge-bg);
+  color: var(--badge-fg);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.badge--sm {
+  padding: 1px 7px 1px 5px;
+  font-size: var(--font-size-2xs);
+  line-height: 14px;
+}
+
+.badge--success {
+  --badge-fg: var(--tone-success-fg);
+  --badge-bg: var(--tone-success-bg);
+  --badge-border: var(--tone-success-border);
+}
+
+.badge--failure {
+  --badge-fg: var(--tone-failure-fg);
+  --badge-bg: var(--tone-failure-bg);
+  --badge-border: var(--tone-failure-border);
+}
+
+.badge--warning {
+  --badge-fg: var(--tone-warning-fg);
+  --badge-bg: var(--tone-warning-bg);
+  --badge-border: var(--tone-warning-border);
+}
+
+.badge--running {
+  --badge-fg: var(--tone-running-fg);
+  --badge-bg: var(--tone-running-bg);
+  --badge-border: var(--tone-running-border);
+}
+
+.badge--info {
+  --badge-fg: var(--tone-info-fg);
+  --badge-bg: var(--tone-info-bg);
+  --badge-border: var(--tone-info-border);
+}
+
+.badge--merged {
+  --badge-fg: var(--tone-merged-fg);
+  --badge-bg: var(--tone-merged-bg);
+  --badge-border: var(--tone-merged-border);
+}
+
+.badge--running .icon {
+  animation: spin 1.6s linear infinite;
+}
+
+.fchip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--control-h-sm);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+
+.fchip--clickable:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+.fchip--selected {
+  background: var(--tone-info-bg);
+  border-color: var(--tone-info-border);
+  color: var(--accent);
+}
+
+.fchip__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.fchip__remove {
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  margin-right: -4px;
+  background: none;
+  border: none;
+  border-radius: 50%;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.fchip__remove:hover {
+  opacity: 1;
+}

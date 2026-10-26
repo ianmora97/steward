@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { OPTIONAL_TAB_KEYS, PINNED_TAB_KEYS, TAB_DESCRIPTIONS, type TabKey, type WorkspaceTab } from '@shared/schemas/tabs';
 import { Icon, type IconName } from '../../components/Icon';
 import { useAppStore } from '../../stores/app.store';
+import { toast } from '../../stores/toast.store';
 
 const TAB_LABELS: Record<TabKey, string> = {
   git: 'Git',
@@ -144,8 +145,13 @@ export function TabBar({ tabs }: { tabs: WorkspaceTab[] }): React.JSX.Element {
   const hidden = OPTIONAL_TAB_KEYS.filter((key) => !onBar.some((tab) => tab.tabKey === key));
 
   async function add(tabKey: TabKey): Promise<void> {
-    await setTabVisibility(tabKey, true);
+    if (!(await setTabVisibility(tabKey, true))) return;
     setActiveTab(tabKey);
+    toast.success(`${tabLabel(tabKey)} added to the bar`);
+  }
+
+  async function remove(tabKey: TabKey): Promise<void> {
+    if (await setTabVisibility(tabKey, false)) toast.success(`${tabLabel(tabKey)} removed from the bar`);
   }
 
   const settingsIndex = onBar.findIndex((tab) => tab.tabKey === FIXED_LAST_TAB);
@@ -173,7 +179,7 @@ export function TabBar({ tabs }: { tabs: WorkspaceTab[] }): React.JSX.Element {
             className="tabbar__close"
             aria-label={`Remove ${tabLabel(tab.tabKey)} from the bar`}
             title={`Remove ${tabLabel(tab.tabKey)} from the bar (nothing is deleted)`}
-            onClick={() => void setTabVisibility(tab.tabKey, false)}
+            onClick={() => void remove(tab.tabKey)}
           >
             <Icon name="x" size={12} />
           </button>
