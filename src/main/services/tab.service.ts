@@ -24,16 +24,20 @@ interface TabDefinition {
   pinned: boolean;
 }
 
+/** Every row exists so the + menu can bring a service back; only Git, Terminal and Settings start on the bar. */
 const DEFAULT_TABS: readonly TabDefinition[] = [
   { tabKey: 'git', pinned: true },
-  { tabKey: 'terminal', pinned: false },
+  { tabKey: 'terminal', pinned: true },
   { tabKey: 'ssh', pinned: false },
   { tabKey: 'github', pinned: false },
   { tabKey: 'deployments', pinned: false },
   { tabKey: 'docker', pinned: false },
   { tabKey: 'mongodb', pinned: false },
+  { tabKey: 'redis', pinned: false },
   { tabKey: 'settings', pinned: false }
 ];
+
+const STARTS_VISIBLE: readonly TabKey[] = ['git', 'terminal', 'settings'];
 
 export function seedDefaultTabs(db: SqlDatabase, projectId: string): WorkspaceTab[] {
   const updatedAt = nowIso();
@@ -43,7 +47,7 @@ export function seedDefaultTabs(db: SqlDatabase, projectId: string): WorkspaceTa
       projectId,
       tabKey: definition.tabKey,
       position: index,
-      visible: true,
+      visible: STARTS_VISIBLE.includes(definition.tabKey),
       pinned: definition.pinned,
       source: 'builtin',
       integrationId: null,
@@ -98,8 +102,8 @@ export function setTabVisibility(
   if (!visible && PINNED_TAB_KEYS.includes(tabKey)) {
     throw new StewardServiceError(
       'CONFLICT',
-      'the Git tab cannot be hidden',
-      'Git is the one tab every project keeps. It can be reordered but not removed.'
+      `the ${tabKey === 'git' ? 'Git' : 'Terminal'} tab cannot be removed`,
+      'Git and Terminal are on the bar of every project.'
     );
   }
 
@@ -131,8 +135,10 @@ export function attachIntegrationTab(
 ): WorkspaceTab[] {
   const existing = listTabsByProject(db, projectId);
   const updatedAt = nowIso();
+  // GitHub is no tab of its own any more (it lives inside Git), so connecting it only records the link.
+  const showsOnBar = tabKey !== 'github';
   if (existing.some((tab) => tab.tabKey === tabKey)) {
-    updateTabVisibility(db, projectId, tabKey, true, updatedAt);
+    if (showsOnBar) updateTabVisibility(db, projectId, tabKey, true, updatedAt);
     setTabIntegration(db, projectId, tabKey, integrationId, updatedAt);
   } else {
     insertTab(db, {
@@ -140,7 +146,7 @@ export function attachIntegrationTab(
       projectId,
       tabKey,
       position: existing.reduce((max, tab) => Math.max(max, tab.position), -1) + 1,
-      visible: true,
+      visible: showsOnBar,
       pinned: false,
       source: 'integration',
       integrationId,

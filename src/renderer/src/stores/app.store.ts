@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { Project } from '@shared/schemas/project';
 import type { Repository, RepositoryProbe } from '@shared/schemas/repository';
-import type { TabKey, WorkspaceTab } from '@shared/schemas/tabs';
+import { OPTIONAL_TAB_KEYS, type TabKey, type WorkspaceTab } from '@shared/schemas/tabs';
 import type { AppInfo } from '@shared/types/ipc';
 import type { StewardError, StewardResult } from '@shared/types/result';
 
@@ -14,6 +14,12 @@ import type { StewardError, StewardResult } from '@shared/types/result';
  */
 export type AppView = 'overview' | 'project';
 
+/** The sections of the project's Settings tab. */
+export type SettingsSection = 'general' | 'services' | 'integrations' | 'workspace';
+
+/** The sections of the Git tab. GitHub's pull requests and Actions are sections of it, not a tab of their own. */
+export type GitSection = 'changes' | 'activity' | 'pulls' | 'actions';
+
 interface AppState {
   appInfo: AppInfo | null;
   view: AppView;
@@ -24,6 +30,10 @@ interface AppState {
   repositories: Repository[];
   tabs: WorkspaceTab[];
   activeTabKey: TabKey | null;
+  /** A section somebody asked the Git tab to open (e.g. "go to GitHub"); the tab reads it once and clears it. */
+  requestedGitSection: GitSection | null;
+  /** Same idea for Settings: "manage repositories" opens it on the right section. */
+  requestedSettingsSection: SettingsSection | null;
   busy: boolean;
   error: StewardError | null;
 
@@ -41,7 +51,14 @@ interface AppState {
   removeRepository: (repositoryId: string) => Promise<void>;
 
   setActiveTab: (tabKey: TabKey) => void;
+  /** Opens the Git tab on one of its sections. */
+  openGitSection: (section: GitSection) => void;
+  clearGitSectionRequest: () => void;
+  openSettings: (section: SettingsSection) => void;
+  clearSettingsRequest: () => void;
   moveTab: (tabKey: TabKey, direction: -1 | 1) => Promise<void>;
+  /** Moves an optional service one place among the optional services only, so a hidden neighbour never swallows the move. */
+  moveService: (tabKey: TabKey, direction: -1 | 1) => Promise<void>;
   setTabVisibility: (tabKey: TabKey, visible: boolean) => Promise<void>;
   restoreTabs: () => Promise<void>;
   /** Re-reads the tab list, e.g. after an integration added or removed its tab. */
@@ -116,6 +133,8 @@ export const useAppStore = create<AppState>((set, get) => {
     repositories: [],
     tabs: [],
     activeTabKey: null,
+    requestedGitSection: null,
+    requestedSettingsSection: null,
     busy: false,
     error: null,
 
@@ -190,7 +209,17 @@ export const useAppStore = create<AppState>((set, get) => {
       if (removed !== null && projectId !== null) await loadWorkspace(projectId);
     },
 
-    setActiveTab: (tabKey) => set({ activeTabKey: tabKey }),
+    // Anything that still says "go to the GitHub tab" lands on the GitHub part of Git.
+    setActiveTab: (tabKey) =>
+      tabKey === 'github' ? set({ activeTabKey: 'git', requestedGitSection: 'pulls' }) : set({ activeTabKey: tabKey }),
+
+    openGitSection: (section) => set({ activeTabKey: 'git', requestedGitSection: section }),
+
+    clearGitSectionRequest: () => set({ requestedGitSection: null }),
+
+    openSettings: (section) => set({ activeTabKey: 'settings', requestedSettingsSection: section }),
+
+    clearSettingsRequest: () => set({ requestedSettingsSection: null }),
 
     moveTab: async (tabKey, direction) => {
       const projectId = get().selectedProjectId;
@@ -212,6 +241,28 @@ export const useAppStore = create<AppState>((set, get) => {
       if (get().tabs.some((tab) => tab.tabKey === 'settings')) swapped.push('settings');
 
       const tabs = await unwrap(api().tabs.reorder({ projectId, orderedTabKeys: swapped }));
+      if (tabs !== null) set({ tabs });
+    },
+
+    moveService: async (tabKey, direction) => {
+      const projectId = get().selectedProjectId;
+      if (projectId === null) return;
+
+      const ordered: TabKey[] = [...get().tabs].sort((a, b) => a.position - b.position).map((tab) => tab.tabKey);
+      const optional = ordered.filter((key) => OPTIONAL_TAB_KEYS.includes(key));
+      const index = optional.indexOf(tabKey);
+      const target = index + direction;
+      if (index === -1 || target < 0 || target >= optional.length) return;
+
+      const swapped = [...optional];
+      const moving = swapped[index] as TabKey;
+      swapped[index] = swapped[target] as TabKey;
+      swapped[target] = moving;
+      // The optional services fill, in their new order, the places the optional services held.
+      let next = 0;
+      const rebuilt = ordered.map((key) => (OPTIONAL_TAB_KEYS.includes(key) ? (swapped[next++] as TabKey) : key));
+
+      const tabs = await unwrap(api().tabs.reorder({ projectId, orderedTabKeys: rebuilt }));
       if (tabs !== null) set({ tabs });
     },
 

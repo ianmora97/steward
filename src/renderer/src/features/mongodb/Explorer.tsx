@@ -150,8 +150,8 @@ export function Explorer({
               <div className={`mgtree__row mgtree__row--db${selected === null && selectedDb === database.name ? ' mgtree__row--active' : ''}`}>
                 <button type="button" className="mgtree__label" onClick={() => void toggle(database.name)}>
                   <Icon name={isOpen ? 'chevronDown' : 'chevronRight'} size={14} />
+                  <Icon name="database" size={14} />
                   <span className="mgtree__name">{database.name}</span>
-                  <span className="card__hint">{formatSize(database.sizeOnDisk)}</span>
                 </button>
                 <span className="mgtree__actions">
                   <button type="button" className="iconbutton" title={connection.readOnly ? 'Read-only connection' : 'New collection'} aria-label={`New collection in ${database.name}`} disabled={connection.readOnly} onClick={() => setCreating(database.name)}>
