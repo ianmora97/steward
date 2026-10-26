@@ -9,6 +9,8 @@ import { useTerminalStore } from '../../stores/terminal.store';
 import { TerminalSettingsPanel } from './TerminalSettingsPanel';
 import { TerminalView } from './TerminalView';
 import './terminal.css';
+import { Button } from '../../components/Button';
+import { IconButton } from '../../components/IconButton';
 
 const REFRESH_MS = 3000;
 const NO_SESSIONS: TerminalSession[] = [];
@@ -223,14 +225,7 @@ export function TerminalPanel(): React.JSX.Element {
                   )}
                 </button>
               )}
-              <button
-                type="button"
-                className="iconbutton termbar__close"
-                aria-label="Close terminal"
-                onClick={() => void close(projectId, session.id)}
-              >
-                <Icon name="x" size={14} />
-              </button>
+              <IconButton icon="x" size={14} className="termbar__close" label="Close terminal" onClick={() => void close(projectId, session.id)} />
             </span>
           ))}
         </nav>
@@ -247,36 +242,23 @@ export function TerminalPanel(): React.JSX.Element {
               </option>
             ))}
           </select>
-          <button
-            type="button"
-            className={`button${showSplit ? ' button--toggled' : ''}`}
+          <Button
+            className={showSplit ? 'button--toggled' : ''}
+            icon="split"
             aria-pressed={split}
             disabled={sessions.length < 2}
             title="Show all terminals at once"
             onClick={() => toggleSplit(projectId)}
           >
-            <Icon name="split" />
             Split
-          </button>
+          </Button>
           <div className="termmenu" ref={menuRef}>
-            <button
-              type="button"
-              className="button button--primary"
-              disabled={repositoryId === ''}
-              onClick={() => void create(projectId, repositoryId)}
-            >
+            <Button variant="primary" disabled={repositoryId === ''} onClick={() => void create(projectId, repositoryId)}>
               New terminal
-            </button>
-            <button
-              type="button"
-              className="button button--primary termmenu__toggle"
-              disabled={repositoryId === ''}
-              aria-label="Choose a shell"
-              aria-expanded={menuOpen}
-              onClick={() => (menuOpen ? closeMenu() : setMenuOpen(true))}
-            >
+            </Button>
+            <Button variant="primary" className="termmenu__toggle" disabled={repositoryId === ''} aria-label="Choose a shell" aria-expanded={menuOpen} onClick={() => (menuOpen ? closeMenu() : setMenuOpen(true))}>
               <Icon name="chevronDown" />
-            </button>
+            </Button>
             {menuOpen && (
               <div className={`termmenu__list${menuClosing ? ' is-closing' : ''}`} role="menu">
                 {profiles.map((profile) => (
@@ -308,15 +290,7 @@ export function TerminalPanel(): React.JSX.Element {
               </div>
             )}
           </div>
-          <button
-            type="button"
-            className="iconbutton iconbutton--bordered"
-            onClick={() => setShowSettings(true)}
-            aria-label="Shell settings"
-            title="Shell settings"
-          >
-            <Icon name="gear" />
-          </button>
+          <IconButton icon="gear" label="Shell settings" bordered size={16} onClick={() => setShowSettings(true)} />
         </div>
       </div>
 

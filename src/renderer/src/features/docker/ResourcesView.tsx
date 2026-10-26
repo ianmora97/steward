@@ -2,9 +2,11 @@ import { useCallback, useEffect, useState } from 'react';
 import type { DockerNetwork, DockerTarget, DockerVolume } from '@shared/schemas/docker';
 import type { StewardError } from '@shared/types/result';
 import { EmptyState } from '../../components/EmptyState';
-import { Icon } from '../../components/Icon';
+
 import { DestructiveDialog, type DestructiveRequest } from './DestructiveDialog';
 import { BUILTIN_NETWORKS } from './docker-meta';
+import { IconButton } from '../../components/IconButton';
+import { Loading } from '../../components/Loading';
 
 export function ResourcesView({
   projectId,
@@ -59,6 +61,7 @@ export function ResourcesView({
         </p>
       ),
       confirmLabel: 'Remove volume',
+      doneMessage: `Volume ${volume.name} removed`,
       thing: 'volume',
       expectedName: volume.name,
       run: (confirmation) =>
@@ -81,6 +84,7 @@ export function ResourcesView({
         </p>
       ),
       confirmLabel: 'Remove network',
+      doneMessage: `Network ${network.name} removed`,
       thing: 'network',
       expectedName: network.name,
       run: (confirmation) =>
@@ -94,7 +98,7 @@ export function ResourcesView({
     });
   }
 
-  if (volumes === null || networks === null) return <p className="card__hint">Loading…</p>;
+  if (volumes === null || networks === null) return <Loading lines={5} label="Loading volumes and networks…" />;
 
   return (
     <div className="dpcolumns">
@@ -112,15 +116,7 @@ export function ResourcesView({
                     {volume.driver} · {volume.scope}
                   </span>
                 </span>
-                <button
-                  type="button"
-                  className="iconbutton"
-                  aria-label={`Remove volume ${volume.name}`}
-                  title="Remove"
-                  onClick={() => askRemoveVolume(volume)}
-                >
-                  <Icon name="trash" size={14} />
-                </button>
+                <IconButton icon="trash" label="Remove" size={14} onClick={() => askRemoveVolume(volume)} />
               </li>
             ))}
           </ul>
@@ -138,16 +134,7 @@ export function ResourcesView({
                   {network.driver} · {network.scope}
                 </span>
               </span>
-              <button
-                type="button"
-                className="iconbutton"
-                aria-label={`Remove network ${network.name}`}
-                title={BUILTIN_NETWORKS.includes(network.name) ? 'Docker keeps its default networks' : 'Remove'}
-                disabled={BUILTIN_NETWORKS.includes(network.name)}
-                onClick={() => askRemoveNetwork(network)}
-              >
-                <Icon name="trash" size={14} />
-              </button>
+              <IconButton icon="trash" label={BUILTIN_NETWORKS.includes(network.name) ? 'Docker keeps its default networks' : 'Remove'} disabled={BUILTIN_NETWORKS.includes(network.name)} size={14} onClick={() => askRemoveNetwork(network)} />
             </li>
           ))}
         </ul>

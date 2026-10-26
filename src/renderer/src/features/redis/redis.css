@@ -12,59 +12,6 @@
 }
 
 /* connection bar: what and where on the left, access and actions on the right, everything on one centre line */
-.rdconn {
-  display: flex;
-  flex: none;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 12px;
-  min-height: 40px;
-  padding: 4px 6px 4px 14px;
-  background: var(--bg-raised);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-}
-
-.rdconn__dot {
-  flex: none;
-  width: 8px;
-  height: 8px;
-  background: var(--text-muted);
-  border-radius: 50%;
-}
-
-.rdconn__dot--up {
-  background: var(--ok);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 22%, transparent);
-}
-
-.rdconn__host {
-  max-width: 340px;
-  overflow: hidden;
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 20px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.rdconn__meta {
-  color: var(--text-muted);
-  font-size: 12.5px;
-  line-height: 20px;
-  white-space: nowrap;
-}
-
-.rdconn__actions {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-}
-
-.rdconn__actions .iconbutton {
-  width: 30px;
-  height: 30px;
-}
 
 .rdview {
   display: flex;
@@ -74,14 +21,21 @@
 }
 
 .rdlayout {
-  grid-template-columns: 340px minmax(0, 1fr);
+  grid-template-columns: clamp(220px, 34%, 340px) minmax(0, 1fr);
+}
+
+@media (max-width: 1100px) {
+  .rdlayout {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 260px minmax(0, 1fr);
+  }
 }
 
 /* key browser */
 .rdbrowser {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
   min-height: 0;
 }
 
@@ -130,7 +84,7 @@
 .rdbrowser__more {
   display: flex;
   justify-content: center;
-  padding: 8px 0;
+  padding: var(--space-2) 0;
 }
 
 .rdkeys {
@@ -144,7 +98,7 @@
   align-items: center;
   gap: 6px;
   width: 100%;
-  padding: 4px 8px;
+  padding: var(--space-1) var(--space-2);
   color: inherit;
   text-align: left;
   background: none;
@@ -166,7 +120,7 @@
   min-width: 0;
   overflow: hidden;
   font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: 12.5px;
+  font-size: var(--font-size-sm);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -176,7 +130,7 @@
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
   min-height: 0;
 }
 
@@ -184,7 +138,7 @@
   display: flex;
   flex: none;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
   padding-bottom: 10px;
   border-bottom: 1px solid var(--border);
 }
@@ -194,7 +148,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 12px;
+  gap: var(--space-2) var(--space-3);
 }
 
 .rddetail__name {
@@ -216,18 +170,18 @@
 .rdbody__tools {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
 }
 
 .rdtable {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12.5px;
+  font-size: var(--font-size-sm);
 }
 
 .rdtable th {
-  padding: 6px 8px;
+  padding: 6px var(--space-2);
   color: var(--text-muted);
   font-weight: 600;
   text-align: left;
@@ -235,7 +189,7 @@
 }
 
 .rdtable td {
-  padding: 4px 8px;
+  padding: var(--space-1) var(--space-2);
   vertical-align: top;
   border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
 }
@@ -279,7 +233,7 @@
 
 .rdpair {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .rdpair__name {
@@ -294,7 +248,7 @@
 .rdvalue {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .rdvalue__bar {
@@ -307,9 +261,9 @@
 .rdvalue__body {
   max-height: 60vh;
   margin: 0;
-  padding: 10px 12px;
+  padding: 10px var(--space-3);
   overflow: auto;
-  font-size: 12.5px;
+  font-size: var(--font-size-sm);
   white-space: pre-wrap;
   word-break: break-all;
   background: var(--bg-raised);
@@ -328,7 +282,7 @@
   display: grid;
   flex: 1;
   grid-template-columns: minmax(0, 1fr) 260px;
-  gap: 16px;
+  gap: var(--space-4);
   min-height: 0;
 }
 
@@ -342,9 +296,9 @@
 .rdwork__log {
   flex: 1;
   min-height: 0;
-  padding: 12px;
+  padding: var(--space-3);
   overflow: auto;
-  font-size: 12.5px;
+  font-size: var(--font-size-sm);
   background: var(--bg-raised);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -376,7 +330,7 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .rdwork__input .field__input {
@@ -389,8 +343,8 @@
   left: 0;
   z-index: 5;
   min-width: 200px;
-  margin: 0 0 4px;
-  padding: 4px;
+  margin: 0 0 var(--space-1);
+  padding: var(--space-1);
   list-style: none;
   background: var(--bg-raised);
   border: 1px solid var(--border);
@@ -400,7 +354,7 @@
 .rdwork__suggestion {
   display: block;
   width: 100%;
-  padding: 3px 8px;
+  padding: 3px var(--space-2);
   color: inherit;
   text-align: left;
   background: none;
@@ -415,8 +369,8 @@
 .rdwork__confirm {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 10px 12px;
+  gap: var(--space-2);
+  padding: 10px var(--space-3);
   background: color-mix(in srgb, var(--warning, #f5a524) 12%, transparent);
   border: 1px solid color-mix(in srgb, var(--warning, #f5a524) 45%, transparent);
   border-radius: var(--radius);
@@ -429,7 +383,7 @@
 .rdwork__confirm-actions,
 .rdwork__save {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .rdwork__save .field__input {
@@ -438,7 +392,7 @@
 
 .rdwork__side {
   min-height: 0;
-  padding: 12px;
+  padding: var(--space-3);
   overflow: auto;
   background: var(--bg-raised);
   border: 1px solid var(--border);
@@ -446,7 +400,7 @@
 }
 
 .rdwork__side-title {
-  margin: 12px 0 6px;
+  margin: var(--space-3) 0 6px;
   font-size: 12px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -473,7 +427,7 @@
   flex: 1;
   flex-direction: column;
   min-width: 0;
-  padding: 4px 6px;
+  padding: var(--space-1) 6px;
   overflow: hidden;
   color: inherit;
   text-align: left;
@@ -494,7 +448,7 @@
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
   min-height: 0;
 }
 
@@ -507,7 +461,7 @@
 .rddash {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .rddash__bar,
@@ -515,8 +469,8 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 12px;
-  margin-bottom: 8px;
+  gap: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-2);
 }
 
 .rdsection__inline {
@@ -528,14 +482,14 @@
 .rdtiles {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .rdtile {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 12px 14px;
+  padding: var(--space-3) 14px;
   background: var(--bg-raised);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -554,14 +508,14 @@
 .rdspark {
   width: 100%;
   height: 30px;
-  margin-top: 4px;
+  margin-top: var(--space-1);
   color: var(--accent, #5b8def);
 }
 
 .rdbars__grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .rdbars__cell {
@@ -580,7 +534,7 @@
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
   min-height: 0;
 }
 
@@ -588,7 +542,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .rdpubsub__form .field {
@@ -598,42 +552,13 @@
 .rdpubsub__chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-}
-
-.rdchip {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 4px 2px 10px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-}
-
-.rdchip--active {
-  background: color-mix(in srgb, var(--accent, #5b8def) 18%, transparent);
-}
-
-.rdchip__label {
-  color: inherit;
-  background: none;
-  border: 0;
-  cursor: pointer;
-}
-
-.rdchip__badge {
-  margin-left: 6px;
-  padding: 0 6px;
-  font-size: 11px;
-  background: var(--accent, #5b8def);
-  border-radius: 999px;
-  color: #fff;
+  gap: var(--space-2);
 }
 
 .rdpubsub__log {
   flex: 1;
   min-height: 120px;
-  padding: 8px;
+  padding: var(--space-2);
   overflow: auto;
   background: var(--bg-raised);
   border: 1px solid var(--border);
@@ -644,7 +569,7 @@
   display: flex;
   gap: 10px;
   width: 100%;
-  padding: 3px 4px;
+  padding: 3px var(--space-1);
   color: inherit;
   text-align: left;
   background: none;

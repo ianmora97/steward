@@ -4,6 +4,7 @@ import type { Repository, RepositoryProbe } from '@shared/schemas/repository';
 import { OPTIONAL_TAB_KEYS, type TabKey, type WorkspaceTab } from '@shared/schemas/tabs';
 import type { AppInfo } from '@shared/types/ipc';
 import type { StewardError, StewardResult } from '@shared/types/result';
+import { toast } from './toast.store';
 
 /**
  * Renderer state.
@@ -59,7 +60,8 @@ interface AppState {
   moveTab: (tabKey: TabKey, direction: -1 | 1) => Promise<void>;
   /** Moves an optional service one place among the optional services only, so a hidden neighbour never swallows the move. */
   moveService: (tabKey: TabKey, direction: -1 | 1) => Promise<void>;
-  setTabVisibility: (tabKey: TabKey, visible: boolean) => Promise<void>;
+  /** Resolves to whether the change was made (a failure is shown in the error banner). */
+  setTabVisibility: (tabKey: TabKey, visible: boolean) => Promise<boolean>;
   restoreTabs: () => Promise<void>;
   /** Re-reads the tab list, e.g. after an integration added or removed its tab. */
   refreshTabs: (activate?: TabKey) => Promise<void>;
@@ -169,6 +171,7 @@ export const useAppStore = create<AppState>((set, get) => {
     createProject: async (input) => {
       const project = await unwrap(api().projects.create(input));
       if (project === null) return false;
+      toast.success('Project created');
       await get().refreshProjects();
       await get().selectProject(project.id);
       return true;
@@ -177,6 +180,7 @@ export const useAppStore = create<AppState>((set, get) => {
     deleteProject: async (projectId) => {
       const removed = await unwrap(api().projects.remove({ id: projectId }));
       if (removed === null) return;
+      toast.success('Project deleted');
 
       await get().refreshProjects();
       if (get().selectedProjectId === projectId) {
@@ -198,6 +202,7 @@ export const useAppStore = create<AppState>((set, get) => {
       const payload = input.name === undefined ? { projectId, localPath: input.localPath } : { projectId, localPath: input.localPath, name: input.name };
       const repository = await unwrap(api().repositories.add(payload));
       if (repository === null) return false;
+      toast.success('Repository added');
 
       await loadWorkspace(projectId);
       return true;
@@ -206,7 +211,9 @@ export const useAppStore = create<AppState>((set, get) => {
     removeRepository: async (repositoryId) => {
       const projectId = get().selectedProjectId;
       const removed = await unwrap(api().repositories.remove({ id: repositoryId }));
-      if (removed !== null && projectId !== null) await loadWorkspace(projectId);
+      if (removed === null) return;
+      toast.success('Repository removed');
+      if (projectId !== null) await loadWorkspace(projectId);
     },
 
     // Anything that still says "go to the GitHub tab" lands on the GitHub part of Git.
@@ -268,10 +275,10 @@ export const useAppStore = create<AppState>((set, get) => {
 
     setTabVisibility: async (tabKey, visible) => {
       const projectId = get().selectedProjectId;
-      if (projectId === null) return;
+      if (projectId === null) return false;
 
       const tabs = await unwrap(api().tabs.setVisibility({ projectId, tabKey, visible }));
-      if (tabs === null) return;
+      if (tabs === null) return false;
 
       const stillVisible = tabs.filter((tab) => tab.visible);
       const current = get().activeTabKey;
@@ -282,6 +289,7 @@ export const useAppStore = create<AppState>((set, get) => {
             ? current
             : (stillVisible[0]?.tabKey ?? null)
       });
+      return true;
     },
 
     restoreTabs: async () => {
@@ -289,7 +297,9 @@ export const useAppStore = create<AppState>((set, get) => {
       if (projectId === null) return;
 
       const tabs = await unwrap(api().tabs.restoreDefaults({ projectId }));
-      if (tabs !== null) set({ tabs, activeTabKey: tabs.filter((t) => t.visible)[0]?.tabKey ?? null });
+      if (tabs === null) return;
+      toast.success('Tab bar reset');
+      set({ tabs, activeTabKey: tabs.filter((t) => t.visible)[0]?.tabKey ?? null });
     },
 
     refreshTabs: async (activate) => {

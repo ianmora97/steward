@@ -1,16 +1,19 @@
 import { useEffect, useState } from 'react';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { Icon } from '../../components/Icon';
-import { Pill } from '../../components/Pill';
+import { Badge } from '../../components/Badge';
 import { useAppStore, type GitSection } from '../../stores/app.store';
 import { useGithubStore } from '../../stores/github.store';
 import { useGitStore } from '../../stores/git.store';
 import { GithubSection } from '../github/GithubSection';
-import { healthPill } from '../github/run-format';
+import { healthBadge } from '../github/run-format';
 import { RepositoryPanel } from '../repositories/RepositoryPanel';
 import { ActivityView } from './ActivityView';
 import { BranchesModal } from './BranchesModal';
 import { GitWorkbench } from './GitWorkbench';
+import { IconButton } from '../../components/IconButton';
+import { Button } from '../../components/Button';
+import { Chip } from '../../components/Chip';
 
 const LOCAL_SECTIONS: Array<{ key: GitSection; label: string }> = [
   { key: 'changes', label: 'Changes' },
@@ -77,7 +80,7 @@ function SectionNav({ section, onSelect }: { section: GitSection; onSelect: (nex
   const pullsState = useGithubStore((state) => state.pullsState);
   const hasNext = useGithubStore((state) => state.hasNext);
   const health = useGithubStore((state) => state.health);
-  const actionsHealth = healthPill(health?.status ?? 'unknown');
+  const actionsHealth = healthBadge(health?.status ?? 'unknown');
   const tab = (key: GitSection, label: string, extra?: React.ReactNode): React.JSX.Element => (
     <button key={key} type="button" className={`subtabs__tab${section === key ? ' subtabs__tab--active' : ''}`} onClick={() => onSelect(key)}>
       {label}
@@ -99,13 +102,13 @@ function SectionNav({ section, onSelect }: { section: GitSection; onSelect: (nex
         'pulls',
         'Pull requests',
         connected && pullsState === 'open' && pulls.length > 0 ? (
-          <Pill tone="success">
+          <Badge tone="success">
             {pulls.length}
             {hasNext ? '+' : ''}
-          </Pill>
+          </Badge>
         ) : null
       )}
-      {tab('actions', 'Actions', connected && health !== null ? <Pill tone={actionsHealth.tone} icon={actionsHealth.icon}>{actionsHealth.label}</Pill> : null)}
+      {tab('actions', 'Actions', connected && health !== null ? <Badge tone={actionsHealth.tone} icon={actionsHealth.icon}>{actionsHealth.label}</Badge> : null)}
     </nav>
   );
 }
@@ -123,6 +126,17 @@ function GitToolbar({ onOpenBranches }: { onOpenBranches: () => void }): React.J
   const abortMerge = useGitStore((state) => state.abortMerge);
 
   const [confirmAbort, setConfirmAbort] = useState(false);
+  const [pending, setPending] = useState<'refresh' | 'fetch' | 'pull' | 'push' | null>(null);
+
+  // Which button was pressed, so only that one shows the spinner while the others wait.
+  async function perform(action: 'refresh' | 'fetch' | 'pull' | 'push', operation: () => Promise<void>): Promise<void> {
+    setPending(action);
+    try {
+      await operation();
+    } finally {
+      setPending(null);
+    }
+  }
 
   const hasUpstream = status?.upstream !== undefined && status.upstream !== null;
 
@@ -145,23 +159,14 @@ function GitToolbar({ onOpenBranches }: { onOpenBranches: () => void }): React.J
         ) : (
           <strong>{repositories[0]?.name}</strong>
         )}
-        <button
-          type="button"
-          className="iconbutton"
-          title="Add or manage the project's repositories"
-          aria-label="Manage repositories"
-          onClick={() => openSettings('workspace')}
-        >
-          <Icon name="gear" size={15} />
-        </button>
+        <IconButton icon="gear" label="Add or manage the project's repositories" onClick={() => openSettings('workspace')} />
 
         {status !== null && (
           <>
-            <button type="button" className="chip chip--primary gitbar__branch" title="Branches: switch, create or delete" onClick={onOpenBranches}>
-              <Icon name="git" size={13} />
+            <Chip selected icon="git" title="Branches: switch, create or delete" onClick={onOpenBranches}>
               {status.detached ? `detached @ ${status.head?.slice(0, 7) ?? '?'}` : (status.branch ?? 'no branch')}
               <Icon name="chevronDown" size={13} />
-            </button>
+            </Chip>
             {status.upstream !== null && (
               <span className="gitbar__upstream" title={`Upstream ${status.upstream}`}>
                 {status.upstream} · ↑{status.ahead} ↓{status.behind}
@@ -175,37 +180,38 @@ function GitToolbar({ onOpenBranches }: { onOpenBranches: () => void }): React.J
       </div>
 
       <div className="gitbar__actions">
-        <button type="button" className="button" disabled={busy} onClick={() => void refresh()}>
+        <Button loading={pending === 'refresh'} loadingLabel="Refreshing…" disabled={busy} onClick={() => void perform('refresh', refresh)}>
           Refresh
-        </button>
-        <button type="button" className="button" disabled={busy} onClick={() => void fetchRemote()}>
+        </Button>
+        <Button loading={pending === 'fetch'} loadingLabel="Fetching…" disabled={busy} onClick={() => void perform('fetch', fetchRemote)}>
           Fetch
-        </button>
-        <button
-          type="button"
-          className="button"
+        </Button>
+        <Button
+          loading={pending === 'pull'}
+          loadingLabel="Pulling…"
           disabled={busy || !hasUpstream || status?.detached === true}
           title={hasUpstream ? 'Fast-forward only' : 'This branch has no upstream yet'}
-          onClick={() => void pull('ff-only')}
+          onClick={() => void perform('pull', () => pull('ff-only'))}
         >
           Pull{status !== null && status.behind > 0 ? ` ↓${status.behind}` : ''}
-        </button>
-        <button
-          type="button"
-          className="button button--primary"
+        </Button>
+        <Button
+          variant="primary"
+          loading={pending === 'push'}
+          loadingLabel="Pushing…"
           disabled={busy || status === null || status.detached || !status.hasCommits}
-          onClick={() => void push()}
+          onClick={() => void perform('push', push)}
         >
           Push{status !== null && status.ahead > 0 ? ` ↑${status.ahead}` : ''}
-        </button>
+        </Button>
       </div>
 
       {status?.mergeInProgress === true && (
         <div className="gitbar__merge" role="status">
           <span>A merge is in progress.</span>
-          <button type="button" className="button button--small" disabled={busy} onClick={() => setConfirmAbort(true)}>
+          <Button size="sm" disabled={busy} onClick={() => setConfirmAbort(true)}>
             Abort merge
-          </button>
+          </Button>
         </div>
       )}
 
@@ -231,7 +237,6 @@ function GitToolbar({ onOpenBranches }: { onOpenBranches: () => void }): React.J
 
 function GitMessages(): React.JSX.Element | null {
   const error = useGitStore((state) => state.error);
-  const notice = useGitStore((state) => state.notice);
   const dismiss = useGitStore((state) => state.dismiss);
   const pull = useGitStore((state) => state.pull);
   const busy = useGitStore((state) => state.busy);
@@ -246,25 +251,14 @@ function GitMessages(): React.JSX.Element | null {
         </div>
         <div className="gitmsg__actions">
           {error.code === 'GIT_DIVERGED' && (
-            <button type="button" className="button button--small" disabled={busy} onClick={() => void pull('merge')}>
+            <Button size="sm" disabled={busy} onClick={() => void pull('merge')}>
               Pull with merge
-            </button>
+            </Button>
           )}
-          <button type="button" className="button button--ghost button--small" onClick={dismiss}>
+          <Button variant="ghost" size="sm" onClick={dismiss}>
             Dismiss
-          </button>
+          </Button>
         </div>
-      </div>
-    );
-  }
-
-  if (notice !== null) {
-    return (
-      <div className="gitmsg gitmsg--ok" role="status">
-        <pre className="gitmsg__details">{notice}</pre>
-        <button type="button" className="button button--ghost button--small" onClick={dismiss}>
-          Dismiss
-        </button>
       </div>
     );
   }

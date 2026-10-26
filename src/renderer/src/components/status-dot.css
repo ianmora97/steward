@@ -1,0 +1,73 @@
+.sdot {
+  --dot: var(--text-dim);
+  position: relative;
+  display: inline-block;
+  flex: none;
+  background: var(--dot);
+  border-radius: 50%;
+}
+
+.sdot--ok {
+  --dot: var(--ok);
+}
+
+.sdot--warn {
+  --dot: var(--warn);
+}
+
+.sdot--danger {
+  --dot: var(--danger);
+}
+
+.sdot--busy {
+  --dot: var(--accent);
+}
+
+/* A ring that grows and fades behind the dot, plus a slow blink of the dot itself. */
+.sdot--ok,
+.sdot--warn,
+.sdot--danger,
+.sdot--busy {
+  box-shadow: 0 0 8px color-mix(in srgb, var(--dot) 70%, transparent);
+  animation: sdot-blink 2.4s ease-in-out infinite;
+}
+
+.sdot--ok::after,
+.sdot--warn::after,
+.sdot--danger::after,
+.sdot--busy::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--dot);
+  border-radius: 50%;
+  animation: sdot-ring 2.4s ease-out infinite;
+}
+
+/* Trouble blinks faster than health. */
+.sdot--danger,
+.sdot--danger::after {
+  animation-duration: 1.2s;
+}
+
+.sdot--busy,
+.sdot--busy::after {
+  animation-duration: 0.9s;
+}
+
+@keyframes sdot-blink {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@keyframes sdot-ring {
+  from {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(2.6);
+  }
+}

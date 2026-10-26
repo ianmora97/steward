@@ -12,8 +12,13 @@ import { useTerminalStore } from '../../stores/terminal.store';
 import { ConnectionEditor, type HostFields } from './ConnectionEditor';
 import { ConnectionList } from './ConnectionList';
 import { HostKeyReview } from './SshSession';
+import { CONNECTION_LABEL } from './ssh-meta';
+import { ProviderLogo } from './ProviderLogo';
 import { VpcHome } from './VpcHome';
 import './ssh.css';
+import './vpc-home.css';
+import { Button } from '../../components/Button';
+import { toast } from '../../stores/toast.store';
 
 const REFRESH_MS = 5000;
 const NO_SESSIONS: TerminalSession[] = [];
@@ -129,13 +134,17 @@ export function SshPanel(): React.JSX.Element {
     if (result.success) setHistory(result.data);
   }
 
-  async function test(host: SshHost): Promise<void> {
+  async function test(host: SshHost, announce = true): Promise<void> {
     markChecking(host.id, true);
     const result = await window.steward.ssh.test({ id: host.id });
     markChecking(host.id, false);
     if (result.success) {
       setError(null);
       replaceHost(result.data);
+      if (announce) {
+        if (result.data.connection.state === 'connected') toast.success(`${host.name} answered`);
+        else toast.error(`${host.name}: ${CONNECTION_LABEL[result.data.connection.state]}`);
+      }
     } else {
       setError(result.error);
     }
@@ -166,9 +175,10 @@ export function SshPanel(): React.JSX.Element {
   async function testAll(): Promise<void> {
     const queue = [...hosts];
     const worker = async (): Promise<void> => {
-      for (let host = queue.shift(); host !== undefined; host = queue.shift()) await test(host);
+      for (let host = queue.shift(); host !== undefined; host = queue.shift()) await test(host, false);
     };
     await Promise.all([worker(), worker(), worker()]);
+    toast.info(`${hosts.length} connection${hosts.length === 1 ? '' : 's'} checked`);
   }
 
   async function save(fields: HostFields): Promise<StewardError | null> {
@@ -177,6 +187,7 @@ export function SshPanel(): React.JSX.Element {
         ? await window.steward.ssh.create({ projectId: projectId as string, ...fields })
         : await window.steward.ssh.update({ id: selected.id, ...fields });
     if (!result.success) return result.error;
+    toast.success(selected === null ? 'Connection added' : 'Connection saved');
     await reload();
     setSelection(result.data.id);
     return null;
@@ -189,6 +200,7 @@ export function SshPanel(): React.JSX.Element {
       setError(result.error);
       return;
     }
+    toast.success('Connection removed');
     setSelection(null);
     setHistory([]);
     await reload();
@@ -202,22 +214,18 @@ export function SshPanel(): React.JSX.Element {
         <div>
           <h2 className="sshpage__title">
             VPC connections
-            {hosts.some((host) => host.provider === 'aws') && <span className="sshpage__tag">AWS</span>}
+            {hosts.some((host) => host.provider === 'aws') && <ProviderLogo provider="aws" height={26} />}
           </h2>
           <p className="sshpage__subtitle">
             Manage SSH access to your instances and bastion hosts, organized by environment.
           </p>
         </div>
-        <button
-          type="button"
-          className="button button--primary"
-          onClick={() => {
+        <Button variant="primary" onClick={() => {
             setSelection('new');
             setView('connections');
-          }}
-        >
+          }}>
           <Icon name="plus" size={14} /> New connection
-        </button>
+        </Button>
       </header>
 
       <nav className="subtabs" aria-label="VPC sections">
@@ -231,6 +239,7 @@ export function SshPanel(): React.JSX.Element {
       {loaded && view === 'home' && (
         <VpcHome
           hosts={hosts}
+          environments={environments}
           activeHostIds={activeHostIds}
           checking={testing}
           now={now}

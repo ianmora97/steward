@@ -2,6 +2,14 @@ import { create } from 'zustand';
 import type { Execution, GitBranchList, GitDiff, GitStatus } from '@shared/schemas/git';
 import type { GitCommitDetail, GraphCommit } from '@shared/schemas/graph';
 import type { StewardError, StewardResult } from '@shared/types/result';
+import { toast } from './toast.store';
+
+/** The line of Git's output that says what happened (the ref update, "Already up to date"), short enough for a toast. */
+function brief(output: string): string {
+  const lines = output.split('\n').map((text) => text.trim()).filter((text) => text !== '');
+  const line = lines.find((text) => /->|up[ -]to[ -]date|Fast-forward|files? changed|\bnew branch\b/i.test(text)) ?? lines[0] ?? '';
+  return line.length > 140 ? `${line.slice(0, 137)}…` : line;
+}
 
 /**
  * Git tab state.
@@ -29,8 +37,6 @@ interface GitState {
   diff: GitDiff | null;
   busy: boolean;
   error: StewardError | null;
-  /** Git's own output from the last fetch/pull/push, shown verbatim. */
-  notice: string | null;
 
   /** Commit graph: pages appended in `git log --topo-order`; reloaded after every mutation once opened. */
   commits: GraphCommit[];
@@ -162,7 +168,10 @@ export const useGitStore = create<GitState>((set, get) => {
     // Refresh even after a failure: Git may have partly applied the change
     // (a conflicted merge, say), and the screen must show what is true now.
     await reload();
-    if (data !== null) set({ notice: notice(data) });
+    if (data !== null) {
+      const message = notice(data);
+      if (message !== null) toast.success(message);
+    }
     return data;
   }
 
@@ -175,7 +184,6 @@ export const useGitStore = create<GitState>((set, get) => {
     diff: null,
     busy: false,
     error: null,
-    notice: null,
     commits: [],
     historyLoaded: false,
     historyLoading: false,
@@ -195,7 +203,6 @@ export const useGitStore = create<GitState>((set, get) => {
         selected: null,
         diff: null,
         error: null,
-        notice: null,
         commits: [],
         historyLoaded: false,
         hasMoreHistory: false,
@@ -222,7 +229,7 @@ export const useGitStore = create<GitState>((set, get) => {
       }
     },
 
-    dismiss: () => set({ error: null, notice: null }),
+    dismiss: () => set({ error: null }),
 
     selectFile: async (file) => {
       set({ selected: file, diff: null });
@@ -238,7 +245,10 @@ export const useGitStore = create<GitState>((set, get) => {
     },
 
     discard: async (paths) => {
-      await mutate((repositoryId) => api().discard({ repositoryId, paths, confirmed: true }));
+      await mutate(
+        (repositoryId) => api().discard({ repositoryId, paths, confirmed: true }),
+        () => 'Changes discarded'
+      );
     },
 
     commit: async (message) => {
@@ -250,17 +260,25 @@ export const useGitStore = create<GitState>((set, get) => {
     },
 
     createBranch: async (name, checkout) => {
-      const result = await mutate((repositoryId) => api().createBranch({ repositoryId, name, checkout }));
+      const result = await mutate(
+        (repositoryId) => api().createBranch({ repositoryId, name, checkout }),
+        () => (checkout ? `Branch ${name} created and checked out` : `Branch ${name} created`)
+      );
       return result !== null;
     },
 
     checkout: async (name, remote) => {
-      await mutate((repositoryId) => api().checkout({ repositoryId, name, remote }));
+      await mutate(
+        (repositoryId) => api().checkout({ repositoryId, name, remote }),
+        () => `Switched to ${name}`
+      );
     },
 
     deleteBranch: async (name, force) => {
-      const result = await mutate((repositoryId) =>
-        api().deleteBranch(force ? { repositoryId, name, force: true, confirmed: true } : { repositoryId, name })
+      const result = await mutate(
+        (repositoryId) =>
+          api().deleteBranch(force ? { repositoryId, name, force: true, confirmed: true } : { repositoryId, name }),
+        () => `Branch ${name} deleted`
       );
       return result !== null;
     },
@@ -268,26 +286,29 @@ export const useGitStore = create<GitState>((set, get) => {
     fetch: async () => {
       await mutate(
         (repositoryId) => api().fetch({ repositoryId }),
-        (data) => data.output || 'Fetched. Nothing new on the remote.'
+        (data) => brief(data.output) || 'Fetched. Nothing new on the remote.'
       );
     },
 
     pull: async (mode) => {
       await mutate(
         (repositoryId) => api().pull({ repositoryId, mode }),
-        (data) => data.output || 'Pulled.'
+        (data) => brief(data.output) || 'Pulled.'
       );
     },
 
     push: async () => {
       await mutate(
         (repositoryId) => api().push({ repositoryId }),
-        (data) => data.output || 'Pushed.'
+        (data) => brief(data.output) || 'Pushed.'
       );
     },
 
     abortMerge: async () => {
-      await mutate((repositoryId) => api().abortMerge({ repositoryId }));
+      await mutate(
+        (repositoryId) => api().abortMerge({ repositoryId }),
+        () => 'Merge aborted'
+      );
     },
 
     loadHistory: async (reset) => {

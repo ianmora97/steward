@@ -3,6 +3,8 @@ import type { GraphCommit, GraphRef } from '@shared/schemas/graph';
 import { layoutGraph, type GraphRow } from '@shared/graph/layout';
 import { Icon } from '../../components/Icon';
 import { useGitStore } from '../../stores/git.store';
+import { Badge } from '../../components/Badge';
+import { Spinner } from '../../components/Spinner';
 
 const ROW_HEIGHT = 32;
 const VISIBLE_REFS = 2;
@@ -263,7 +265,7 @@ export function GraphView(): React.JSX.Element {
           <span className="graphview__count">
             {commits.length.toLocaleString()} commit{commits.length === 1 ? '' : 's'} loaded
             {hasMore ? ' — more load as you scroll' : ''}
-            {loading ? ' · loading…' : ''}
+            {loading && <Spinner size={11} />}
           </span>
         </div>
 
@@ -274,7 +276,7 @@ export function GraphView(): React.JSX.Element {
         >
           <span className="graph__wip-dot" aria-hidden="true" />
           Working changes
-          <span className="chip">{changeCount === 0 ? 'clean' : `${changeCount} file${changeCount === 1 ? '' : 's'}`}</span>
+          <Badge tone="neutral">{changeCount === 0 ? 'clean' : `${changeCount} file${changeCount === 1 ? '' : 's'}`}</Badge>
         </button>
 
         {historyLoaded && commits.length === 0 && !loading ? (

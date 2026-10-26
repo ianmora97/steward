@@ -1,4 +1,5 @@
 import type { StewardError } from '@shared/types/result';
+import { Button } from './Button';
 
 /**
  * Failures belong in the interface, not only in the console: the user has to
@@ -18,9 +19,9 @@ export function ErrorBanner({
         {error.details !== undefined && <p className="banner__details">{error.details}</p>}
         <span className="banner__code">{error.code}</span>
       </div>
-      <button type="button" className="button button--ghost" onClick={onDismiss} aria-label="Dismiss">
+      <Button variant="ghost" onClick={onDismiss} aria-label="Dismiss">
         Dismiss
-      </button>
+      </Button>
     </div>
   );
 }

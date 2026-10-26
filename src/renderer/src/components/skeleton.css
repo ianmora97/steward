@@ -1,0 +1,37 @@
+/* Skeleton: a placeholder with the shape of what is loading. Reduced motion freezes the shimmer. */
+.skeleton {
+  display: block;
+  background: linear-gradient(90deg, var(--bg-sunken) 25%, var(--border) 50%, var(--bg-sunken) 75%);
+  background-size: 200% 100%;
+  border-radius: var(--radius-sm);
+  animation: shimmer 1.4s linear infinite;
+}
+
+.skeleton--line {
+  height: 12px;
+}
+
+.skeleton--block {
+  height: 80px;
+  border-radius: var(--radius-md);
+}
+
+.skeleton--row {
+  height: var(--control-h-lg);
+  border-radius: var(--radius-md);
+}
+
+.skeleton--card {
+  height: 96px;
+  border-radius: var(--radius-md);
+}
+
+.skeleton__stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.loading {
+  width: 100%;
+}

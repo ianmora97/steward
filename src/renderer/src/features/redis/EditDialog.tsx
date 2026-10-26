@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { StewardError, StewardResult } from '@shared/types/result';
 import { Modal } from '../../components/Modal';
 import { ExpiryField } from './ExpiryField';
+import { Button } from '../../components/Button';
 
 export interface FieldSpec {
   id: string;
@@ -110,12 +111,12 @@ export function EditDialog({
           </div>
         )}
         <div className="dialog__actions">
-          <button type="button" className="button" onClick={onCancel}>
+          <Button onClick={onCancel}>
             Cancel
-          </button>
-          <button type="submit" className="button button--primary" disabled={busy || numberProblem !== undefined}>
-            {busy ? 'Saving…' : submitLabel}
-          </button>
+          </Button>
+          <Button variant="primary" loading={busy} loadingLabel="Saving…" disabled={numberProblem !== undefined} type="submit">
+            {submitLabel}
+          </Button>
         </div>
       </form>
     </Modal>

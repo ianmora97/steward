@@ -8,11 +8,11 @@ import { ServicesSection } from './settings/ServicesSection';
 import { WorkspaceSection } from './settings/WorkspaceSection';
 import './settings.css';
 
-const SECTIONS: Array<{ key: SettingsSection; label: string; icon: IconName; hint: string }> = [
-  { key: 'general', label: 'General', icon: 'settings', hint: 'Name, look, archive' },
-  { key: 'services', label: 'Services', icon: 'panel', hint: 'What is on the tab bar' },
-  { key: 'integrations', label: 'Integrations', icon: 'plug', hint: 'GitHub account' },
-  { key: 'workspace', label: 'Workspace', icon: 'folder', hint: 'Repositories, shell, environments' }
+const SECTIONS: Array<{ key: SettingsSection; label: string; icon: IconName }> = [
+  { key: 'general', label: 'General', icon: 'settings' },
+  { key: 'services', label: 'Services', icon: 'panel' },
+  { key: 'integrations', label: 'Integrations', icon: 'plug' },
+  { key: 'workspace', label: 'Workspace', icon: 'folder' }
 ];
 
 /** A project's settings, in sections. Everything is stored locally, per project. */
@@ -44,10 +44,7 @@ export function WorkspaceSettings(): React.JSX.Element {
             onClick={() => setSection(item.key)}
           >
             <Icon name={item.icon} size={17} />
-            <span className="pset__navtext">
-              <span className="pset__navname">{item.label}</span>
-              <span className="pset__navhint">{item.hint}</span>
-            </span>
+            <span className="pset__navname">{item.label}</span>
           </button>
         ))}
       </nav>

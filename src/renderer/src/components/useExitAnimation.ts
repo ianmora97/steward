@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-export const EXIT_MS = 160;
+/** Must match `--dur-base` in styles/tokens.css: the exit animation lasts this long. */
+export const EXIT_MS = 180;
+
+function exitDelay(): number {
+  // With reduced motion the CSS plays no exit, so there is nothing to wait for.
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : EXIT_MS;
+}
 
 /**
  * Lets a component play its exit animation before its owner removes it:
@@ -25,7 +31,7 @@ export function useExitAnimation(): { closing: boolean; requestClose: (action: (
       timer.current = null;
       setClosing(false);
       action();
-    }, EXIT_MS);
+    }, exitDelay());
   }, []);
 
   return { closing, requestClose };

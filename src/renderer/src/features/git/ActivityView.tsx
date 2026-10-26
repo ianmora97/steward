@@ -1,4 +1,6 @@
 import { useGitStore } from '../../stores/git.store';
+import { Badge } from '../../components/Badge';
+import { EXECUTION_STATUS } from '../../components/execution-status';
 
 /** What Steward ran for you, from the execution history. Reads are not listed; actions are. */
 export function ActivityView(): React.JSX.Element {
@@ -16,8 +18,12 @@ export function ActivityView(): React.JSX.Element {
             <code className="activity__command">
               {execution.command} {execution.args.join(' ')}
             </code>
-            <span className={`chip chip--${execution.status}`}>{execution.status.replace('_', ' ')}</span>
-            {execution.confirmedByUser && <span className="chip chip--pinned">confirmed</span>}
+            <Badge tone={EXECUTION_STATUS[execution.status].tone}>{EXECUTION_STATUS[execution.status].label}</Badge>
+            {execution.confirmedByUser && (
+              <Badge tone="info" icon="check">
+                confirmed
+              </Badge>
+            )}
           </div>
           <p className="activity__meta">
             {new Date(execution.startedAt).toLocaleString()} · {execution.durationMs ?? '?'} ms ·{' '}

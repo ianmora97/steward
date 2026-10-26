@@ -1,7 +1,10 @@
 import type { CommitFile } from '@shared/schemas/graph';
-import { Icon } from '../../components/Icon';
+
 import { useGitStore } from '../../stores/git.store';
 import { DiffView } from './DiffView';
+import { IconButton } from '../../components/IconButton';
+import { Loading } from '../../components/Loading';
+import { Badge } from '../../components/Badge';
 
 const STATUS_LETTER: Record<CommitFile['status'], string> = {
   added: 'A',
@@ -22,7 +25,7 @@ export function CommitInfo(): React.JSX.Element {
   if (detail === null) {
     return (
       <aside className="commitdetail">
-        <p className="diff__placeholder">Loading commit…</p>
+        <Loading variant="line" lines={5} label="Loading commit…" />
       </aside>
     );
   }
@@ -37,15 +40,7 @@ export function CommitInfo(): React.JSX.Element {
           <h3 className="commitcard__subject" title={detail.subject}>
             {detail.subject}
           </h3>
-          <button
-            type="button"
-            className="iconbutton"
-            onClick={() => void selectCommit(null)}
-            aria-label="Close commit"
-            title="Close"
-          >
-            <Icon name="x" size={14} />
-          </button>
+          <IconButton icon="x" label="Close" size={14} onClick={() => void selectCommit(null)} />
         </div>
 
         {detail.body !== '' && <pre className="commitcard__body">{detail.body}</pre>}
@@ -78,7 +73,7 @@ export function CommitInfo(): React.JSX.Element {
           </span>
           <span className="stat--add">+{additions}</span>
           <span className="stat--del">−{deletions}</span>
-          {detail.isMerge && <span className="chip">vs first parent</span>}
+          {detail.isMerge && <Badge tone="neutral">vs first parent</Badge>}
         </div>
       </section>
 

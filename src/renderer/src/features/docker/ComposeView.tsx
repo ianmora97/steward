@@ -2,9 +2,12 @@ import { useCallback, useEffect, useState } from 'react';
 import type { DockerComposeAction, DockerComposeProject, DockerComposeService } from '@shared/schemas/docker';
 import type { StewardError } from '@shared/types/result';
 import { EmptyState } from '../../components/EmptyState';
-import { Pill } from '../../components/Pill';
+import { Badge } from '../../components/Badge';
 import { DestructiveDialog, type DestructiveRequest } from './DestructiveDialog';
-import { containerChip } from './docker-meta';
+import { containerBadge } from './docker-meta';
+import { Button } from '../../components/Button';
+import { Loading } from '../../components/Loading';
+import { toast } from '../../stores/toast.store';
 
 const ACTION_LABEL: Record<DockerComposeAction, string> = {
   up: 'Up',
@@ -64,8 +67,10 @@ function ProjectCard({
       action
     });
     setBusy(null);
-    if (result.success) setOutput(result.data.output);
-    else onError(result.error);
+    if (result.success) {
+      setOutput(result.data.output);
+      toast.success(`${project.repositoryName}: ${ACTION_LABEL[action]} finished`);
+    } else onError(result.error);
     await reload();
   }
 
@@ -79,6 +84,7 @@ function ProjectCard({
         </p>
       ),
       confirmLabel: 'Down and delete volumes',
+      doneMessage: `${project.repositoryName} taken down, volumes deleted`,
       thing: 'project',
       expectedName: project.repositoryName,
       // Compose projects live in local repositories, so a protected server never asks for a typed name here.
@@ -104,18 +110,18 @@ function ProjectCard({
       </header>
 
       {services === null ? (
-        <p className="card__hint">Reading services…</p>
+        <Loading variant="line" lines={3} label="Reading services…" />
       ) : services.length === 0 ? (
         <p className="card__hint">No containers yet. Run Up to create them.</p>
       ) : (
         <ul className="dklist">
           {services.map((service) => {
-            const chip = containerChip(service.state, service.status);
+            const badge = containerBadge(service.state, service.status);
             return (
               <li key={service.name} className="dkrow dkrow--simple">
-                <Pill tone={chip.tone} icon={chip.icon} title={service.status}>
-                  {chip.label}
-                </Pill>
+                <Badge tone={badge.tone} icon={badge.icon} title={service.status}>
+                  {badge.label}
+                </Badge>
                 <span className="dkrow__main dkrow__main--static">
                   <span className="dkrow__name">{service.service}</span>
                   <span className="dkrow__meta dpmono">{service.ports === '' ? service.status : `${service.ports} · ${service.status}`}</span>
@@ -128,19 +134,21 @@ function ProjectCard({
 
       <footer className="dkcompose__actions">
         {(Object.keys(ACTION_LABEL) as DockerComposeAction[]).map((action) => (
-          <button
+          <Button
             key={action}
-            type="button"
-            className={`button button--small${action === 'down' ? ' button--danger-text' : ''}`}
+            size="sm"
+            dangerText={action === 'down'}
+            loading={busy === action}
+            loadingLabel={`${ACTION_LABEL[action]}…`}
             disabled={busy !== null}
             onClick={() => void run(action)}
           >
-            {busy === action ? `${ACTION_LABEL[action]}…` : ACTION_LABEL[action]}
-          </button>
+            {ACTION_LABEL[action]}
+          </Button>
         ))}
-        <button type="button" className="button button--small button--danger-text" disabled={busy !== null} onClick={askDownWithVolumes}>
+        <Button size="sm" dangerText disabled={busy !== null} onClick={askDownWithVolumes}>
           Down + volumes…
-        </button>
+        </Button>
       </footer>
 
       {output !== null && output !== '' && <pre className="dplog">{output}</pre>}

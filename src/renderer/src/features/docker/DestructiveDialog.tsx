@@ -1,7 +1,10 @@
+import { createPortal } from 'react-dom';
 import { useState } from 'react';
 import type { StewardError, StewardResult } from '@shared/types/result';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { useExitAnimation } from '../../components/useExitAnimation';
+import { Button } from '../../components/Button';
+import { toast } from '../../stores/toast.store';
 
 export interface DestructiveRequest {
   title: string;
@@ -11,6 +14,8 @@ export interface DestructiveRequest {
   thing: string;
   /** The exact name main will compare against, shown as a hint in the typed-name step. */
   expectedName: string;
+  /** What the toast says once it went through: "Container removed". */
+  doneMessage?: string;
   /** Called with the typed name only after main asked for one. */
   run: (confirmation?: { name: string }) => Promise<StewardResult<unknown>>;
 }
@@ -42,6 +47,7 @@ export function DestructiveDialog({
     const result = await request.run(confirmation);
     setBusy(false);
     if (result.success) {
+      toast.success(request.doneMessage ?? 'Done');
       onDone();
       return;
     }
@@ -70,7 +76,7 @@ export function DestructiveDialog({
     );
   }
 
-  return (
+  return createPortal(
     <div className={`dialog__backdrop${closing ? ' is-closing' : ''}`} onClick={() => requestClose(onCancel)}>
       <div className="dialog" role="alertdialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
         <h3 className="dialog__title">This server is protected</h3>
@@ -93,19 +99,15 @@ export function DestructiveDialog({
           {problem !== null && <p className="dprequired">{problem}</p>}
         </div>
         <div className="dialog__actions">
-          <button type="button" className="button" onClick={() => requestClose(onCancel)}>
+          <Button onClick={() => requestClose(onCancel)}>
             Cancel
-          </button>
-          <button
-            type="button"
-            className="button button--danger"
-            disabled={busy || typed === ''}
-            onClick={() => void attempt({ name: typed })}
-          >
+          </Button>
+          <Button variant="danger" loading={busy} loadingLabel="Working…" disabled={typed === ''} onClick={() => void attempt({ name: typed })}>
             {request.confirmLabel}
-          </button>
+          </Button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

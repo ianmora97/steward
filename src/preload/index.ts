@@ -2,7 +2,8 @@ import { contextBridge, ipcRenderer } from 'electron';
 import type { DockerLogEndEvent, DockerLogEvent } from '@shared/schemas/docker';
 import type { RedisMessageEvent, RedisSubscriptionEndEvent } from '@shared/schemas/redis';
 import type { TerminalDataEvent, TerminalExitEvent } from '@shared/schemas/terminal';
-import { DOCKER_EVENTS, IPC_CHANNELS, REDIS_EVENTS, TERMINAL_EVENTS, type StewardApi } from '@shared/types/ipc';
+import type { ZoomState } from '@shared/schemas/ui';
+import { DOCKER_EVENTS, IPC_CHANNELS, REDIS_EVENTS, TERMINAL_EVENTS, UI_EVENTS, type StewardApi } from '@shared/types/ipc';
 
 /**
  * The entire bridge between the renderer and the main process.
@@ -36,6 +37,11 @@ function subscribe<T>(channel: string, listener: (payload: T) => void): () => vo
 const api: StewardApi = {
   app: {
     getInfo: () => invoke(IPC_CHANNELS.appGetInfo)
+  },
+  ui: {
+    getZoom: () => invoke(IPC_CHANNELS.uiGetZoom),
+    setZoom: (input) => invoke(IPC_CHANNELS.uiSetZoom, input),
+    onZoomChanged: (listener) => subscribe<ZoomState>(UI_EVENTS.zoomChanged, listener)
   },
   overview: {
     summary: () => invoke(IPC_CHANNELS.overviewSummary),

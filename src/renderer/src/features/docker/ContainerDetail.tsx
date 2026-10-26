@@ -3,12 +3,14 @@ import type { DockerContainer, DockerContainerDetail, DockerTarget } from '@shar
 import type { StewardError } from '@shared/types/result';
 import { Icon } from '../../components/Icon';
 import { Modal } from '../../components/Modal';
-import { Pill } from '../../components/Pill';
+import { Badge } from '../../components/Badge';
 import { useAppStore } from '../../stores/app.store';
 import { useTerminalStore } from '../../stores/terminal.store';
 import { DestructiveDialog, type DestructiveRequest } from './DestructiveDialog';
 import { LogsPane } from './LogsPane';
-import { containerChip } from './docker-meta';
+import { containerBadge } from './docker-meta';
+import { Button } from '../../components/Button';
+import { Loading } from '../../components/Loading';
 
 type Tab = 'info' | 'logs';
 
@@ -47,7 +49,7 @@ export function ContainerDetail({
     };
   }, [projectId, target, container.id, onError]);
 
-  const chip = containerChip(container.state, container.status);
+  const badge = containerBadge(container.state, container.status);
   const running = container.state === 'running';
 
   async function openShell(): Promise<void> {
@@ -68,6 +70,7 @@ export function ContainerDetail({
         </p>
       ),
       confirmLabel: 'Kill container',
+      doneMessage: `${container.name} killed`,
       thing: 'container',
       expectedName: container.name,
       run: (confirmation) =>
@@ -86,19 +89,19 @@ export function ContainerDetail({
     <Modal title={container.name} onClose={onClose} className="dkdetail">
       <div className="dkdetail__body">
         <div className="dkdetail__head">
-          <Pill tone={chip.tone} icon={chip.icon} title={container.status}>
-            {chip.label}
-          </Pill>
+          <Badge tone={badge.tone} icon={badge.icon} title={container.status}>
+            {badge.label}
+          </Badge>
           <span className="card__hint">{container.status}</span>
           <span className="dpitem__spacer" />
           {running && (
             <>
-              <button type="button" className="button button--small" onClick={() => void openShell()}>
+              <Button size="sm" onClick={() => void openShell()}>
                 <Icon name="terminal" size={14} /> Shell
-              </button>
-              <button type="button" className="button button--small button--danger-text" onClick={askKill}>
+              </Button>
+              <Button size="sm" dangerText onClick={askKill}>
                 Kill
-              </button>
+              </Button>
             </>
           )}
         </div>
@@ -137,7 +140,7 @@ export function ContainerDetail({
 }
 
 function InfoPane({ detail }: { detail: DockerContainerDetail | null }): React.JSX.Element {
-  if (detail === null) return <p className="card__hint">Loading…</p>;
+  if (detail === null) return <Loading variant="line" lines={6} label="Loading the container…" />;
   return (
     <div className="dkinfo">
       <dl className="dpsummary">

@@ -2,9 +2,13 @@ import { useCallback, useEffect, useState } from 'react';
 import type { DockerImage, DockerPruneKind, DockerTarget } from '@shared/schemas/docker';
 import type { StewardError } from '@shared/types/result';
 import { EmptyState } from '../../components/EmptyState';
-import { Icon } from '../../components/Icon';
-import { Pill } from '../../components/Pill';
+
+import { Badge } from '../../components/Badge';
 import { DestructiveDialog, type DestructiveRequest } from './DestructiveDialog';
+import { Button } from '../../components/Button';
+import { IconButton } from '../../components/IconButton';
+import { Loading } from '../../components/Loading';
+import { toast } from '../../stores/toast.store';
 
 const PRUNE_LABEL: Record<DockerPruneKind, string> = {
   containers: 'Stopped containers',
@@ -91,6 +95,7 @@ export function ImagesView({
       return;
     }
     setPullOutput(result.data.output);
+    toast.success(`Pulled ${pullRef.trim()}`);
     setPullRef('');
     await reload();
   }
@@ -107,6 +112,7 @@ export function ImagesView({
         </p>
       ),
       confirmLabel: 'Remove image',
+      doneMessage: `${reference} removed`,
       thing: 'image',
       expectedName: reference,
       run: (confirmation) =>
@@ -130,6 +136,7 @@ export function ImagesView({
         </>
       ),
       confirmLabel: 'Prune',
+      doneMessage: 'Prune finished',
       thing: 'server',
       expectedName: serverName,
       run: (confirmation) =>
@@ -143,7 +150,7 @@ export function ImagesView({
     });
   }
 
-  if (images === null) return <p className="card__hint">Loading images…</p>;
+  if (images === null) return <Loading lines={5} label="Loading images…" />;
 
   return (
     <section className="dpsection">
@@ -164,9 +171,7 @@ export function ImagesView({
             spellCheck={false}
             aria-label="Image to pull"
           />
-          <button type="submit" className="button button--primary" disabled={pulling || pullRef.trim() === ''}>
-            {pulling ? 'Pulling…' : 'Pull'}
-          </button>
+          <Button variant="primary" loading={pulling} loadingLabel="Pulling…" disabled={pullRef.trim() === ''} type="submit">Pull</Button>
         </form>
         <div className="dkprune">
           <select
@@ -181,9 +186,9 @@ export function ImagesView({
               </option>
             ))}
           </select>
-          <button type="button" className="button button--danger-text" onClick={askPrune}>
+          <Button dangerText onClick={askPrune}>
             Prune…
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -207,26 +212,18 @@ export function ImagesView({
               </span>
               <span className="dkrow__chips">
                 {image.usedBy.length > 0 ? (
-                  <Pill tone="info" icon="docker" title={image.usedBy.join(', ')}>
+                  <Badge tone="info" icon="docker" title={image.usedBy.join(', ')}>
                     {image.usedBy.length} container{image.usedBy.length === 1 ? '' : 's'}
-                  </Pill>
+                  </Badge>
                 ) : image.dangling ? (
-                  <Pill tone="warning" icon="alert">
+                  <Badge tone="warning" icon="alert">
                     Dangling
-                  </Pill>
+                  </Badge>
                 ) : (
                   <span className="card__hint">Not in use</span>
                 )}
               </span>
-              <button
-                type="button"
-                className="iconbutton"
-                aria-label={`Remove ${referenceOf(image)}`}
-                title="Remove"
-                onClick={() => askRemove(image)}
-              >
-                <Icon name="trash" size={14} />
-              </button>
+              <IconButton icon="trash" label="Remove" size={14} onClick={() => askRemove(image)} />
             </li>
           ))}
         </ul>

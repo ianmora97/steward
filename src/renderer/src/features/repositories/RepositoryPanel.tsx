@@ -2,6 +2,8 @@ import { useState } from 'react';
 import type { RepositoryProbe } from '@shared/schemas/repository';
 import { EmptyState } from '../../components/EmptyState';
 import { useAppStore } from '../../stores/app.store';
+import { Button } from '../../components/Button';
+import { Badge } from '../../components/Badge';
 
 /**
  * Binds local repositories to the project and shows what Git reports about a
@@ -62,17 +64,12 @@ export function RepositoryPanel(): React.JSX.Element {
             placeholder="C:\path\to\repository"
             spellCheck={false}
           />
-          <button type="button" className="button" onClick={() => void browse()} disabled={busy}>
+          <Button disabled={busy} onClick={() => void browse()}>
             Browse…
-          </button>
-          <button
-            type="button"
-            className="button"
-            onClick={() => void check()}
-            disabled={busy || candidatePath.trim() === ''}
-          >
+          </Button>
+          <Button disabled={busy || candidatePath.trim() === ''} onClick={() => void check()}>
             Check
-          </button>
+          </Button>
         </div>
 
         {probe !== null && (
@@ -102,9 +99,9 @@ export function RepositoryPanel(): React.JSX.Element {
                     <dd>{probe.provider}</dd>
                   </div>
                 </dl>
-                <button type="button" className="button button--primary" onClick={() => void add()} disabled={busy}>
+                <Button variant="primary" disabled={busy} onClick={() => void add()}>
                   Add to project
-                </button>
+                </Button>
               </>
             ) : (
               <>
@@ -129,22 +126,17 @@ export function RepositoryPanel(): React.JSX.Element {
               <li key={repository.id} className="repo-item">
                 <div className="repo-item__head">
                   <span className="repo-item__name">{repository.name}</span>
-                  <span className={`chip chip--${repository.role}`}>{repository.role}</span>
-                  <span className="chip">{repository.provider}</span>
+                  <Badge tone={repository.role === 'primary' ? 'info' : 'neutral'}>{repository.role}</Badge>
+                  <Badge tone="neutral">{repository.provider}</Badge>
                 </div>
                 <p className="repo-item__path">{repository.localPath}</p>
                 <p className="repo-item__meta">
                   {repository.defaultBranch ?? 'unknown branch'}
                   {repository.remoteUrl !== null && ` · ${repository.remoteUrl}`}
                 </p>
-                <button
-                  type="button"
-                  className="button button--ghost button--small"
-                  onClick={() => void removeRepository(repository.id)}
-                  disabled={busy}
-                >
+                <Button variant="ghost" size="sm" disabled={busy} onClick={() => void removeRepository(repository.id)}>
                   Remove from project
-                </button>
+                </Button>
               </li>
             ))}
           </ul>

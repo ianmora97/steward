@@ -1,5 +1,6 @@
 import type { MongoExplainSummary } from '@shared/schemas/mongodb';
-import { Pill } from '../../components/Pill';
+import { Badge } from '../../components/Badge';
+import { Button } from '../../components/Button';
 
 /** What an explain says at a glance: an index scan is good news, a full collection scan is worth a second look. */
 export function ExplainPanel({ summary, onClose }: { summary: MongoExplainSummary; onClose: () => void }): React.JSX.Element {
@@ -8,19 +9,19 @@ export function ExplainPanel({ summary, onClose }: { summary: MongoExplainSummar
       <header className="mgexplain__head">
         <strong>Query plan</strong>
         {summary.stage === 'COLLSCAN' ? (
-          <Pill tone="warning" icon="alert" title="Every document of the collection was examined">
+          <Badge tone="warning" icon="alert" title="Every document of the collection was examined">
             COLLSCAN
-          </Pill>
+          </Badge>
         ) : (
-          <Pill tone={summary.usesIndex ? 'success' : 'neutral'} icon={summary.usesIndex ? 'checkCircle' : 'minusCircle'}>
+          <Badge tone={summary.usesIndex ? 'success' : 'neutral'} icon={summary.usesIndex ? 'checkCircle' : 'minusCircle'}>
             {summary.stage}
             {summary.indexName === null ? '' : ` · ${summary.indexName}`}
-          </Pill>
+          </Badge>
         )}
         <span className="dpitem__spacer" />
-        <button type="button" className="button button--small" onClick={onClose}>
+        <Button size="sm" onClick={onClose}>
           Close
-        </button>
+        </Button>
       </header>
       <dl className="dpsummary">
         <dt>Returned</dt>

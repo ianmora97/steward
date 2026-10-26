@@ -1,4 +1,4 @@
-import type { PillTone } from '../../components/Pill';
+import type { BadgeTone } from '../../components/Badge';
 
 export function formatBytes(bytes: number | null | undefined): string {
   if (bytes === null || bytes === undefined) return '—';
@@ -50,7 +50,7 @@ export function typeLabel(type: string): string {
   return TYPE_LABEL[type] ?? type;
 }
 
-export const TYPE_TONE: Record<string, PillTone> = {
+export const TYPE_TONE: Record<string, BadgeTone> = {
   string: 'info',
   hash: 'success',
   list: 'warning',
@@ -60,7 +60,7 @@ export const TYPE_TONE: Record<string, PillTone> = {
   'ReJSON-RL': 'neutral'
 };
 
-export function typeTone(type: string): PillTone {
+export function typeTone(type: string): BadgeTone {
   return TYPE_TONE[type] ?? 'neutral';
 }
 

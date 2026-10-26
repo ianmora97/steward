@@ -5,13 +5,18 @@ import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { EmptyState } from '../../components/EmptyState';
 import { ErrorBanner } from '../../components/ErrorBanner';
 import { Icon } from '../../components/Icon';
-import { Pill } from '../../components/Pill';
+import { Badge } from '../../components/Badge';
 import { useAppStore } from '../../stores/app.store';
 import { CollectionView } from './CollectionView';
 import { ConnectionDialog } from './ConnectionDialog';
 import { DatabaseView } from './DatabaseView';
 import { Explorer, type Namespace } from './Explorer';
 import './mongo.css';
+import { Button } from '../../components/Button';
+import { toast } from '../../stores/toast.store';
+import { Loading } from '../../components/Loading';
+import { ConnectionBar } from '../../components/ConnectionBar';
+import { IconButton } from '../../components/IconButton';
 
 type Dialog = { kind: 'new' } | { kind: 'edit'; connection: MongoConnection } | null;
 
@@ -66,6 +71,7 @@ export function MongoPanel(): React.JSX.Element {
       setError(result.error);
       return;
     }
+    toast.success('Connection removed');
     setConnections((current) => (current ?? []).filter((candidate) => candidate.id !== target.id));
     if (selectedId === target.id) {
       setSelectedId(null);
@@ -105,64 +111,65 @@ export function MongoPanel(): React.JSX.Element {
               ))}
             </select>
           )}
-          <button type="button" className="button button--primary" onClick={() => setDialog({ kind: 'new' })}>
-            <Icon name="plus" size={14} /> New connection
-          </button>
+          <Button variant="primary" icon="plus" onClick={() => setDialog({ kind: 'new' })}>
+            New connection
+          </Button>
         </div>
       </header>
 
-      {connections === null && <p className="card__hint">Loading connections…</p>}
+      {connections === null && <Loading lines={2} label="Loading connections…" />}
 
       {connections !== null && connection === null && (
         <EmptyState title="No MongoDB connections yet" description="Add one with a connection string (mongodb:// or mongodb+srv://) or by filling in the fields.">
-          <button type="button" className="button button--primary" onClick={() => setDialog({ kind: 'new' })}>
+          <Button variant="primary" onClick={() => setDialog({ kind: 'new' })}>
             New connection
-          </button>
+          </Button>
         </EmptyState>
       )}
 
       {connection !== null && (
         <>
-          <div className="mgconnbar">
-            <span className="dpmono mgconnbar__host" title={connection.hostDisplay}>
-              {connection.hostDisplay}
-            </span>
+          <ConnectionBar
+            title={connection.hostDisplay}
+            badges={
+              <>
             {connection.isAtlas && (
-              <Pill tone="info" icon="cloud">
+              <Badge tone="info" icon="cloud">
                 Atlas
-              </Pill>
+              </Badge>
             )}
             {connection.environmentName !== null && (
-              <Pill
+              <Badge
                 tone={connection.protectedEnvironment ? 'warning' : 'neutral'}
                 icon={connection.protectedEnvironment ? 'shield' : 'tag'}
                 title={connection.protectedEnvironment ? 'Protected environment' : undefined}
               >
                 {connection.environmentName}
-              </Pill>
+              </Badge>
             )}
             {connection.readOnly ? (
-              <Pill tone="success" icon="lock" title="Steward refuses every write on this connection">
+              <Badge tone="success" icon="lock" title="Steward refuses every write on this connection">
                 Read-only
-              </Pill>
+              </Badge>
             ) : (
-              <Pill tone="warning" icon="edit" title="This connection can change data">
+              <Badge tone="warning" icon="edit" title="This connection can change data">
                 Can write
-              </Pill>
+              </Badge>
             )}
             {connection.options.tlsAllowInvalidCertificates === true && (
-              <Pill tone="failure" icon="alert" title="The server's certificate is not verified">
+              <Badge tone="failure" icon="alert" title="The server's certificate is not verified">
                 Certificates not verified
-              </Pill>
+              </Badge>
             )}
-            <span className="dpitem__spacer" />
-            <button type="button" className="button button--small" onClick={() => setDialog({ kind: 'edit', connection })}>
-              <Icon name="edit" size={14} /> Edit
-            </button>
-            <button type="button" className="button button--small button--danger-text" onClick={() => setRemoving(connection)}>
-              <Icon name="trash" size={14} /> Remove
-            </button>
-          </div>
+              </>
+            }
+            actions={
+              <>
+                <IconButton icon="edit" label="Edit the connection" onClick={() => setDialog({ kind: 'edit', connection })} />
+                <IconButton icon="trash" tone="danger" label="Remove the connection" onClick={() => setRemoving(connection)} />
+              </>
+            }
+          />
 
           <div className="mglayout">
             <aside className="mgside">

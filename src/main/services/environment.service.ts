@@ -63,6 +63,7 @@ export function createEnvironment(db: SqlDatabase, input: EnvironmentCreateInput
     key: freeKey(db, input.projectId, input.name),
     name: input.name,
     kind: input.kind,
+    icon: input.icon,
     rank: nextEnvironmentRank(db, input.projectId),
     isProtected: input.isProtected,
     createdAt: now,
@@ -86,6 +87,7 @@ export function updateEnvironment(db: SqlDatabase, input: EnvironmentUpdateInput
     ...existing,
     name: input.name,
     kind: input.kind,
+    icon: input.icon,
     isProtected: input.isProtected,
     updatedAt: nowIso()
   };

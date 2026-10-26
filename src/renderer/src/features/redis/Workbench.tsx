@@ -4,6 +4,9 @@ import type { RedisConnection, RedisSavedCommand } from '@shared/schemas/redis';
 import type { StewardError } from '@shared/types/result';
 import { Icon } from '../../components/Icon';
 import { useRedisStore } from '../../stores/redis.store';
+import { Button } from '../../components/Button';
+import { IconButton } from '../../components/IconButton';
+import { toast } from '../../stores/toast.store';
 
 interface Entry {
   id: number;
@@ -143,15 +146,19 @@ export function Workbench({
     const text = line.trim() === '' ? (history[history.length - 1] ?? '') : line.trim();
     if (text === '') return;
     const result = await window.steward.redis.saveCommand({ connectionId: connection.id, name, commandText: text });
-    if (result.success) setSaved((current) => [...current, result.data].sort((a, b) => a.name.localeCompare(b.name)));
-    else onError(result.error);
+    if (result.success) {
+      toast.success('Command saved');
+      setSaved((current) => [...current, result.data].sort((a, b) => a.name.localeCompare(b.name)));
+    } else onError(result.error);
     setSaving(null);
   }
 
   async function removeSaved(id: string): Promise<void> {
     const result = await window.steward.redis.deleteSavedCommand({ id });
-    if (result.success) setSaved((current) => current.filter((candidate) => candidate.id !== id));
-    else onError(result.error);
+    if (result.success) {
+      toast.success('Saved command deleted');
+      setSaved((current) => current.filter((candidate) => candidate.id !== id));
+    } else onError(result.error);
   }
 
   return (
@@ -187,17 +194,12 @@ export function Workbench({
               </label>
             )}
             <div className="rdwork__confirm-actions">
-              <button type="button" className="button button--small" onClick={() => setPending(null)}>
+              <Button size="sm" onClick={() => setPending(null)}>
                 Cancel
-              </button>
-              <button
-                type="button"
-                className="button button--small button--danger"
-                disabled={busy || (connection.protectedEnvironment && typedName !== connection.name)}
-                onClick={() => void run(pending.line, pending.args, connection.protectedEnvironment ? { confirmName: typedName } : {})}
-              >
+              </Button>
+              <Button variant="danger" size="sm" disabled={busy || (connection.protectedEnvironment && typedName !== connection.name)} onClick={() => void run(pending.line, pending.args, connection.protectedEnvironment ? { confirmName: typedName } : {})}>
                 Run <code>{pending.line}</code>
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -229,15 +231,15 @@ export function Workbench({
             autoFocus
             autoComplete="off"
           />
-          <button type="button" className="button button--primary" disabled={busy || line.trim() === ''} onClick={submit}>
+          <Button variant="primary" disabled={busy || line.trim() === ''} onClick={submit}>
             Run
-          </button>
-          <button type="button" className="button" onClick={() => setSaving('')} disabled={line.trim() === '' && history.length === 0} title="Save this command">
+          </Button>
+          <Button disabled={line.trim() === '' && history.length === 0} onClick={() => setSaving('')} title="Save this command">
             <Icon name="save" size={14} /> Save
-          </button>
-          <button type="button" className="button" onClick={() => setEntries([])} disabled={entries.length === 0}>
+          </Button>
+          <Button disabled={entries.length === 0} onClick={() => setEntries([])}>
             Clear
-          </button>
+          </Button>
         </div>
         {saving !== null && (
           <form
@@ -248,12 +250,12 @@ export function Workbench({
             }}
           >
             <input className="field__input" value={saving} onChange={(event) => setSaving(event.target.value)} placeholder="Name for this command" autoFocus />
-            <button type="submit" className="button button--small button--primary" disabled={saving.trim() === ''}>
+            <Button variant="primary" size="sm" disabled={saving.trim() === ''} type="submit">
               Save
-            </button>
-            <button type="button" className="button button--small" onClick={() => setSaving(null)}>
+            </Button>
+            <Button size="sm" onClick={() => setSaving(null)}>
               Cancel
-            </button>
+            </Button>
           </form>
         )}
       </div>
@@ -268,9 +270,7 @@ export function Workbench({
                 <span>{command.name}</span>
                 <span className="card__hint dpmono">{command.commandText}</span>
               </button>
-              <button type="button" className="iconbutton" aria-label={`Delete ${command.name}`} title="Delete" onClick={() => void removeSaved(command.id)}>
-                <Icon name="trash" size={14} />
-              </button>
+              <IconButton icon="trash" label="Delete" size={14} onClick={() => void removeSaved(command.id)} />
             </li>
           ))}
         </ul>

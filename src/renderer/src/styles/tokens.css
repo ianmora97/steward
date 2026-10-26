@@ -1,0 +1,108 @@
+/*
+ * Design tokens: the one place a colour, a gap, a radius, a size or a duration is decided.
+ * Screens and components read these; they never hard-code the value.
+ */
+:root {
+  /* Surfaces, text and brand */
+  --bg: #0a0f1c;
+  --bg-raised: #101829;
+  --bg-sunken: #0b1120;
+  --border: #1b2539;
+  --border-strong: #27344d;
+  --text: #e8edf7;
+  --text-muted: #8d9ab3;
+  --text-dim: #62708a;
+  --accent: #2f6df0;
+  --accent-ink: #ffffff;
+  --danger: #f2555a;
+  --ok: #3fb67f;
+  --warn: #e0a93b;
+  --merged: #a371f7;
+  --bg-control: #1a212c;
+  --bg-control-hover: #222b38;
+  --bg-hover: #1a2438;
+  --bg-tooltip: #172036;
+  --bg-danger-soft: #2a1519;
+  --accent-hover: #6a9ff9;
+  --danger-ink: #1a0608;
+
+  /* Tones: foreground, tinted fill and border for every status colour. */
+  --tone-success-fg: var(--ok);
+  --tone-failure-fg: var(--danger);
+  --tone-warning-fg: var(--warn);
+  --tone-running-fg: var(--warn);
+  --tone-info-fg: var(--accent);
+  --tone-merged-fg: var(--merged);
+  --tone-neutral-fg: var(--text-muted);
+
+  --tone-success-bg: color-mix(in srgb, var(--tone-success-fg) 14%, transparent);
+  --tone-failure-bg: color-mix(in srgb, var(--tone-failure-fg) 14%, transparent);
+  --tone-warning-bg: color-mix(in srgb, var(--tone-warning-fg) 14%, transparent);
+  --tone-running-bg: color-mix(in srgb, var(--tone-running-fg) 14%, transparent);
+  --tone-info-bg: color-mix(in srgb, var(--tone-info-fg) 14%, transparent);
+  --tone-merged-bg: color-mix(in srgb, var(--tone-merged-fg) 14%, transparent);
+  --tone-neutral-bg: color-mix(in srgb, var(--tone-neutral-fg) 14%, transparent);
+
+  --tone-success-border: color-mix(in srgb, var(--tone-success-fg) 35%, transparent);
+  --tone-failure-border: color-mix(in srgb, var(--tone-failure-fg) 35%, transparent);
+  --tone-warning-border: color-mix(in srgb, var(--tone-warning-fg) 35%, transparent);
+  --tone-running-border: color-mix(in srgb, var(--tone-running-fg) 35%, transparent);
+  --tone-info-border: color-mix(in srgb, var(--tone-info-fg) 35%, transparent);
+  --tone-merged-border: color-mix(in srgb, var(--tone-merged-fg) 35%, transparent);
+  --tone-neutral-border: color-mix(in srgb, var(--tone-neutral-fg) 35%, transparent);
+
+  /* Spacing: a 4px grid. --space-3 inside a row, --space-4 between blocks. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 48px;
+
+  /* Radii */
+  --radius-sm: 5px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-pill: 999px;
+  --radius: var(--radius-md);
+
+  /* Type */
+  --font-sans: 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  --font-size-2xs: 11px;
+  --font-size-xs: 11.5px;
+  --font-size-sm: 12.5px;
+  --font-size-md: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 19px;
+  --font-weight-regular: 400;
+  --font-weight-medium: 520;
+  --font-weight-semibold: 620;
+
+  /* Controls and icons */
+  --control-h-sm: 28px;
+  --control-h-md: 32px;
+  --control-h-lg: 38px;
+  --icon-sm: 14px;
+  --icon-md: 16px;
+  --icon-lg: 20px;
+
+  /* Layers */
+  --z-dropdown: 20;
+  --z-modal: 50;
+  --z-toast: 80;
+  --z-tooltip: 90;
+
+  /* Shadows */
+  --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 14px 40px rgba(0, 0, 0, 0.5);
+
+  /* Motion. JS that mirrors a duration (useExitAnimation) must match --dur-base. */
+  --dur-fast: 120ms;
+  --dur-base: 180ms;
+  --dur-slow: 240ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+}

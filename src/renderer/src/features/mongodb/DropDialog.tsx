@@ -1,6 +1,8 @@
+import { createPortal } from 'react-dom';
 import { useState } from 'react';
 import type { StewardError, StewardResult } from '@shared/types/result';
 import { useExitAnimation } from '../../components/useExitAnimation';
+import { Button } from '../../components/Button';
 
 /**
  * Dropping a collection or a database cannot be undone, so the exact name has to be typed; on a connection in a
@@ -42,7 +44,7 @@ export function DropDialog({
     else setProblem(result.error);
   }
 
-  return (
+  return createPortal(
     <div className={`dialog__backdrop${closing ? ' is-closing' : ''}`} onClick={() => requestClose(onCancel)}>
       <div className="dialog" role="alertdialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
         <h3 className="dialog__title">{title}</h3>
@@ -65,14 +67,13 @@ export function DropDialog({
           {problem !== null && <p className="dprequired">{problem.message}</p>}
         </div>
         <div className="dialog__actions">
-          <button type="button" className="button" onClick={() => requestClose(onCancel)}>
+          <Button onClick={() => requestClose(onCancel)}>
             Cancel
-          </button>
-          <button type="button" className="button button--danger" disabled={!ready || busy} onClick={() => void confirm()}>
-            {busy ? 'Dropping…' : 'Drop'}
-          </button>
+          </Button>
+          <Button variant="danger" loading={busy} loadingLabel="Dropping…" disabled={!ready || busy} onClick={() => void confirm()}>Drop</Button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

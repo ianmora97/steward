@@ -20,6 +20,7 @@
     "package": "npm run build && electron-builder --dir"
   },
   "dependencies": {
+    "@floating-ui/dom": "1.8.0",
     "@mongodb-js/shell-bson-parser": "1.6.3",
     "@redis/client": "6.3.0",
     "@xterm/addon-fit": "0.11.0",

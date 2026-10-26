@@ -9,7 +9,8 @@ import {
   type DisplayNode
 } from '@shared/mongo/shell-format';
 import type { MongoDocument } from '@shared/schemas/mongodb';
-import { Icon } from '../../components/Icon';
+import { IconButton } from '../../components/IconButton';
+import { Button } from '../../components/Button';
 
 export type DocumentViewMode = 'list' | 'json' | 'table';
 
@@ -70,15 +71,9 @@ function ActionButtons({
   const reason = readOnly ? 'This connection is read-only' : document.tooLarge ? 'Too large to edit here' : undefined;
   return (
     <span className="mgdocactions">
-      <button type="button" className="iconbutton" title={reason ?? 'Edit'} aria-label="Edit document" disabled={locked} onClick={() => actions.onEdit(document)}>
-        <Icon name="edit" size={14} />
-      </button>
-      <button type="button" className="iconbutton" title={reason ?? 'Clone'} aria-label="Clone document" disabled={locked} onClick={() => actions.onClone(document)}>
-        <Icon name="plus" size={14} />
-      </button>
-      <button type="button" className="iconbutton" title={reason ?? 'Delete'} aria-label="Delete document" disabled={locked} onClick={() => actions.onDelete(document)}>
-        <Icon name="trash" size={14} />
-      </button>
+      <IconButton icon="edit" label={reason ?? 'Edit'} disabled={locked} size={14} onClick={() => actions.onEdit(document)} />
+      <IconButton icon="plus" label={reason ?? 'Clone'} disabled={locked} size={14} onClick={() => actions.onClone(document)} />
+      <IconButton icon="trash" label={reason ?? 'Delete'} disabled={locked} size={14} onClick={() => actions.onDelete(document)} />
     </span>
   );
 }
@@ -107,13 +102,9 @@ function JsonView({ documents, actions, readOnly }: { documents: MongoDocument[]
         <li key={`${index}:${document.json.length}`} className="mgdoc">
           <header className="mgdoc__head">
             <span className="mgdoc__id dpmono">{documentIdText(document.json)}</span>
-            <button
-              type="button"
-              className="button button--small"
-              onClick={() => void navigator.clipboard.writeText(formatNode(toDisplayNode(parseDocumentJson(document.json))))}
-            >
+            <Button size="sm" onClick={() => void navigator.clipboard.writeText(formatNode(toDisplayNode(parseDocumentJson(document.json))))}>
               Copy
-            </button>
+            </Button>
             {actions !== null && <ActionButtons document={document} actions={actions} readOnly={readOnly} />}
           </header>
           <pre className="mgjson dpmono">

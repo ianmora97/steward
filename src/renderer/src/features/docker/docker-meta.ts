@@ -1,15 +1,15 @@
 import type { DockerTarget } from '@shared/schemas/docker';
 import type { IconName } from '../../components/Icon';
-import type { PillTone } from '../../components/Pill';
+import type { BadgeTone } from '../../components/Badge';
 
 export interface StateChip {
-  tone: PillTone;
+  tone: BadgeTone;
   icon: IconName;
   label: string;
 }
 
 /** Docker's own state word plus its status text ("Exited (1) 3 minutes ago", "Up 2 hours (unhealthy)"). */
-export function containerChip(state: string, status: string): StateChip {
+export function containerBadge(state: string, status: string): StateChip {
   switch (state) {
     case 'running':
       return /\(unhealthy\)/i.test(status)

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { Environment } from '@shared/schemas/environments';
 import type { TerminalProfile } from '@shared/schemas/terminal';
 import type { StewardError } from '@shared/types/result';
+import { Card } from '../../../components/Card';
 import { ErrorBanner } from '../../../components/ErrorBanner';
 import { useAppStore } from '../../../stores/app.store';
 import { EnvironmentsView } from '../../deployments/EnvironmentsView';
@@ -47,26 +48,26 @@ export function WorkspaceSection({ projectId }: { projectId: string }): React.JS
     <div className="pset__stack">
       {error !== null && <ErrorBanner error={error} onDismiss={() => setError(null)} />}
 
-      <section className="card">
-        <h2 className="card__title">Repositories</h2>
+      <Card>
+        <Card.Header title="Repositories" />
         <p className="card__hint">The folders on this machine that make up the project. Git and GitHub read them; Steward never moves or edits them.</p>
         <RepositoryPanel />
-      </section>
+      </Card>
 
-      <section className="card">
-        <h2 className="card__title">Terminal</h2>
+      <Card>
+        <Card.Header title="Terminal" />
         <TerminalSettingsPanel projectId={projectId} profiles={profiles} defaultProfileId={defaultProfileId} onChanged={loadProfiles} />
-      </section>
+      </Card>
 
-      <section className="card">
-        <h2 className="card__title">Environments</h2>
+      <Card>
+        <Card.Header title="Environments" />
         <p className="card__hint">Production, Staging… Servers and deploy targets belong to one. A protected environment asks you to type its name before anything runs.</p>
         <EnvironmentsView projectId={projectId} environments={environments} onChanged={setEnvironments} onError={setError} />
-      </section>
+      </Card>
 
       {appInfo !== null && (
-        <section className="card card--muted">
-          <h2 className="card__title">Local storage</h2>
+        <Card muted>
+          <Card.Header title="Local storage" />
           <dl className="probe__facts">
             <div>
               <dt>Database</dt>
@@ -85,7 +86,7 @@ export function WorkspaceSection({ projectId }: { projectId: string }): React.JS
             Steward stores its own configuration and execution records only. Git and provider data are read from Git and the provider APIs, never treated as a
             local system of record.
           </p>
-        </section>
+        </Card>
       )}
     </div>
   );

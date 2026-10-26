@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react';
 import { EmptyState } from './components/EmptyState';
 import { ErrorBanner } from './components/ErrorBanner';
+import { PageHeader } from './components/PageHeader';
+import { ToastViewport } from './components/Toast';
+import { TooltipLayer } from './components/Tooltip';
+import { useMediaQuery } from './components/useMediaQuery';
+import { TopProgress } from './components/TopProgress';
 import { Overview } from './features/overview/Overview';
 import { NewProjectModal } from './features/projects/NewProjectModal';
 import { ProjectSidebar } from './features/projects/ProjectSidebar';
@@ -65,13 +70,15 @@ export function App(): React.JSX.Element {
   const error = useAppStore((state) => state.error);
   const dismissError = useAppStore((state) => state.dismissError);
   const busy = useAppStore((state) => state.busy);
-  const appInfo = useAppStore((state) => state.appInfo);
   const projects = useAppStore((state) => state.projects);
   const selectedProjectId = useAppStore((state) => state.selectedProjectId);
   const tabs = useAppStore((state) => state.tabs);
   const view = useAppStore((state) => state.view);
   const [creating, setCreating] = useState(false);
-  const [collapsed, setCollapsed] = useState(readCollapsed);
+  const [collapsedByUser, setCollapsed] = useState(readCollapsed);
+  // Too little room (a small window, or a high zoom) folds the sidebar to icons whatever was chosen.
+  const narrow = useMediaQuery('(max-width: 900px)');
+  const collapsed = collapsedByUser || narrow;
 
   useEffect(() => {
     void initialize();
@@ -81,10 +88,15 @@ export function App(): React.JSX.Element {
 
   return (
     <div className={`app${collapsed ? ' app--collapsed' : ''}`}>
+      <TopProgress active={busy} />
+      <ToastViewport />
+      <TooltipLayer />
       <ProjectSidebar
         onNewProject={() => setCreating(true)}
         collapsed={collapsed}
-        onToggle={() =>
+        onToggle={() => {
+          // Folded by lack of room, not by choice: leave the saved preference alone.
+          if (narrow) return;
           setCollapsed((value) => {
             try {
               localStorage.setItem(COLLAPSED_KEY, value ? '0' : '1');
@@ -92,8 +104,8 @@ export function App(): React.JSX.Element {
               // The preference just won't persist.
             }
             return !value;
-          })
-        }
+          });
+        }}
       />
 
       <main className="workspace">
@@ -105,15 +117,9 @@ export function App(): React.JSX.Element {
           </div>
         ) : (
           <div key={project.id} className="workspace__project enter">
-            <header className="workspace__header">
-              <div>
-                <h2 className="workspace__title">{project.name}</h2>
-                <p className="workspace__subtitle">
-                  {project.description ?? 'No description'} · {project.slug}
-                </p>
-              </div>
-              {busy && <span className="workspace__busy">Working…</span>}
-            </header>
+            <div className="workspace__header">
+              <PageHeader title={project.name} subtitle={`${project.description ?? 'No description'} · ${project.slug}`} />
+            </div>
 
             <TabBar tabs={tabs} />
 
@@ -124,24 +130,6 @@ export function App(): React.JSX.Element {
         )}
 
         {creating && <NewProjectModal onClose={() => setCreating(false)} />}
-
-        <footer className="statusbar">
-          {appInfo === null ? (
-            <span>Connecting to the main process…</span>
-          ) : (
-            <>
-              <span>Steward {appInfo.appVersion}</span>
-              <span>Electron {appInfo.electronVersion}</span>
-              <span>Node {appInfo.nodeVersion}</span>
-              <span>
-                {appInfo.gitAvailable ? `Git ${appInfo.gitVersion ?? ''}`.trim() : 'Git not found'}
-              </span>
-              <span>
-                {appInfo.databaseDriver} · schema v{appInfo.schemaVersion}
-              </span>
-            </>
-          )}
-        </footer>
       </main>
     </div>
   );

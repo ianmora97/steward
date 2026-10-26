@@ -5,8 +5,10 @@ import type { Environment } from '@shared/schemas/environments';
 import type { StewardError } from '@shared/types/result';
 import { ErrorBanner } from '../../components/ErrorBanner';
 import { Modal } from '../../components/Modal';
-import { Pill } from '../../components/Pill';
+import { Badge } from '../../components/Badge';
 import { collectInputs, InputsForm, missingRequired } from './InputsForm';
+import { Button } from '../../components/Button';
+import { Loading } from '../../components/Loading';
 
 /** The inputs a workflow declared at one ref, or why they could not be read. Only valid for that ref. */
 type SpecsLoad = { ref: string; specs: WorkflowInputSpec[] } | { ref: string; error: StewardError };
@@ -113,9 +115,9 @@ export function DeployModal({
           <dd>
             {environment.name}{' '}
             {environment.isProtected && (
-              <Pill tone="warning" icon="shield">
+              <Badge tone="warning" icon="shield">
                 Protected
-              </Pill>
+              </Badge>
             )}
           </dd>
           <dt>Target</dt>
@@ -154,7 +156,7 @@ export function DeployModal({
             </label>
 
             {specsError !== null && <ErrorBanner error={specsError} onDismiss={() => setSpecsLoad(null)} />}
-            {specsError === null && specs === null && <p className="card__hint">Reading the workflow’s inputs…</p>}
+            {specsError === null && specs === null && <Loading variant="line" lines={3} label="Reading the workflow’s inputs…" />}
             {specs !== null && specs.length === 0 && (
               <p className="card__hint">This workflow takes no inputs.</p>
             )}
@@ -192,17 +194,10 @@ export function DeployModal({
         )}
       </div>
       <div className="dialog__actions">
-        <button type="button" className="button" onClick={onClose}>
+        <Button onClick={onClose}>
           Cancel
-        </button>
-        <button
-          type="button"
-          className="button button--primary"
-          disabled={!ready || starting}
-          onClick={() => void start()}
-        >
-          {starting ? 'Starting…' : 'Deploy'}
-        </button>
+        </Button>
+        <Button variant="primary" loading={starting} loadingLabel="Starting…" disabled={!ready || starting} onClick={() => void start()}>Deploy</Button>
       </div>
     </Modal>
   );

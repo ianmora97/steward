@@ -4,11 +4,13 @@ import type { GithubJob, GithubJobLog } from '@shared/schemas/github';
 import type { StewardError, StewardResult } from '@shared/types/result';
 import { EmptyState } from '../../components/EmptyState';
 import { ErrorBanner } from '../../components/ErrorBanner';
-import { Pill } from '../../components/Pill';
+import { Badge } from '../../components/Badge';
 import { useAppStore } from '../../stores/app.store';
 import { JobLogModal } from '../github/JobLogModal';
 import { RunDetail } from '../github/RunDetail';
-import { agoLabel, deploymentChip, deploymentDuration, sourceLabel, UNKNOWN_HINT } from './deployment-meta';
+import { agoLabel, deploymentBadge, deploymentDuration, sourceLabel, UNKNOWN_HINT } from './deployment-meta';
+import { Button } from '../../components/Button';
+import { Loading } from '../../components/Loading';
 
 /** The output of a command deploy. Always plain text, never interpreted as HTML. */
 function DeploymentLogView({ deployment }: { deployment: Deployment }): React.JSX.Element {
@@ -24,7 +26,7 @@ function DeploymentLogView({ deployment }: { deployment: Deployment }): React.JS
     };
   }, [deployment.id]);
 
-  if (log === null) return <p className="card__hint">Loading output…</p>;
+  if (log === null) return <Loading variant="line" lines={4} label="Loading output…" />;
   if ('code' in log) return <p className="card__hint">{log.message}</p>;
   if (log.text.trim() === '') return <p className="card__hint">No output was recorded.</p>;
   return (
@@ -74,9 +76,9 @@ function RunJobs({ projectId, deployment }: { projectId: string; deployment: Dep
     return (
       <div className="dphint">
         <p className="card__hint">GitHub never showed a run for this deployment.</p>
-        <button type="button" className="button button--small" onClick={() => setActiveTab('github')}>
+        <Button size="sm" onClick={() => setActiveTab('github')}>
           Open the GitHub tab
-        </button>
+        </Button>
       </div>
     );
   }
@@ -138,7 +140,7 @@ export function HistoryView({
   return (
     <ul className="dplist">
       {deployments.map((deployment) => {
-        const chip = deploymentChip(deployment.status);
+        const badge = deploymentBadge(deployment.status);
         const source = sourceLabel(deployment.statusSource);
         const duration = deploymentDuration(deployment);
         const open = expandedId === deployment.id;
@@ -150,9 +152,9 @@ export function HistoryView({
               aria-expanded={open}
               onClick={() => setExpandedId(open ? null : deployment.id)}
             >
-              <Pill tone={chip.tone} icon={chip.icon}>
-                {chip.label}
-              </Pill>
+              <Badge tone={badge.tone} icon={badge.icon}>
+                {badge.label}
+              </Badge>
               <span className="dphistory__target">{deployment.targetName}</span>
               <span className="dphistory__meta">{deployment.environmentName}</span>
               {deployment.ref !== null && <span className="dphistory__meta dpmono">{deployment.ref}</span>}

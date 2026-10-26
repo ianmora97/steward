@@ -5,7 +5,7 @@
 }
 
 .panel.mgpage {
-  gap: 20px;
+  gap: var(--space-5);
   height: 100%;
   min-height: 0;
   max-width: none;
@@ -17,13 +17,13 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 12px 24px;
+  gap: var(--space-3) var(--space-6);
 }
 
 .mghead__title {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   margin: 0;
   font-size: 22px;
   font-weight: 650;
@@ -32,7 +32,7 @@
 .mghead__actions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .mghead__select {
@@ -40,34 +40,19 @@
   min-width: 220px;
 }
 
-.mgconnbar {
-  display: flex;
-  flex: none;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px 12px;
-}
-
-.mgconnbar__host {
-  max-width: 420px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .mglayout {
   display: grid;
   flex: 1;
   grid-template-columns: 290px minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr);
-  gap: 20px;
+  gap: var(--space-5);
   min-height: 0;
 }
 
 .mgside {
   min-height: 0;
   overflow: auto;
-  padding: 12px;
+  padding: var(--space-3);
   background: var(--bg-raised);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -85,7 +70,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 8px;
+  margin-bottom: var(--space-2);
 }
 
 .mgexplorer__bar .dksearch {
@@ -155,7 +140,7 @@
 .mgtree__new {
   display: flex;
   gap: 6px;
-  padding: 4px 0;
+  padding: var(--space-1) 0;
 }
 
 .mgtree__new .field__input {
@@ -177,13 +162,13 @@
 }
 
 .mgcollection__head {
-  margin-bottom: 12px;
+  margin-bottom: var(--space-3);
 }
 
 .mgcollection__title {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   margin: 0;
   font-size: 18px;
 }
@@ -207,14 +192,14 @@
 }
 
 .mgcollection__stats {
-  margin: 4px 0 0;
+  margin: var(--space-1) 0 0;
 }
 
 .mgcollection__body {
   flex: 1;
   min-height: 0;
   overflow: auto;
-  padding-top: 16px;
+  padding-top: var(--space-4);
 }
 
 .mgcollection__body--fill {
@@ -249,9 +234,9 @@
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
   min-height: 0;
-  padding-right: 4px;
+  padding-right: var(--space-1);
   overflow: auto;
 }
 
@@ -260,7 +245,7 @@
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-4);
   min-height: 0;
 }
 
@@ -269,18 +254,18 @@
 }
 
 .mgdb__head .card__hint {
-  margin: 4px 0 0;
+  margin: var(--space-1) 0 0;
 }
 
 .mgdb__grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: 12px;
+  gap: var(--space-3);
   align-content: start;
   flex: 1;
   min-height: 0;
   margin: 0;
-  padding: 0 4px 0 0;
+  padding: 0 var(--space-1) 0 0;
   overflow: auto;
   list-style: none;
 }
@@ -288,9 +273,9 @@
 .mgdb__card {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
   width: 100%;
-  padding: 14px 16px;
+  padding: 14px var(--space-4);
   color: inherit;
   text-align: left;
   background: var(--bg-raised);
@@ -306,7 +291,7 @@
 .mgdb__name {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   min-width: 0;
   font-weight: 600;
 }
@@ -314,7 +299,7 @@
 .mgdb__meta {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   min-height: 18px;
 }
 
@@ -326,20 +311,20 @@
 .mgquery {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .mgquery__row {
   display: flex;
   align-items: flex-end;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .mgquery__filter {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   min-width: 0;
 }
 
@@ -353,7 +338,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .mgtoolbar__count {
@@ -372,7 +357,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .mgsaved .field__input {
@@ -385,7 +370,7 @@
 }
 
 .mgsaved__manage ul {
-  margin: 4px 0 0;
+  margin: var(--space-1) 0 0;
   padding-left: 18px;
 }
 
@@ -393,14 +378,14 @@
 .mgdocs {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
 .mgdoc {
-  padding: 10px 12px;
+  padding: 10px var(--space-3);
   background: var(--bg-raised);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -543,15 +528,6 @@
   max-width: 420px;
 }
 
-.mgtypechip {
-  display: inline-block;
-  margin-right: 6px;
-  padding: 1px 8px;
-  background: color-mix(in srgb, var(--text) 8%, transparent);
-  border-radius: 999px;
-  font-size: 12px;
-}
-
 .mgschema__size {
   min-width: 180px;
 }
@@ -561,8 +537,8 @@
 .mgconn__body {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 0 20px 20px;
+  gap: var(--space-3);
+  padding: 0 var(--space-5) var(--space-5);
 }
 
 .mgeditor__text {
@@ -601,7 +577,7 @@
 
 /* explain */
 .mgexplain {
-  padding: 12px 14px;
+  padding: var(--space-3) 14px;
   background: var(--bg-raised);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -611,7 +587,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 8px;
+  margin-bottom: var(--space-2);
 }
 
 /* aggregation */
@@ -625,7 +601,7 @@
 }
 
 .mgstage {
-  padding: 10px 12px;
+  padding: 10px var(--space-3);
   background: var(--bg-raised);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -645,14 +621,14 @@
 }
 
 .mgstage__preview {
-  margin-top: 8px;
+  margin-top: var(--space-2);
 }
 
 .mgagg__bar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .mgagg__bar .field__input {
@@ -663,7 +639,7 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 12px 14px;
+  padding: var(--space-3) 14px;
   background: var(--bg-raised);
   border: 1px solid var(--border);
   border-radius: var(--radius);

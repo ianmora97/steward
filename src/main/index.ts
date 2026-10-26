@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 import { BrowserWindow, app, dialog, safeStorage, shell } from 'electron';
-import { DOCKER_EVENTS, REDIS_EVENTS, TERMINAL_EVENTS, type AppInfo, type DirectoryPick } from '@shared/types/ipc';
+import { DOCKER_EVENTS, REDIS_EVENTS, TERMINAL_EVENTS, UI_EVENTS, type AppInfo, type DirectoryPick } from '@shared/types/ipc';
 import { openStewardDatabase, type StewardDatabase } from './db/connection';
 import { registerIpcHandlers } from './ipc/register';
 import { validateExistingDirectory, validateExistingFile } from './security/paths';
@@ -17,6 +17,7 @@ import { createGithubPullsService } from './services/github-pulls.service';
 import { createSecretStore } from './security/secret-store';
 import { createSshService } from './services/ssh.service';
 import { createTerminalService, type TerminalService } from './services/terminal.service';
+import { createUiSettingsService, type UiSettingsService } from './services/ui-settings.service';
 
 const isDev = !app.isPackaged;
 const rendererDevUrl = process.env['ELECTRON_RENDERER_URL'];
@@ -27,6 +28,7 @@ let terminal: TerminalService | null = null;
 let docker: DockerService | null = null;
 let mongo: MongoService | null = null;
 let redis: RedisService | null = null;
+let ui: UiSettingsService | null = null;
 
 function databaseFilePath(): string {
   // An override keeps development and manual testing off the real database.
@@ -249,6 +251,16 @@ function createWindow(): BrowserWindow {
   });
 
   window.once('ready-to-show', () => window.show());
+  // A reload resets the page's zoom, so the stored one goes back on every load.
+  window.webContents.on('did-finish-load', () => ui?.applyCurrent());
+  window.webContents.on('before-input-event', (event, input) => {
+    if (input.type !== 'keyDown' || !(input.control || input.meta) || input.alt) return;
+    if (input.key === '+' || input.key === '=') ui?.stepZoom(1);
+    else if (input.key === '-' || input.key === '_') ui?.stepZoom(-1);
+    else if (input.key === '0') ui?.resetZoom();
+    else return;
+    event.preventDefault();
+  });
   // A reload leaves the page with no memory of its Pub/Sub subscriptions, so they would hold a slot for nothing.
   window.webContents.on('did-start-loading', () => void redis?.endSubscriptions());
   hardenNavigation(window);
@@ -347,6 +359,12 @@ function startup(): void {
     emitSubscriptionEnd: (event) => sendToWindow(REDIS_EVENTS.subscriptionEnd, event)
   });
 
+  ui = createUiSettingsService({
+    db: database.db,
+    apply: (zoom) => mainWindow?.webContents.setZoomFactor(zoom / 100),
+    emit: (event) => sendToWindow(UI_EVENTS.zoomChanged, event)
+  });
+
   registerIpcHandlers({
     database,
     terminal,
@@ -358,6 +376,7 @@ function startup(): void {
     docker,
     mongo,
     redis,
+    ui,
     readAppInfo,
     pickDirectory,
     pickKeyFile

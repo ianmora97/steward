@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { Icon } from './Icon';
+import { createPortal } from 'react-dom';
+import { IconButton } from './IconButton';
 import { useExitAnimation } from './useExitAnimation';
 
 /** A centred dialog that fades in, slides up, and plays the reverse on close. */
@@ -25,7 +26,8 @@ export function Modal({
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose, requestClose]);
 
-  return (
+  // In the body, not where it was opened: a container or a transform higher up would otherwise become the frame of this fixed dialog.
+  return createPortal(
     <div className={`dialog__backdrop${closing ? ' is-closing' : ''}`} onClick={close}>
       <div
         className={`dialog dialog--wide ${className}`}
@@ -38,12 +40,11 @@ export function Modal({
           <h3 id="modal-title" className="dialog__title">
             {title}
           </h3>
-          <button type="button" className="iconbutton" onClick={close} aria-label="Close">
-            <Icon name="x" />
-          </button>
+          <IconButton icon="x" label="Close" size={16} onClick={close} />
         </header>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

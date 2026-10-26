@@ -119,6 +119,8 @@ export const sshHostSchema = sshHostFieldsSchema.extend({
   createdAt: isoTimestampSchema,
   /** The environment's name, resolved by main. Read-only: it is changed through `environmentId`. */
   environment: z.string().nullable(),
+  /** The environment's icon, resolved by main alongside its name. */
+  environmentIcon: z.string().nullable(),
   connection: sshConnectionSchema,
   lastCommand: sshLastCommandSchema.nullable(),
   /** `none` until a one-shot command has run; then whether the latest one succeeded. */

@@ -9,6 +9,9 @@ import type { StewardError } from '@shared/types/result';
 import { Icon } from '../../components/Icon';
 import { DocumentResults, ViewSwitch, type DocumentViewMode } from './DocumentViews';
 import { ExplainPanel } from './ExplainPanel';
+import { Button } from '../../components/Button';
+import { IconButton } from '../../components/IconButton';
+import { toast } from '../../stores/toast.store';
 
 interface Stage {
   id: number;
@@ -137,6 +140,7 @@ export function AggregationView({
     });
     if (!result.success) onError(result.error);
     else {
+      toast.success('Pipeline saved');
       setSaving(null);
       setSavedReload((value) => value + 1);
     }
@@ -176,9 +180,9 @@ export function AggregationView({
           ))}
         </select>
         {saving === null ? (
-          <button type="button" className="button button--small" onClick={() => setSaving('')}>
+          <Button size="sm" onClick={() => setSaving('')}>
             Save this pipeline
-          </button>
+          </Button>
         ) : (
           <form
             className="mgsaved__form"
@@ -188,8 +192,8 @@ export function AggregationView({
             }}
           >
             <input className="field__input" value={saving} onChange={(event) => setSaving(event.target.value)} placeholder="Name" autoFocus />
-            <button type="submit" className="button button--small button--primary">Save</button>
-            <button type="button" className="button button--small" onClick={() => setSaving(null)}>Cancel</button>
+            <Button variant="primary" size="sm" type="submit">Save</Button>
+            <Button size="sm" onClick={() => setSaving(null)}>Cancel</Button>
           </form>
         )}
         {saved.length > 0 && (
@@ -199,19 +203,14 @@ export function AggregationView({
               {saved.map((query) => (
                 <li key={query.id}>
                   {query.name}
-                  <button
-                    type="button"
-                    className="iconbutton"
-                    aria-label={`Delete saved pipeline ${query.name}`}
-                    onClick={() =>
+                  <IconButton icon="trash" label={`Delete saved pipeline ${query.name}`} size={14} onClick={() =>
                       void window.steward.mongo.deleteSavedQuery({ id: query.id }).then((result) => {
-                        if (result.success) setSavedReload((value) => value + 1);
-                        else onError(result.error);
+                        if (result.success) {
+                          toast.success('Saved pipeline deleted');
+                          setSavedReload((value) => value + 1);
+                        } else onError(result.error);
                       })
-                    }
-                  >
-                    <Icon name="trash" size={14} />
-                  </button>
+                    } />
                 </li>
               ))}
             </ul>
@@ -227,27 +226,15 @@ export function AggregationView({
               <header className="mgstage__head">
                 <strong>Stage {index + 1}</strong>
                 <span className="dpitem__spacer" />
-                <button type="button" className="iconbutton" aria-label="Move stage up" disabled={index === 0} onClick={() => move(index, -1)}>
-                  <span aria-hidden="true">↑</span>
-                </button>
-                <button type="button" className="iconbutton" aria-label="Move stage down" disabled={index === stages.length - 1} onClick={() => move(index, 1)}>
-                  <span aria-hidden="true">↓</span>
-                </button>
-                <button type="button" className="button button--small" onClick={() => void preview(index, stage.id)}>
+                <IconButton icon="chevronUp" label="Move stage up" disabled={index === 0} onClick={() => move(index, -1)} />
+                <IconButton icon="chevronDown" label="Move stage down" disabled={index === stages.length - 1} onClick={() => move(index, 1)} />
+                <Button size="sm" onClick={() => void preview(index, stage.id)}>
                   Preview
-                </button>
-                <button
-                  type="button"
-                  className="iconbutton"
-                  aria-label="Remove stage"
-                  disabled={stages.length === 1}
-                  onClick={() => {
+                </Button>
+                <IconButton icon="trash" label="Remove stage" disabled={stages.length === 1} size={14} onClick={() => {
                     setStages((current) => current.filter((candidate) => candidate.id !== stage.id));
                     setPreviews({});
-                  }}
-                >
-                  <Icon name="trash" size={14} />
-                </button>
+                  }} />
               </header>
               <textarea className="field__input dpmono mgstage__text" value={stage.text} onChange={(event) => update(stage.id, event.target.value)} spellCheck={false} aria-label={`Stage ${index + 1}`} />
               {shown !== undefined && (
@@ -275,27 +262,21 @@ export function AggregationView({
             </option>
           ))}
         </select>
-        <button
-          type="button"
-          className="button button--small"
-          onClick={() => {
+        <Button size="sm" onClick={() => {
             setStages((current) => [...current, { id: nextId, text: TEMPLATES[template] ?? '{  }' }]);
             setNextId(nextId + 1);
-          }}
-        >
+          }}>
           <Icon name="plus" size={14} /> Add stage
-        </button>
+        </Button>
         <label className="dpcheck">
           <input type="checkbox" checked={allowDiskUse} onChange={(event) => setAllowDiskUse(event.target.checked)} />
           <span>Allow disk use</span>
         </label>
         <span className="dpitem__spacer" />
-        <button type="button" className="button" onClick={() => void runExplain()}>
+        <Button onClick={() => void runExplain()}>
           Explain
-        </button>
-        <button type="button" className="button button--primary" disabled={running || blockedByReadOnly || (writes && !confirmedWrite)} onClick={() => void run()}>
-          {running ? 'Running…' : 'Run pipeline'}
-        </button>
+        </Button>
+        <Button variant="primary" loading={running} loadingLabel="Running…" disabled={blockedByReadOnly || (writes && !confirmedWrite)} onClick={() => void run()}>Run pipeline</Button>
       </div>
 
       {writes && (

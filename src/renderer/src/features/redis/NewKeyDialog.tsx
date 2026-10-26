@@ -5,6 +5,8 @@ import type { StewardError } from '@shared/types/result';
 import { Modal } from '../../components/Modal';
 import { ExpiryField, secondsUntil } from './ExpiryField';
 import { typeLabel } from './redis-meta';
+import { Button } from '../../components/Button';
+import { toast } from '../../stores/toast.store';
 
 type NewType = 'string' | 'hash' | 'list' | 'set' | 'zset' | 'stream' | 'json';
 
@@ -112,6 +114,7 @@ export function NewKeyDialog({
       }
     }
     setBusy(false);
+    toast.success(`Key ${trimmed} created`);
     onCreated(trimmed);
   }
 
@@ -181,10 +184,8 @@ export function NewKeyDialog({
           </div>
         )}
         <div className="dialog__actions">
-          <button type="button" className="button" onClick={onCancel}>Cancel</button>
-          <button type="submit" className="button button--primary" disabled={busy || key.trim() === ''}>
-            {busy ? 'Creating…' : 'Create key'}
-          </button>
+          <Button onClick={onCancel}>Cancel</Button>
+          <Button variant="primary" loading={busy} loadingLabel="Creating…" disabled={key.trim() === ''} type="submit">Create key</Button>
         </div>
       </form>
     </Modal>

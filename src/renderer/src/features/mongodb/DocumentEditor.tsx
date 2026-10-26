@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { StewardError, StewardResult } from '@shared/types/result';
 import { Modal } from '../../components/Modal';
+import { Button } from '../../components/Button';
 
 /**
  * Edits one document (or inserts new ones) as shell-syntax text. What is saved is parsed in the main
@@ -56,17 +57,17 @@ export function DocumentEditor({
           </div>
         )}
         <div className="dialog__actions">
-          <button type="button" className="button" onClick={onClose}>
+          <Button onClick={onClose}>
             Cancel
-          </button>
+          </Button>
           {problem?.code === 'MONGO_DOC_CHANGED' && (
-            <button type="button" className="button button--danger" disabled={busy} onClick={() => void submit(true)}>
+            <Button variant="danger" disabled={busy} onClick={() => void submit(true)}>
               Save anyway
-            </button>
+            </Button>
           )}
-          <button type="button" className="button button--primary" disabled={busy || text.trim() === ''} onClick={() => void submit(false)}>
-            {busy ? 'Saving…' : submitLabel}
-          </button>
+          <Button variant="primary" loading={busy} loadingLabel="Saving…" disabled={text.trim() === ''} onClick={() => void submit(false)}>
+            {submitLabel}
+          </Button>
         </div>
       </div>
     </Modal>

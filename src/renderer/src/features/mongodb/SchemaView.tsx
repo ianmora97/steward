@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import type { MongoConnection, MongoSchemaResult } from '@shared/schemas/mongodb';
 import type { StewardError } from '@shared/types/result';
+import { Button } from '../../components/Button';
+import { Badge } from '../../components/Badge';
 
 const SAMPLE_SIZES = [100, 1000, 5000] as const;
 
@@ -41,9 +43,7 @@ export function SchemaView({
             ))}
           </select>
         </label>
-        <button type="button" className="button button--primary" disabled={busy} onClick={() => void analyze()}>
-          {busy ? 'Analyzing…' : 'Analyze schema'}
-        </button>
+        <Button variant="primary" loading={busy} loadingLabel="Analyzing…" onClick={() => void analyze()}>Analyze schema</Button>
         {result !== null && <span className="card__hint">Described from a random sample of {result.sampled} documents, not the whole collection.</span>}
       </div>
 
@@ -68,9 +68,9 @@ export function SchemaView({
                 <td>{field.presentPercent}%</td>
                 <td>
                   {field.types.map((entry) => (
-                    <span key={entry.type} className="mgtypechip">
+                    <Badge key={entry.type} tone="neutral" size="sm">
                       {entry.type} {entry.percent < 100 ? `${entry.percent}%` : ''}
-                    </span>
+                    </Badge>
                   ))}
                 </td>
                 <td className="dpmono mgschema__samples">{field.samples.join('   ')}</td>

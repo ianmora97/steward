@@ -1,5 +1,6 @@
 import type { GitDiff } from '@shared/schemas/git';
 import { Icon } from '../../components/Icon';
+import { Loading } from '../../components/Loading';
 
 function lineClass(line: string): string {
   if (line.startsWith('+++') || line.startsWith('---') || line.startsWith('diff ') || line.startsWith('index ')) {
@@ -16,8 +17,14 @@ export function DiffView({ diff, loading }: { diff: GitDiff | null; loading: boo
   if (diff === null) {
     return (
       <div className="diff__empty">
-        <Icon name="git" size={18} />
-        <span>{loading ? 'Loading diff…' : 'Select a file to see its changes.'}</span>
+        {loading ? (
+          <Loading variant="line" lines={4} label="Loading diff…" />
+        ) : (
+          <>
+            <Icon name="git" size={18} />
+            <span>Select a file to see its changes.</span>
+          </>
+        )}
       </div>
     );
   }

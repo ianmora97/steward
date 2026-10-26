@@ -16,6 +16,9 @@ import {
   fileNameOf,
   sinceLabel
 } from './ssh-meta';
+import { IconButton } from '../../components/IconButton';
+import { Button } from '../../components/Button';
+import { Badge } from '../../components/Badge';
 
 /** The select option that opens the "new environment" dialog instead of choosing one. */
 const NEW_ENVIRONMENT = '__new__';
@@ -244,15 +247,7 @@ export function ConnectionEditor({
         </span>
         {host !== null && (
           <div className="sshmenu" ref={menuRef}>
-            <button
-              type="button"
-              className="iconbutton"
-              aria-label="More actions"
-              aria-expanded={menuOpen}
-              onClick={() => setMenuOpen((open) => !open)}
-            >
-              <Icon name="dots" size={18} />
-            </button>
+            <IconButton icon="dots" size={18} label="More actions" expanded={menuOpen} onClick={() => setMenuOpen((open) => !open)} />
             {menuOpen && (
               <div className="sshmenu__list" role="menu">
                 <button
@@ -435,13 +430,11 @@ export function ConnectionEditor({
                     )}
                   </div>
                   {draft.identityFile !== null && (
-                    <button type="button" className="iconbutton" aria-label="Remove key file" title="Remove key file" onClick={() => set('identityFile', null)}>
-                      <Icon name="x" size={14} />
-                    </button>
+                    <IconButton icon="x" label="Remove key file" size={14} onClick={() => set('identityFile', null)} />
                   )}
-                  <button type="button" className="button" onClick={() => void chooseKey()}>
+                  <Button onClick={() => void chooseKey()}>
                     <Icon name="folder" size={14} /> Choose file
-                  </button>
+                  </Button>
                 </div>
                 <p className="sshhint">
                   <Icon name="lock" size={12} /> Only the file path is saved. Your private key stays on this device.
@@ -498,13 +491,11 @@ export function ConnectionEditor({
                 {host !== null && (
                   <div className="sshcard__actions">
                     {state === 'host_key_unknown' && (
-                      <button type="button" className="button button--small" onClick={onReview}>
+                      <Button size="sm" onClick={onReview}>
                         Review host key
-                      </button>
+                      </Button>
                     )}
-                    <button type="button" className="button button--small" disabled={busy || dirty} onClick={onTest}>
-                      {busy ? 'Checking…' : 'Test connection'}
-                    </button>
+                    <Button size="sm" loading={busy} loadingLabel="Checking…" disabled={dirty} onClick={onTest}>Test connection</Button>
                   </div>
                 )}
                 <div className="sshcard__rule" />
@@ -520,7 +511,7 @@ export function ConnectionEditor({
                 <section className="sshcard">
                   <div className="sshcard__headline">
                     <h3 className="sshcard__title">Active elsewhere</h3>
-                    <span className="sshitem__badge">{elsewhere.length} {elsewhere.length === 1 ? 'session' : 'sessions'}</span>
+                    <Badge tone="info">{elsewhere.length} {elsewhere.length === 1 ? 'session' : 'sessions'}</Badge>
                   </div>
                   {elsewhere.map((session) => {
                     const other = session.sshHostId === null ? undefined : hostsById.get(session.sshHostId);
@@ -551,18 +542,12 @@ export function ConnectionEditor({
           <span className="sshfoot__hint"> · Opens a new terminal tab</span>
         </span>
         <div className="sshfoot__actions">
-          <button type="button" className="button" disabled={!dirty || saving} onClick={() => void save()}>
+          <Button disabled={!dirty || saving} onClick={() => void save()}>
             <Icon name="save" size={14} /> {host === null ? 'Create connection' : 'Save changes'}
-          </button>
-          <button
-            type="button"
-            className="button button--primary"
-            disabled={host === null || dirty || busy}
-            title={dirty ? 'Save your changes first' : undefined}
-            onClick={onConnect}
-          >
+          </Button>
+          <Button variant="primary" disabled={host === null || dirty || busy} title={dirty ? 'Save your changes first' : undefined} onClick={onConnect}>
             <Icon name="plug" size={14} /> Connect via SSH
-          </button>
+          </Button>
         </div>
       </footer>
     </section>

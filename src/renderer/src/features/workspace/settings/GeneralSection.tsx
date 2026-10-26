@@ -1,170 +1,174 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import type { Project } from '@shared/schemas/project';
+import { Button } from '../../../components/Button';
+import { Card } from '../../../components/Card';
 import { ConfirmDialog } from '../../../components/ConfirmDialog';
+import { Field } from '../../../components/Field';
 import { Icon } from '../../../components/Icon';
-import { PROJECT_COLORS, PROJECT_ICONS, ProjectAvatar } from '../../../components/ProjectAvatar';
+import { DEFAULT_PROJECT_COLOR, PROJECT_COLORS, PROJECT_ICONS, ProjectAvatar } from '../../../components/ProjectAvatar';
+import { useAction } from '../../../components/useAction';
 import { useAppStore } from '../../../stores/app.store';
+import { ZoomSelector } from './ZoomSelector';
 
-/** The project's name and look, and the two things that take it out of the way: archive and delete. */
+function iconLabel(name: string): string {
+  const spaced = name.replace(/([A-Z])/g, ' $1').toLowerCase();
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+}
+
+/** The project's name and look, the window's zoom, and the two things that take a project out of the way: archive and delete. */
 export function GeneralSection({ project }: { project: Project }): React.JSX.Element {
   const refreshProjects = useAppStore((state) => state.refreshProjects);
   const showOverview = useAppStore((state) => state.showOverview);
   const deleteProject = useAppStore((state) => state.deleteProject);
   const busy = useAppStore((state) => state.busy);
+  const nameId = useId();
+  const descriptionId = useId();
 
   const [name, setName] = useState(project.name);
   const [description, setDescription] = useState(project.description ?? '');
   const [color, setColor] = useState<string | null>(project.color);
   const [icon, setIcon] = useState<string | null>(project.icon);
-  const [saving, setSaving] = useState(false);
-  const [problem, setProblem] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
   const [confirming, setConfirming] = useState<'archive' | 'delete' | null>(null);
 
   const changed =
     name.trim() !== project.name || description.trim() !== (project.description ?? '') || color !== project.color || icon !== project.icon;
 
-  async function save(): Promise<void> {
-    setSaving(true);
-    setProblem(null);
-    const result = await window.steward.projects.update({
-      id: project.id,
-      name: name.trim(),
-      description: description.trim() === '' ? null : description.trim(),
-      color,
-      icon
-    });
-    setSaving(false);
-    if (!result.success) {
-      setProblem(result.error.message);
-      return;
-    }
-    setSaved(true);
-    await refreshProjects();
-  }
+  const save = useAction(
+    async () => {
+      const result = await window.steward.projects.update({
+        id: project.id,
+        name: name.trim(),
+        description: description.trim() === '' ? null : description.trim(),
+        color,
+        icon
+      });
+      if (result.success) await refreshProjects();
+      return result;
+    },
+    { success: 'Settings saved', errorTarget: 'none' }
+  );
 
-  async function archive(): Promise<void> {
-    setConfirming(null);
-    const result = await window.steward.projects.archive({ id: project.id });
-    if (!result.success) {
-      setProblem(result.error.message);
-      return;
-    }
-    await refreshProjects();
-    showOverview();
-  }
+  const archive = useAction(
+    async () => {
+      const result = await window.steward.projects.archive({ id: project.id });
+      if (result.success) {
+        await refreshProjects();
+        showOverview();
+      }
+      return result;
+    },
+    { success: 'Project archived' }
+  );
 
   return (
     <div className="pset__stack">
-      <section className="card">
-        <h2 className="card__title">Project</h2>
+      <Card>
+        <Card.Header title="Project" />
         <div className="pset__identity">
           <ProjectAvatar icon={icon} color={color} size={56} />
           <div className="pset__fields">
-            <label className="field">
-              <span className="field__label">Name</span>
+            <Field label="Name" htmlFor={nameId}>
+              <input id={nameId} className="field__input" value={name} maxLength={120} onChange={(event) => setName(event.target.value)} />
+            </Field>
+            <Field label="Description" htmlFor={descriptionId}>
               <input
-                className="field__input"
-                value={name}
-                maxLength={120}
-                onChange={(event) => {
-                  setName(event.target.value);
-                  setSaved(false);
-                }}
-              />
-            </label>
-            <label className="field">
-              <span className="field__label">Description</span>
-              <input
+                id={descriptionId}
                 className="field__input"
                 value={description}
                 maxLength={2000}
                 placeholder="What this project is"
-                onChange={(event) => {
-                  setDescription(event.target.value);
-                  setSaved(false);
-                }}
+                onChange={(event) => setDescription(event.target.value)}
               />
-            </label>
-            <div className="field">
-              <span className="field__label">Slug</span>
+            </Field>
+            <Field label="Slug">
               <code className="pset__slug">{project.slug}</code>
-            </div>
+            </Field>
           </div>
         </div>
 
-        <div className="pset__looks">
-          <div className="field">
-            <span className="field__label">Colour</span>
+        <div className="pset__looks" style={{ ['--pick' as string]: color ?? DEFAULT_PROJECT_COLOR }}>
+          <Field label="Colour">
             <div className="pset__swatches" role="radiogroup" aria-label="Project colour">
-              {PROJECT_COLORS.map((swatch) => (
-                <button
-                  key={swatch}
-                  type="button"
-                  role="radio"
-                  aria-checked={(color ?? PROJECT_COLORS[0]) === swatch}
-                  aria-label={swatch}
-                  className={`pset__swatch${(color ?? PROJECT_COLORS[0]) === swatch ? ' pset__swatch--on' : ''}`}
-                  style={{ background: swatch }}
-                  onClick={() => {
-                    setColor(swatch);
-                    setSaved(false);
-                  }}
-                />
-              ))}
+              {PROJECT_COLORS.map((swatch) => {
+                const on = (color ?? DEFAULT_PROJECT_COLOR) === swatch.value;
+                return (
+                  <button
+                    key={swatch.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={on}
+                    aria-label={swatch.name}
+                    title={swatch.name}
+                    className={`pset__swatch${on ? ' pset__swatch--on' : ''}`}
+                    style={{ background: swatch.value }}
+                    onClick={() => setColor(swatch.value)}
+                  />
+                );
+              })}
             </div>
-          </div>
-          <div className="field">
-            <span className="field__label">Icon</span>
+          </Field>
+          <Field label="Icon">
             <div className="pset__icons" role="radiogroup" aria-label="Project icon">
-              {PROJECT_ICONS.map((name) => (
+              {PROJECT_ICONS.map((choice) => (
                 <button
-                  key={name}
+                  key={choice}
                   type="button"
                   role="radio"
-                  aria-checked={(icon ?? 'folder') === name}
-                  aria-label={name}
-                  title={name}
-                  className={`pset__icon${(icon ?? 'folder') === name ? ' pset__icon--on' : ''}`}
-                  onClick={() => {
-                    setIcon(name);
-                    setSaved(false);
-                  }}
+                  aria-checked={(icon ?? 'folder') === choice}
+                  aria-label={iconLabel(choice)}
+                  title={iconLabel(choice)}
+                  className={`pset__icon${(icon ?? 'folder') === choice ? ' pset__icon--on' : ''}`}
+                  onClick={() => setIcon(choice)}
                 >
-                  <Icon name={name} size={16} />
+                  <Icon name={choice} size={16} />
                 </button>
               ))}
             </div>
-          </div>
+          </Field>
         </div>
 
-        {problem !== null && <p className="dprequired">{problem}</p>}
-        <div className="pset__actions">
-          <button type="button" className="button button--primary" disabled={!changed || name.trim() === '' || saving} onClick={() => void save()}>
-            {saving ? 'Saving…' : 'Save changes'}
-          </button>
-          {saved && !changed && <span className="card__hint">Saved.</span>}
-        </div>
-      </section>
+        {save.error !== null && <p className="dprequired">{save.error.message}</p>}
+        <Card.Footer>
+          <Button variant="primary" loading={save.pending} loadingLabel="Saving…" disabled={!changed || name.trim() === ''} onClick={() => void save.run()}>
+            Save changes
+          </Button>
+        </Card.Footer>
+      </Card>
 
-      <section className="card pset__danger">
-        <h2 className="card__title">Archive or delete</h2>
+      <Card>
+        <Card.Header title="Appearance" />
+        <p className="card__hint">Scales the whole interface, text included. Ctrl + and Ctrl − do the same from the keyboard, and Ctrl 0 goes back to 100 %.</p>
+        <Field label="Zoom">
+          <ZoomSelector />
+        </Field>
+      </Card>
+
+      <Card className="pset__danger">
+        <Card.Header title="Archive or delete" />
         <p className="card__hint">
           Archiving hides the project from the sidebar and the overview and keeps everything. Deleting removes it from Steward, with its
           connections and stored credentials; repository folders on disk are never touched.
         </p>
         <div className="pset__actions">
-          <button type="button" className="button" disabled={busy} onClick={() => setConfirming('archive')}>
+          <Button disabled={busy} onClick={() => setConfirming('archive')}>
             Archive project
-          </button>
-          <button type="button" className="button button--danger" disabled={busy} onClick={() => setConfirming('delete')}>
+          </Button>
+          <Button variant="danger" disabled={busy} onClick={() => setConfirming('delete')}>
             Delete project
-          </button>
+          </Button>
         </div>
-      </section>
+      </Card>
 
       {confirming === 'archive' && (
-        <ConfirmDialog title={`Archive ${project.name}?`} confirmLabel="Archive" onCancel={() => setConfirming(null)} onConfirm={() => void archive()}>
+        <ConfirmDialog
+          title={`Archive ${project.name}?`}
+          confirmLabel="Archive"
+          onCancel={() => setConfirming(null)}
+          onConfirm={() => {
+            setConfirming(null);
+            void archive.run();
+          }}
+        >
           <p>It disappears from the sidebar and the overview. Nothing is deleted.</p>
         </ConfirmDialog>
       )}

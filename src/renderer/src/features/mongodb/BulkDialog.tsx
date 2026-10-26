@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import type { MongoConnection } from '@shared/schemas/mongodb';
 import type { StewardError } from '@shared/types/result';
 import { Modal } from '../../components/Modal';
+import { Button } from '../../components/Button';
+import { toast } from '../../stores/toast.store';
 
 /**
  * Deletes or updates every document that matches the current filter. The number shown here is counted for real, and
@@ -61,7 +63,10 @@ export function BulkDialog({
     };
     const result = kind === 'delete' ? await window.steward.mongo.deleteMany(base) : await window.steward.mongo.updateMany({ ...base, update });
     setBusy(false);
-    if (result.success) onDone(result.data.count);
+    if (result.success) {
+      toast.success(kind === 'delete' ? `${result.data.count} documents deleted` : `${result.data.count} documents updated`);
+      onDone(result.data.count);
+    }
     else setProblem(result.error);
   }
 
@@ -95,12 +100,12 @@ export function BulkDialog({
           </div>
         )}
         <div className="dialog__actions">
-          <button type="button" className="button" onClick={onClose}>
+          <Button onClick={onClose}>
             Cancel
-          </button>
-          <button type="button" className="button button--danger" disabled={!ready} onClick={() => void confirm()}>
-            {busy ? 'Working…' : kind === 'delete' ? `Delete ${count ?? ''} documents` : `Update ${count ?? ''} documents`}
-          </button>
+          </Button>
+          <Button variant="danger" loading={busy} loadingLabel={kind === 'delete' ? 'Deleting…' : 'Updating…'} disabled={!ready} onClick={() => void confirm()}>
+            {kind === 'delete' ? `Delete ${count ?? ''} documents` : `Update ${count ?? ''} documents`}
+          </Button>
         </div>
       </div>
     </Modal>

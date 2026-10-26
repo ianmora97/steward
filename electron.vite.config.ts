@@ -21,8 +21,11 @@ export default defineConfig({
     resolve: { alias: {
         '@shared': shared,
         '@renderer': resolve(__dirname, 'src/renderer/src'),
-        '@assets': resolve(__dirname, 'src/assets')
+        '@assets': resolve(__dirname, 'src/assets'),
+        '@root': __dirname
       } },
+    // CHANGELOG.md sits above the renderer root; the release notes read it at build time.
+    server: { fs: { allow: [__dirname] } },
     build: {
       minify: true,
       rollupOptions: { input: { index: resolve(__dirname, 'src/renderer/index.html') } }

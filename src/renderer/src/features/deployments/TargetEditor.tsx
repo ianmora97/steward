@@ -13,6 +13,8 @@ import type { StewardError } from '@shared/types/result';
 import { ErrorBanner } from '../../components/ErrorBanner';
 import { Modal } from '../../components/Modal';
 import { useAppStore } from '../../stores/app.store';
+import { Button } from '../../components/Button';
+import { toast } from '../../stores/toast.store';
 
 /** What GitHub told us about the chosen repository; only valid for the repository it was loaded for. */
 interface RepoData {
@@ -149,6 +151,7 @@ export function TargetEditor({
       setError(result.error);
       return;
     }
+    toast.success(target === null ? 'Target created' : 'Target saved');
     onSaved();
     onClose();
   }
@@ -279,9 +282,9 @@ export function TargetEditor({
               <div className="dphint">
                 <ErrorBanner error={repoError} onDismiss={() => setRepoLoad(null)} />
                 {repoError.code === 'GITHUB_NOT_CONNECTED' && (
-                  <button type="button" className="button" onClick={() => setActiveTab('github')}>
+                  <Button onClick={() => setActiveTab('github')}>
                     Open the GitHub tab to connect
-                  </button>
+                  </Button>
                 )}
               </div>
             )}
@@ -339,17 +342,10 @@ export function TargetEditor({
         </label>
       </div>
       <div className="dialog__actions">
-        <button type="button" className="button" onClick={onClose}>
+        <Button onClick={onClose}>
           Cancel
-        </button>
-        <button
-          type="button"
-          className="button button--primary"
-          disabled={saving || !ready}
-          onClick={() => void save()}
-        >
-          {saving ? 'Saving…' : 'Save'}
-        </button>
+        </Button>
+        <Button variant="primary" loading={saving} loadingLabel="Saving…" disabled={!ready} onClick={() => void save()}>Save</Button>
       </div>
     </Modal>
   );

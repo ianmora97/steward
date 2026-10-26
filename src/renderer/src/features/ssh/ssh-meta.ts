@@ -90,6 +90,8 @@ function rank(environment: string): number {
 export interface EnvironmentGroup {
   /** null = the connections that have no environment yet. */
   environment: string | null;
+  /** The icon the user chose for the environment, if any. */
+  icon: string | null;
   hosts: SshHost[];
 }
 
@@ -107,7 +109,7 @@ export function groupByEnvironment(hosts: SshHost[]): EnvironmentGroup[] {
   }
   const groups: EnvironmentGroup[] = [...byName.entries()]
     .sort(([a], [b]) => rank(a) - rank(b) || a.localeCompare(b))
-    .map(([environment, list]) => ({ environment, hosts: list }));
-  if (unassigned.length > 0) groups.push({ environment: null, hosts: unassigned });
+    .map(([environment, list]) => ({ environment, icon: list.find((host) => host.environmentIcon !== null)?.environmentIcon ?? null, hosts: list }));
+  if (unassigned.length > 0) groups.push({ environment: null, icon: null, hosts: unassigned });
   return groups;
 }

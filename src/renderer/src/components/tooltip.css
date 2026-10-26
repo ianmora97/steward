@@ -1,0 +1,91 @@
+/* The one tooltip (Tooltip.tsx). Enters and leaves with a "shift-away-extreme": it fades while sliding 20px away from its element. */
+.tooltip {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: var(--z-tooltip);
+  max-width: min(320px, calc(100vw - 16px));
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity var(--dur-slow) var(--ease-out),
+    transform var(--dur-slow) var(--ease-out),
+    visibility var(--dur-slow);
+}
+
+.tooltip[data-state='visible'] {
+  visibility: visible;
+  opacity: 1;
+  transform: none;
+}
+
+.tooltip[data-state='hidden'] {
+  transition-duration: var(--dur-base);
+}
+
+.tooltip[data-state='hidden'][data-placement='top'] {
+  transform: translateY(20px);
+}
+
+.tooltip[data-state='hidden'][data-placement='bottom'] {
+  transform: translateY(-20px);
+}
+
+.tooltip[data-state='hidden'][data-placement='left'] {
+  transform: translateX(20px);
+}
+
+.tooltip[data-state='hidden'][data-placement='right'] {
+  transform: translateX(-20px);
+}
+
+.tooltip__body {
+  padding: 6px 10px;
+  color: var(--text);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.4;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  background: var(--bg-tooltip);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  box-shadow:
+    var(--shadow-md),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* A square turned 45°, drawn with the body's own background and a border on the two sides that face out. */
+.tooltip__arrow {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  background: var(--bg-tooltip);
+  border: 1px solid var(--border-strong);
+  transform: rotate(45deg);
+}
+
+.tooltip[data-placement='top'] .tooltip__arrow {
+  bottom: -5px;
+  border-top-color: transparent;
+  border-left-color: transparent;
+}
+
+.tooltip[data-placement='bottom'] .tooltip__arrow {
+  top: -5px;
+  border-right-color: transparent;
+  border-bottom-color: transparent;
+}
+
+.tooltip[data-placement='left'] .tooltip__arrow {
+  right: -5px;
+  border-bottom-color: transparent;
+  border-left-color: transparent;
+}
+
+.tooltip[data-placement='right'] .tooltip__arrow {
+  left: -5px;
+  border-top-color: transparent;
+  border-right-color: transparent;
+}

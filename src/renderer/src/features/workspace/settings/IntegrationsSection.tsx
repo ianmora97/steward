@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
+import { Card } from '../../../components/Card';
 import { ConfirmDialog } from '../../../components/ConfirmDialog';
 import { ErrorBanner } from '../../../components/ErrorBanner';
 import { Icon } from '../../../components/Icon';
-import { Pill, type PillTone } from '../../../components/Pill';
+import { Badge, type BadgeTone } from '../../../components/Badge';
 import { useGithubStore } from '../../../stores/github.store';
 import { ConnectForm } from '../../github/ConnectForm';
+import { Button } from '../../../components/Button';
 
-const STATUS_PILL: Record<string, { tone: PillTone; label: string }> = {
+const STATUS_BADGE: Record<string, { tone: BadgeTone; label: string }> = {
   connected: { tone: 'success', label: 'Connected' },
   auth_error: { tone: 'failure', label: 'Token rejected' },
   unreachable: { tone: 'warning', label: 'Unreachable' },
@@ -30,20 +32,23 @@ export function IntegrationsSection({ projectId }: { projectId: string }): React
   }, [projectId, loadStatus]);
 
   const status = integration?.status ?? 'unconfigured';
-  const pill = STATUS_PILL[status] ?? STATUS_PILL['unconfigured'];
+  const badge = STATUS_BADGE[status] ?? STATUS_BADGE['unconfigured'];
   const connected = status === 'connected';
 
   return (
     <div className="pset__stack">
       {error !== null && <ErrorBanner error={error} onDismiss={dismissError} />}
 
-      <section className="card">
-        <div className="pset__integration-head">
-          <h2 className="card__title">
-            <Icon name="github" size={18} /> GitHub
-          </h2>
-          {pill !== undefined && <Pill tone={pill.tone}>{pill.label}</Pill>}
-        </div>
+      <Card>
+        <Card.Header
+          title={
+            <>
+              <Icon name="github" size={18} /> GitHub
+            </>
+          }
+        >
+          {badge !== undefined && <Badge tone={badge.tone}>{badge.label}</Badge>}
+        </Card.Header>
         <p className="card__hint">
           Pull requests and Actions in the Git tab, and workflow deploys. Steward uses a personal access token, kept encrypted with your system's keyring;
           each project has its own.
@@ -62,12 +67,12 @@ export function IntegrationsSection({ projectId }: { projectId: string }): React
               </div>
             </dl>
             <div className="pset__actions">
-              <button type="button" className="button" disabled={busy} onClick={() => void loadStatus(projectId)}>
+              <Button disabled={busy} onClick={() => void loadStatus(projectId)}>
                 <Icon name="refresh" size={14} /> Check again
-              </button>
-              <button type="button" className="button button--danger" disabled={busy} onClick={() => setConfirming(true)}>
+              </Button>
+              <Button variant="danger" disabled={busy} onClick={() => setConfirming(true)}>
                 Disconnect
-              </button>
+              </Button>
             </div>
           </>
         )}
@@ -76,12 +81,12 @@ export function IntegrationsSection({ projectId }: { projectId: string }): React
         {status === 'unreachable' && (
           <p className="dprequired">
             Steward could not reach GitHub. {integration?.lastError ?? 'Check your connection.'}{' '}
-            <button type="button" className="button button--small" onClick={() => void loadStatus(projectId)}>
+            <Button size="sm" onClick={() => void loadStatus(projectId)}>
               Retry
-            </button>
+            </Button>
           </p>
         )}
-      </section>
+      </Card>
 
       {(status === 'unconfigured' || status === 'auth_error') && (
         <ConnectForm busy={busy} onConnect={(token) => connect(projectId, token)} onImport={() => importFromGh(projectId)} />

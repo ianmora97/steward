@@ -2,24 +2,38 @@
 .pset {
   display: grid;
   grid-template-columns: 240px minmax(0, 1fr);
-  gap: 24px;
+  gap: var(--space-6);
   max-width: 1100px;
 }
 
 .pset__nav {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   align-self: start;
   position: sticky;
   top: 0;
 }
 
+/* With the zoom up or the window narrow, the section list becomes a row above the section. */
+@media (max-width: 1000px) {
+  .pset {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pset__nav {
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+}
+
 .pset__navitem {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 9px 12px;
+  gap: var(--space-3);
+  padding: 9px var(--space-3);
   color: var(--text-muted);
   text-align: left;
   background: none;
@@ -43,27 +57,16 @@
   color: var(--accent);
 }
 
-.pset__navtext {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
 .pset__navname {
   font-size: 13px;
   font-weight: 600;
-}
-
-.pset__navhint {
-  color: var(--text-dim);
-  font-size: 11.5px;
 }
 
 .pset__content,
 .pset__stack {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-4);
   min-width: 0;
 }
 
@@ -77,28 +80,47 @@
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
   min-width: 0;
 }
 
 .pset__slug {
   align-self: flex-start;
   color: var(--text-muted);
-  font-size: 12.5px;
+  font-size: var(--font-size-sm);
 }
 
 .pset__looks {
   display: flex;
   flex-wrap: wrap;
-  gap: 20px 36px;
-  margin: 16px 0;
+  gap: var(--space-5) 36px;
+  margin: var(--space-4) 0;
+}
+
+.pset__looks > * {
+  min-width: 0;
+}
+
+.pset__looks > :first-child {
+  flex: 0 1 270px;
+}
+
+.pset__looks > :last-child {
+  flex: 1 1 340px;
 }
 
 .pset__swatches,
 .pset__icons {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
+}
+
+/* Ninety icons: the list scrolls inside itself instead of stretching the card. */
+.pset__icons {
+  max-height: 188px;
+  padding: 2px;
+  overflow-y: auto;
 }
 
 .pset__swatch {
@@ -135,8 +157,9 @@
 }
 
 .pset__icon--on {
-  color: var(--accent);
-  border-color: var(--accent);
+  color: var(--pick, var(--accent));
+  background: color-mix(in srgb, var(--pick, var(--accent)) 14%, transparent);
+  border-color: var(--pick, var(--accent));
 }
 
 .pset__actions {
@@ -148,20 +171,6 @@
 
 .pset__danger {
   border-color: color-mix(in srgb, var(--danger) 35%, var(--border));
-}
-
-.pset__integration-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.pset__integration-head .card__title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0;
 }
 
 /* services */
@@ -226,9 +235,9 @@
   padding: 0;
   background: var(--bg);
   border: 1px solid var(--border-strong);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  transition: background-color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
 }
 
 .switch__knob {
@@ -239,7 +248,7 @@
   height: 16px;
   background: var(--text-muted);
   border-radius: 50%;
-  transition: transform 0.15s ease, background-color 0.15s ease;
+  transition: transform var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out);
 }
 
 .switch--on {
@@ -257,12 +266,6 @@
   cursor: not-allowed;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .switch,
-  .switch__knob {
-    transition: none;
-  }
-}
 
 .projavatar {
   display: inline-flex;

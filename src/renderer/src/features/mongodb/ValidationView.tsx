@@ -3,6 +3,9 @@ import { documentToShellText } from '@shared/mongo/shell-format';
 import type { MongoConnection, MongoValidation } from '@shared/schemas/mongodb';
 import type { StewardError } from '@shared/types/result';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
+import { Button } from '../../components/Button';
+import { toast } from '../../stores/toast.store';
+import { Loading } from '../../components/Loading';
 
 /** The rules the server applies to documents on write ($jsonSchema or any expression). */
 export function ValidationView({
@@ -54,10 +57,11 @@ export function ValidationView({
       onError(result.error);
       return;
     }
+    toast.success('Validation rules saved');
     setLoaded(result.data);
   }
 
-  if (loaded === null) return <p className="card__hint">Loading…</p>;
+  if (loaded === null) return <Loading variant="line" lines={5} label="Loading validation rules…" />;
 
   return (
     <section className="mgvalidation">
@@ -94,9 +98,9 @@ export function ValidationView({
         </label>
       </div>
       <div className="dialog__actions">
-        <button type="button" className="button button--primary" disabled={connection.readOnly} title={connection.readOnly ? 'This connection is read-only' : undefined} onClick={() => setConfirming(true)}>
+        <Button variant="primary" disabled={connection.readOnly} title={connection.readOnly ? 'This connection is read-only' : undefined} onClick={() => setConfirming(true)}>
           Save validation
-        </button>
+        </Button>
       </div>
 
       {confirming && (
