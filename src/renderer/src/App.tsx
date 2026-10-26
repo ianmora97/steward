@@ -8,7 +8,7 @@ import { DeploymentsPanel } from './features/deployments/DeploymentsPanel';
 import { DockerPanel } from './features/docker/DockerPanel';
 import { GitPanel } from './features/git/GitPanel';
 import { MongoPanel } from './features/mongodb/MongoPanel';
-import { GithubPanel } from './features/github/GithubPanel';
+import { RedisPanel } from './features/redis/RedisPanel';
 import { SshPanel } from './features/ssh/SshPanel';
 import { TerminalPanel } from './features/terminal/TerminalPanel';
 import { TabBar } from './features/workspace/TabBar';
@@ -29,6 +29,7 @@ function ActivePanel(): React.JSX.Element {
 function PanelFor({ tabKey }: { tabKey: TabKey | null }): React.JSX.Element {
   switch (tabKey) {
     case 'git':
+    case 'github':
       return <GitPanel />;
     case 'settings':
       return <WorkspaceSettings />;
@@ -36,12 +37,12 @@ function PanelFor({ tabKey }: { tabKey: TabKey | null }): React.JSX.Element {
       return <TerminalPanel />;
     case 'ssh':
       return <SshPanel />;
-    case 'github':
-      return <GithubPanel />;
     case 'deployments':
       return <DeploymentsPanel />;
     case 'mongodb':
       return <MongoPanel />;
+    case 'redis':
+      return <RedisPanel />;
     case 'docker':
       return <DockerPanel />;
     default:

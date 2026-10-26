@@ -35,7 +35,11 @@ Steward is a desktop app organised around **projects**, not repositories. A proj
 | ✅ | **MongoDB**: connect to local, internal, by-IP and Atlas databases (TLS, authentication, protected environments start read-only), browse and query in shell syntax, view documents as a list, JSON or a table, insert / edit / delete without losing BSON types, aggregations with per-stage preview, indexes, schema analysis, validation, import and export |
 | ✅ | **Docker**: containers, images, volumes, networks and Compose projects of a project, on this machine or on one of its SSH servers. Start / stop / restart, live logs, CPU and memory, a shell inside a container (opens in the Terminal tab), pull and prune; secrets in a container's environment never reach the screen, and destructive actions on a protected server make you type the name |
 
-Next on the roadmap (designed, not built yet): a Redis client, monitoring with Grafana / Loki / Prometheus, and cloud / domain checks for AWS and Cloudflare. See `docs/superpowers/specs/2026-10-23-m8-m13-roadmap-design.md`.
+| ✅ | **Redis**: standalone, Sentinel and Cluster connections (password, ACL user, TLS; protected environments start read-only), a key browser that pages with `SCAN` and never runs `KEYS`, every data type (strings, hashes, lists, sets, sorted sets, streams, RedisJSON) with text / JSON / hex / base64 views, editing with expiry kept, bulk delete by pattern with a re-checked count, a `redis-cli`-style workbench with a denylist, a live dashboard, slow log, clients, memory analysis by sample, and Pub/Sub |
+
+A project's tab bar holds **Git** (with GitHub's pull requests and Actions as sections) and **Terminal**; other services are added with the **+** and taken off with the **×**. Project **Settings** has General, Services, Integrations and Workspace sections, and the home screen shows each project's configured services as status pills plus recent activity.
+
+Next on the roadmap (designed, not built yet): monitoring with Grafana / Loki / Prometheus, and cloud / domain checks for AWS and Cloudflare. See `docs/superpowers/specs/2026-10-23-m8-m13-roadmap-design.md`.
 
 Destructive actions (discard, force-delete a branch, abort a merge) always ask first and say exactly what is lost. Push never forces.
 

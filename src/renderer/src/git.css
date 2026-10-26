@@ -69,6 +69,8 @@
 }
 
 .subtabs__tab {
+  flex-shrink: 0;
+  white-space: nowrap;
   padding: 7px 14px;
   background: none;
   border: none;
@@ -527,6 +529,8 @@
 }
 
 .segmented__option {
+  flex-shrink: 0;
+  white-space: nowrap;
   padding: 5px 11px;
   background: none;
   border: none;
@@ -999,4 +1003,58 @@
   min-height: 0;
   margin: 0;
   overflow-y: auto;
+}
+
+/* Sections of the Git tab, in two named groups. */
+.gitnav {
+  align-items: center;
+  overflow-x: auto;
+}
+
+.gitnav__group {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px 0 4px;
+  color: var(--text-dim);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.gitnav__divider {
+  flex: none;
+  align-self: stretch;
+  width: 1px;
+  margin: 6px 10px;
+  background: var(--border-strong);
+}
+
+.gitnav .subtabs__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* The branch chip opens the branches dialog. */
+.gitbar__branch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.gitbar__branch:hover {
+  filter: brightness(1.15);
+}
+
+.branchesmodal {
+  width: min(760px, calc(100vw - 48px));
+}
+
+.branchesmodal__body {
+  max-height: 72vh;
+  padding: 0 20px 20px;
+  overflow: auto;
 }

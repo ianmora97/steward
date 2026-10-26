@@ -275,3 +275,10 @@ button.ghitem__title:hover {
   margin: 8px 0 0;
   padding-left: 18px;
 }
+
+/* GitHub's sections inside the Git tab. */
+.ghsection {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}

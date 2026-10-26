@@ -1,4 +1,5 @@
 import type { StewardResult } from './result';
+import type { ActivityEntry, OverviewProject } from '../schemas/overview';
 import type {
   CreateProjectInput,
   ListProjectsInput,
@@ -194,6 +195,51 @@ import type {
   MongoValidationSetInput,
   MongoWriteResult
 } from '../schemas/mongodb';
+import type {
+  RedisCommandList,
+  RedisConfigEntry,
+  RedisConnection,
+  RedisConnectionCreateInput,
+  RedisConnectionDraftInput,
+  RedisConnectionIdInput,
+  RedisConnectionListInput,
+  RedisConnectionUpdateInput,
+  RedisClientEntry,
+  RedisCountResult,
+  RedisDeleteResult,
+  RedisExecuteInput,
+  RedisExecuteResult,
+  RedisInfoSnapshot,
+  RedisKeyDeleteInput,
+  RedisKeyGetInput,
+  RedisKeyGetResult,
+  RedisKeyInput,
+  RedisKeyMemory,
+  RedisKeyWriteInput,
+  RedisMemoryAnalyzeInput,
+  RedisMemoryReport,
+  RedisMessageEvent,
+  RedisPatternDeleteInput,
+  RedisPatternInput,
+  RedisPickedFile,
+  RedisPickFileInput,
+  RedisPubsubPublishInput,
+  RedisPubsubSubscribeInput,
+  RedisPubsubUnsubscribeInput,
+  RedisSavedCommand,
+  RedisSavedDeleteInput,
+  RedisSavedListInput,
+  RedisSavedSaveInput,
+  RedisScanInput,
+  RedisScanResult,
+  RedisSlowlogEntry,
+  RedisSlowlogResetInput,
+  RedisStreamInfo,
+  RedisSubscription,
+  RedisSubscriptionEndEvent,
+  RedisTestResult,
+  RedisWriteResult
+} from '../schemas/redis';
 
 /**
  * Every channel Steward exposes, enumerated.
@@ -205,6 +251,8 @@ import type {
  */
 export const IPC_CHANNELS = {
   appGetInfo: 'app:getInfo',
+  overviewSummary: 'overview:summary',
+  overviewActivity: 'overview:activity',
 
   projectsList: 'projects:list',
   projectsCreate: 'projects:create',
@@ -351,7 +399,38 @@ export const IPC_CHANNELS = {
   mongoImport: 'mongo:import',
   mongoSavedList: 'mongo:saved:list',
   mongoSavedSave: 'mongo:saved:save',
-  mongoSavedDelete: 'mongo:saved:delete'
+  mongoSavedDelete: 'mongo:saved:delete',
+
+  redisConnectionsList: 'redis:connections:list',
+  redisConnectionsCreate: 'redis:connections:create',
+  redisConnectionsUpdate: 'redis:connections:update',
+  redisConnectionsDelete: 'redis:connections:delete',
+  redisConnectionsTest: 'redis:connections:test',
+  redisConnectionsTestDraft: 'redis:connections:testDraft',
+  redisPickFile: 'redis:pickFile',
+  redisKeysScan: 'redis:keys:scan',
+  redisKeysGet: 'redis:keys:get',
+  redisKeysMemory: 'redis:keys:memory',
+  redisKeysStreamInfo: 'redis:keys:streamInfo',
+  redisKeysWrite: 'redis:keys:write',
+  redisKeysDelete: 'redis:keys:delete',
+  redisKeysCountPattern: 'redis:keys:countPattern',
+  redisKeysDeletePattern: 'redis:keys:deletePattern',
+  /** The one deliberate exception to "no generic channel": arguments to the connected Redis server, never the OS. */
+  redisExecute: 'redis:execute',
+  redisCommandsList: 'redis:commands:list',
+  redisSavedList: 'redis:saved:list',
+  redisSavedSave: 'redis:saved:save',
+  redisSavedDelete: 'redis:saved:delete',
+  redisInfo: 'redis:info',
+  redisSlowlogGet: 'redis:slowlog:get',
+  redisSlowlogReset: 'redis:slowlog:reset',
+  redisClientsList: 'redis:clients:list',
+  redisConfigGet: 'redis:config:get',
+  redisMemoryAnalyze: 'redis:memory:analyze',
+  redisPubsubSubscribe: 'redis:pubsub:subscribe',
+  redisPubsubUnsubscribe: 'redis:pubsub:unsubscribe',
+  redisPubsubPublish: 'redis:pubsub:publish'
 } as const;
 
 /**
@@ -369,7 +448,12 @@ export const DOCKER_EVENTS = {
   logEnd: 'docker:log-end'
 } as const;
 
-export type IpcChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS];
+export const REDIS_EVENTS = {
+  message: 'redis:message',
+  subscriptionEnd: 'redis:subscription-end'
+} as const;
+
+export type IpcChannel =(typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS];
 
 export interface AppInfo {
   appVersion: string;
@@ -399,6 +483,12 @@ export interface DirectoryPick {
 export interface StewardApi {
   app: {
     getInfo: () => Promise<StewardResult<AppInfo>>;
+  };
+  overview: {
+    /** What each project has configured, from stored data only (no network). */
+    summary: () => Promise<StewardResult<OverviewProject[]>>;
+    /** The latest things Steward did across all projects. */
+    activity: () => Promise<StewardResult<ActivityEntry[]>>;
   };
   projects: {
     list: (input?: ListProjectsInput) => Promise<StewardResult<Project[]>>;
@@ -596,5 +686,46 @@ export interface StewardApi {
     listSavedQueries: (input: MongoSavedQueryListInput) => Promise<StewardResult<MongoSavedQuery[]>>;
     saveQuery: (input: MongoSavedQuerySaveInput) => Promise<StewardResult<MongoSavedQuery>>;
     deleteSavedQuery: (input: MongoSavedQueryDeleteInput) => Promise<StewardResult<{ id: string }>>;
+  };
+  redis: {
+    list: (input: RedisConnectionListInput) => Promise<StewardResult<RedisConnection[]>>;
+    /** Passwords go in once, are stored encrypted and never come back. */
+    create: (input: RedisConnectionCreateInput) => Promise<StewardResult<RedisConnection>>;
+    update: (input: RedisConnectionUpdateInput) => Promise<StewardResult<RedisConnection>>;
+    remove: (input: RedisConnectionIdInput) => Promise<StewardResult<{ id: string }>>;
+    test: (input: RedisConnectionIdInput) => Promise<StewardResult<RedisTestResult>>;
+    /** Tries a connection that is not saved yet. */
+    testDraft: (input: RedisConnectionDraftInput) => Promise<StewardResult<RedisTestResult>>;
+    /** Opens the OS file picker for a TLS file. Only the chosen path comes back. */
+    pickFile: (input: RedisPickFileInput) => Promise<StewardResult<RedisPickedFile>>;
+    /** One page of SCAN. Steward never runs KEYS. Values travel as base64. */
+    scan: (input: RedisScanInput) => Promise<StewardResult<RedisScanResult>>;
+    getKey: (input: RedisKeyGetInput) => Promise<StewardResult<RedisKeyGetResult>>;
+    /** MEMORY USAGE on demand: it is not free on a huge key. */
+    keyMemory: (input: RedisKeyInput) => Promise<StewardResult<RedisKeyMemory>>;
+    streamInfo: (input: RedisKeyInput) => Promise<StewardResult<RedisStreamInfo>>;
+    /** Every write below fails with CONNECTION_READ_ONLY on a read-only connection. */
+    writeKey: (input: RedisKeyWriteInput) => Promise<StewardResult<RedisWriteResult>>;
+    deleteKey: (input: RedisKeyDeleteInput) => Promise<StewardResult<RedisDeleteResult>>;
+    countPattern: (input: RedisPatternInput) => Promise<StewardResult<RedisCountResult>>;
+    deletePattern: (input: RedisPatternDeleteInput) => Promise<StewardResult<RedisDeleteResult>>;
+    /** Arguments for the connected server, checked against a denylist and the connection's read-only flag. */
+    execute: (input: RedisExecuteInput) => Promise<StewardResult<RedisExecuteResult>>;
+    listCommands: (input: RedisConnectionIdInput) => Promise<StewardResult<RedisCommandList>>;
+    listSavedCommands: (input: RedisSavedListInput) => Promise<StewardResult<RedisSavedCommand[]>>;
+    saveCommand: (input: RedisSavedSaveInput) => Promise<StewardResult<RedisSavedCommand>>;
+    deleteSavedCommand: (input: RedisSavedDeleteInput) => Promise<StewardResult<{ id: string }>>;
+    info: (input: RedisConnectionIdInput) => Promise<StewardResult<RedisInfoSnapshot>>;
+    slowlog: (input: RedisConnectionIdInput) => Promise<StewardResult<RedisSlowlogEntry[]>>;
+    resetSlowlog: (input: RedisSlowlogResetInput) => Promise<StewardResult<{ reset: true }>>;
+    clients: (input: RedisConnectionIdInput) => Promise<StewardResult<RedisClientEntry[]>>;
+    config: (input: RedisConnectionIdInput) => Promise<StewardResult<RedisConfigEntry[]>>;
+    analyzeMemory: (input: RedisMemoryAnalyzeInput) => Promise<StewardResult<RedisMemoryReport>>;
+    /** Messages arrive through `onMessage` until `unsubscribe`, the connection closes (`onSubscriptionEnd`) or the app quits. */
+    subscribe: (input: RedisPubsubSubscribeInput) => Promise<StewardResult<RedisSubscription>>;
+    unsubscribe: (input: RedisPubsubUnsubscribeInput) => Promise<StewardResult<{ subscriptionId: string }>>;
+    publish: (input: RedisPubsubPublishInput) => Promise<StewardResult<{ receivers: number }>>;
+    onMessage: (listener: (event: RedisMessageEvent) => void) => () => void;
+    onSubscriptionEnd: (listener: (event: RedisSubscriptionEndEvent) => void) => () => void;
   };
 }

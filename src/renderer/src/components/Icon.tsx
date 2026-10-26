@@ -117,6 +117,16 @@ const PATHS = {
       <polyline points="12 6 12 12 16 14" />
     </>
   ),
+  calendar: (
+    <>
+      <path d="M8 2v4" />
+      <path d="M16 2v4" />
+      <rect width="18" height="18" x="3" y="4" rx="2" />
+      <path d="M3 10h18" />
+    </>
+  ),
+  chevronLeft: <path d="m15 18-6-6 6-6" />,
+  chevronUp: <path d="m18 15-6-6-6 6" />,
   x: (
     <>
       <path d="M18 6 6 18" />
@@ -315,21 +325,29 @@ const PATHS = {
       <path d="m12 5 7 7-7 7" />
     </>
   ),
-  pulse: <path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2" />
+  pulse: <path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2" />,
+  // The MongoDB leaf, drawn solid (a brand mark has no stroke) in the text colour so it follows the tab's state.
+  mongodb: (
+    <path d="M17.193 9.555c-1.264-5.58-4.252-7.414-4.573-8.115-.28-.394-.53-.954-.735-1.44-.036.495-.055.685-.523 1.184-.723.566-4.438 3.682-4.74 10.02-.282 5.912 4.27 9.435 4.888 9.884l.07.05A73.49 73.49 0 0 1 11.91 24h.481c.114-1.032.284-2.056.51-3.07.417-.296.604-.463.85-.693a11.342 11.342 0 0 0 3.639-8.464c.01-.814-.103-1.662-.197-2.218zm-5.336 8.195s0-8.291.275-8.29c.213 0 .49 10.695.49 10.695-.381-.045-.765-1.76-.765-2.405z" />
+  )
 } as const;
 
 export type IconName = keyof typeof PATHS;
 
+/** Brand marks are solid shapes, not outlines: they are filled with the current colour instead of stroked. */
+const SOLID: readonly IconName[] = ['mongodb'];
+
 /** Inline stroke icons: no icon font or dependency, and they inherit the text colour. */
 export function Icon({ name, size = 16 }: { name: IconName; size?: number }): React.JSX.Element {
+  const solid = SOLID.includes(name);
   return (
     <svg
       className="icon"
       width={size}
       height={size}
       viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
+      fill={solid ? 'currentColor' : 'none'}
+      stroke={solid ? 'none' : 'currentColor'}
       strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"

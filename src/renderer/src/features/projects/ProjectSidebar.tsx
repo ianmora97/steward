@@ -1,5 +1,6 @@
 import { useAppStore } from '../../stores/app.store';
 import { Icon } from '../../components/Icon';
+import { ProjectAvatar } from '../../components/ProjectAvatar';
 import logo from '@assets/images/steward_logo.png';
 
 /**
@@ -71,7 +72,7 @@ export function ProjectSidebar({
             onClick={() => void selectProject(project.id)}
             title={project.name}
           >
-            <Icon name="folder" />
+            <ProjectAvatar icon={project.icon} color={project.color} size={22} />
             <span className="navitem__text">{project.name}</span>
           </button>
         ))}

@@ -158,15 +158,137 @@ body {
   border-bottom-color: var(--accent);
 }
 
+/* The active tab's icon takes the accent colour too, so the current place reads at a glance. */
+.tabbar__tab--active .icon {
+  color: var(--accent);
+}
+
+.tabbar__item {
+  position: relative;
+  display: flex;
+  flex: none;
+}
+
+.tabbar__item .tabbar__tab--removable {
+  padding-right: 26px;
+}
+
+/* A service can leave the bar: the × shows on hover or focus and takes no room until then. */
+.tabbar__close {
+  position: absolute;
+  top: 50%;
+  right: 3px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  color: var(--text-muted);
+  background: var(--bg-raised);
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  transform: translateY(-60%);
+}
+
+.tabbar__item:hover .tabbar__close,
+.tabbar__close:focus-visible {
+  display: inline-flex;
+}
+
+.tabbar__close:hover {
+  color: var(--text);
+  background: #1a2438;
+}
+
+.tabbar__add {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  align-self: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-left: 4px;
+  padding: 0;
+  color: var(--text-muted);
+  background: none;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.tabbar__add:hover,
+.tabbar__add[aria-expanded='true'] {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
 /* Settings closes the bar, pushed to the far right. */
-.tabbar__tab--end {
+.tabbar__end {
+  display: flex;
+  flex: none;
   margin-left: auto;
 }
 
-.tabbar__pin {
+.addmenu {
+  position: fixed;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  box-shadow: 0 14px 40px rgb(0 0 0 / 0.55);
+}
+
+.addmenu__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  color: var(--text);
+  text-align: left;
+  background: none;
+  border: 0;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.addmenu__item:hover,
+.addmenu__item:focus-visible {
+  background: #1a2438;
+}
+
+.addmenu__icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
   color: var(--accent);
-  font-size: 15px;
-  line-height: 0;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border-radius: var(--radius-sm);
+}
+
+.addmenu__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.addmenu__name {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.addmenu__hint {
+  color: var(--text-muted);
+  font-size: 12px;
 }
 
 .tab-admin {
@@ -412,7 +534,10 @@ body {
   outline-offset: 1px;
 }
 
+/* A button's label never breaks onto a second line: when it does not fit, the row wraps or the label becomes an icon. */
 .button {
+  flex-shrink: 0;
+  white-space: nowrap;
   padding: 7px 13px;
   background: #1a212c;
   border: 1px solid var(--border-strong);

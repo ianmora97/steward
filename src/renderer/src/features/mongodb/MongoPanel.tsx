@@ -82,7 +82,7 @@ export function MongoPanel(): React.JSX.Element {
 
       <header className="mghead">
         <h2 className="mghead__title">
-          <Icon name="database" size={22} />
+          <Icon name="mongodb" size={22} />
           MongoDB
         </h2>
         <div className="mghead__actions">

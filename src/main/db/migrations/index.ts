@@ -549,6 +549,67 @@ const m017: Migration = {
   `
 };
 
+/**
+ * The Redis tab and the commands a user saves in its console. Connections reuse `data_connections` (m017);
+ * the command history stays in the renderer's memory and is never written.
+ */
+const m018: Migration = {
+  version: 18,
+  name: 'redis-saved-commands-and-tab',
+  sql: `
+    CREATE TABLE redis_saved_commands (
+      id            TEXT NOT NULL PRIMARY KEY,
+      connection_id TEXT NOT NULL REFERENCES data_connections (id) ON DELETE CASCADE,
+      name          TEXT NOT NULL,
+      command_text  TEXT NOT NULL,
+      created_at    TEXT NOT NULL
+    );
+
+    CREATE INDEX idx_redis_saved_commands ON redis_saved_commands (connection_id);
+
+    INSERT INTO workspace_tabs (id, project_id, tab_key, position, visible, pinned, source, integration_id, updated_at)
+      SELECT lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-4' || substr(hex(randomblob(2)), 2) ||
+                   '-a' || substr(hex(randomblob(2)), 2) || '-' || hex(randomblob(6))),
+             p.id, 'redis',
+             COALESCE((SELECT MAX(position) FROM workspace_tabs WHERE project_id = p.id), -1) + 1,
+             1, 0, 'builtin', NULL, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+        FROM projects p
+       WHERE NOT EXISTS (SELECT 1 FROM workspace_tabs t WHERE t.project_id = p.id AND t.tab_key = 'redis');
+  `
+};
+
+/**
+ * The tab bar now holds only Git and Terminal until a project adds more. For projects that already exist, an
+ * optional tab stays when something is configured behind it and is hidden (not deleted: the + menu brings it
+ * back) when nothing is. GitHub stops being a tab: its pull requests and Actions live inside Git. Docker has
+ * no table that says it is in use, so it is hidden everywhere.
+ */
+const m019: Migration = {
+  version: 19,
+  name: 'optional-tabs-hidden-until-used',
+  sql: `
+    UPDATE workspace_tabs SET pinned = 1 WHERE tab_key = 'terminal';
+
+    UPDATE workspace_tabs SET visible = 0 WHERE tab_key IN ('github', 'docker');
+
+    UPDATE workspace_tabs SET visible = 0
+     WHERE tab_key = 'ssh'
+       AND NOT EXISTS (SELECT 1 FROM ssh_hosts h WHERE h.project_id = workspace_tabs.project_id);
+
+    UPDATE workspace_tabs SET visible = 0
+     WHERE tab_key = 'deployments'
+       AND NOT EXISTS (SELECT 1 FROM deploy_targets d WHERE d.project_id = workspace_tabs.project_id);
+
+    UPDATE workspace_tabs SET visible = 0
+     WHERE tab_key = 'mongodb'
+       AND NOT EXISTS (SELECT 1 FROM data_connections c WHERE c.project_id = workspace_tabs.project_id AND c.kind = 'mongodb');
+
+    UPDATE workspace_tabs SET visible = 0
+     WHERE tab_key = 'redis'
+       AND NOT EXISTS (SELECT 1 FROM data_connections c WHERE c.project_id = workspace_tabs.project_id AND c.kind = 'redis');
+  `
+};
+
 export const MIGRATIONS: readonly Migration[] = [
   m001,
   m002,
@@ -566,7 +627,9 @@ export const MIGRATIONS: readonly Migration[] = [
   m014,
   m015,
   m016,
-  m017
+  m017,
+  m018,
+  m019
 ];
 
 export const LATEST_SCHEMA_VERSION = MIGRATIONS.reduce((max, m) => Math.max(max, m.version), 0);

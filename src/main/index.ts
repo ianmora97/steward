@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 import { BrowserWindow, app, dialog, safeStorage, shell } from 'electron';
-import { DOCKER_EVENTS, TERMINAL_EVENTS, type AppInfo, type DirectoryPick } from '@shared/types/ipc';
+import { DOCKER_EVENTS, REDIS_EVENTS, TERMINAL_EVENTS, type AppInfo, type DirectoryPick } from '@shared/types/ipc';
 import { openStewardDatabase, type StewardDatabase } from './db/connection';
 import { registerIpcHandlers } from './ipc/register';
 import { validateExistingDirectory, validateExistingFile } from './security/paths';
@@ -9,6 +9,7 @@ import { createDeploymentService } from './services/deployment.service';
 import { createDockerExec } from './services/docker-exec';
 import { createDockerService, type DockerService } from './services/docker.service';
 import { createMongoService, type MongoService } from './services/mongo.service';
+import { createRedisService, type RedisService } from './services/redis.service';
 import { createGithubActionsService } from './services/github-actions.service';
 import { createGithubApi } from './services/github-api';
 import { createGithubIntegrationService } from './services/github-integration.service';
@@ -25,6 +26,7 @@ let database: StewardDatabase | null = null;
 let terminal: TerminalService | null = null;
 let docker: DockerService | null = null;
 let mongo: MongoService | null = null;
+let redis: RedisService | null = null;
 
 function databaseFilePath(): string {
   // An override keeps development and manual testing off the real database.
@@ -187,6 +189,27 @@ async function pickMongoFile(purpose: 'tlsCa' | 'tlsCertificate' | 'import'): Pr
   return result.canceled || chosen === undefined ? null : chosen;
 }
 
+/** The file dialogs Redis needs: the TLS CA, client certificate and client key. Only paths leave this function. */
+async function pickRedisFile(purpose: 'tlsCa' | 'tlsCert' | 'tlsKey'): Promise<string | null> {
+  const titles = {
+    tlsCa: 'Choose the CA certificate file',
+    tlsCert: 'Choose the client certificate file',
+    tlsKey: 'Choose the client key file'
+  } as const;
+  const options = {
+    title: titles[purpose],
+    properties: ['openFile' as const, 'dontAddToRecent' as const],
+    filters: [
+      { name: 'Certificates and keys', extensions: ['pem', 'crt', 'cer', 'key'] },
+      { name: 'All files', extensions: ['*'] }
+    ]
+  };
+  const result =
+    mainWindow === null ? await dialog.showOpenDialog(options) : await dialog.showOpenDialog(mainWindow, options);
+  const chosen = result.filePaths[0];
+  return result.canceled || chosen === undefined ? null : chosen;
+}
+
 async function chooseSavePath(defaultName: string, label: string, extensions: string[]): Promise<string | null> {
   const options = {
     title: 'Export to…',
@@ -226,6 +249,8 @@ function createWindow(): BrowserWindow {
   });
 
   window.once('ready-to-show', () => window.show());
+  // A reload leaves the page with no memory of its Pub/Sub subscriptions, so they would hold a slot for nothing.
+  window.webContents.on('did-start-loading', () => void redis?.endSubscriptions());
   hardenNavigation(window);
 
   if (isDev && rendererDevUrl !== undefined) {
@@ -314,6 +339,14 @@ function startup(): void {
     dialogs: { pickFile: pickMongoFile, chooseSavePath }
   });
 
+  redis = createRedisService({
+    db: database.db,
+    secrets,
+    dialogs: { pickFile: pickRedisFile },
+    emitMessage: (event) => sendToWindow(REDIS_EVENTS.message, event),
+    emitSubscriptionEnd: (event) => sendToWindow(REDIS_EVENTS.subscriptionEnd, event)
+  });
+
   registerIpcHandlers({
     database,
     terminal,
@@ -324,6 +357,7 @@ function startup(): void {
     deployments,
     docker,
     mongo,
+    redis,
     readAppInfo,
     pickDirectory,
     pickKeyFile
@@ -362,6 +396,7 @@ if (!app.requestSingleInstanceLock()) {
     terminal?.shutdown();
     docker?.shutdown();
     void mongo?.shutdown();
+    void redis?.shutdown();
     try {
       database?.db.close();
     } catch (error) {

@@ -12,6 +12,7 @@ import { useTerminalStore } from '../../stores/terminal.store';
 import { ConnectionEditor, type HostFields } from './ConnectionEditor';
 import { ConnectionList } from './ConnectionList';
 import { HostKeyReview } from './SshSession';
+import { VpcHome } from './VpcHome';
 import './ssh.css';
 
 const REFRESH_MS = 5000;
@@ -35,8 +36,18 @@ export function SshPanel(): React.JSX.Element {
   const [error, setError] = useState<StewardError | null>(null);
   const [reviewing, setReviewing] = useState<SshHost | null>(null);
   const [deleting, setDeleting] = useState<SshHost | null>(null);
-  const [testing, setTesting] = useState<string | null>(null);
+  const [testing, setTesting] = useState<ReadonlySet<string>>(new Set());
+  const [view, setView] = useState<'home' | 'connections'>('home');
   const [now, setNow] = useState(() => Date.now());
+
+  const markChecking = useCallback((id: string, on: boolean): void => {
+    setTesting((current) => {
+      const next = new Set(current);
+      if (on) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  }, []);
 
   const reload = useCallback(async (): Promise<SshHost[]> => {
     if (projectId === null) return [];
@@ -119,9 +130,9 @@ export function SshPanel(): React.JSX.Element {
   }
 
   async function test(host: SshHost): Promise<void> {
-    setTesting(host.id);
+    markChecking(host.id, true);
     const result = await window.steward.ssh.test({ id: host.id });
-    setTesting(null);
+    markChecking(host.id, false);
     if (result.success) {
       setError(null);
       replaceHost(result.data);
@@ -133,9 +144,9 @@ export function SshPanel(): React.JSX.Element {
 
   async function connect(host: SshHost): Promise<void> {
     // Checked first so an untrusted or unreachable host is explained here, not as a silent failure inside the shell.
-    setTesting(host.id);
+    markChecking(host.id, true);
     const checked = await window.steward.ssh.test({ id: host.id });
-    setTesting(null);
+    markChecking(host.id, false);
     if (!checked.success) {
       setError(checked.error);
       return;
@@ -149,6 +160,15 @@ export function SshPanel(): React.JSX.Element {
     if (state !== 'connected' && state !== 'auth_failed') return;
     // Auth failure without prompts is expected for password logins; the shell can still ask for one.
     if (await createRemote(projectId as string, host.id)) setActiveTab('terminal');
+  }
+
+  /** Every connection, three at a time: a slow or dead one must not hold up the rest, nor open dozens of ssh at once. */
+  async function testAll(): Promise<void> {
+    const queue = [...hosts];
+    const worker = async (): Promise<void> => {
+      for (let host = queue.shift(); host !== undefined; host = queue.shift()) await test(host);
+    };
+    await Promise.all([worker(), worker(), worker()]);
   }
 
   async function save(fields: HostFields): Promise<StewardError | null> {
@@ -188,12 +208,47 @@ export function SshPanel(): React.JSX.Element {
             Manage SSH access to your instances and bastion hosts, organized by environment.
           </p>
         </div>
-        <button type="button" className="button button--primary" onClick={() => setSelection('new')}>
+        <button
+          type="button"
+          className="button button--primary"
+          onClick={() => {
+            setSelection('new');
+            setView('connections');
+          }}
+        >
           <Icon name="plus" size={14} /> New connection
         </button>
       </header>
 
-      {loaded && (
+      <nav className="subtabs" aria-label="VPC sections">
+        {(['home', 'connections'] as const).map((value) => (
+          <button key={value} type="button" className={`subtabs__tab${view === value ? ' subtabs__tab--active' : ''}`} onClick={() => setView(value)}>
+            {value === 'home' ? 'Home' : 'Connections'}
+          </button>
+        ))}
+      </nav>
+
+      {loaded && view === 'home' && (
+        <VpcHome
+          hosts={hosts}
+          activeHostIds={activeHostIds}
+          checking={testing}
+          now={now}
+          onTest={(host) => void test(host)}
+          onTestAll={() => void testAll()}
+          onConnect={(host) => void connect(host)}
+          onManage={(host) => {
+            setSelection(host.id);
+            setView('connections');
+          }}
+          onNew={() => {
+            setSelection('new');
+            setView('connections');
+          }}
+        />
+      )}
+
+      {loaded && view === 'connections' && (
         <div className="sshpage__body">
           <ConnectionList hosts={hosts} activeHostIds={activeHostIds} selection={effective} onSelect={setSelection} />
           <ConnectionEditor
@@ -206,7 +261,7 @@ export function SshPanel(): React.JSX.Element {
             sessions={remoteSessions}
             hostsById={hostsById}
             now={now}
-            busy={selected !== null && testing === selected.id}
+            busy={selected !== null && testing.has(selected.id)}
             onSave={save}
             onTest={() => selected !== null && void test(selected)}
             onConnect={() => selected !== null && void connect(selected)}

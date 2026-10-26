@@ -1,0 +1,249 @@
+/* DateTimePicker: the trigger looks like any field, the popover is raised above dialogs (z-index) and uses the app's tokens. */
+.dtp-trigger {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.dtp-trigger__button {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding-right: 34px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dtp-trigger__button:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border-strong));
+}
+
+.dtp-trigger__button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.dtp-trigger__button[aria-expanded='true'] {
+  border-color: var(--accent);
+}
+
+.dtp-trigger__button .icon {
+  flex: none;
+  color: var(--text-muted);
+}
+
+.dtp-trigger__button--empty .dtp-trigger__text {
+  color: var(--text-dim);
+}
+
+.dtp-trigger__text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dtp-trigger--invalid .dtp-trigger__button {
+  border-color: var(--danger);
+}
+
+.dtp-trigger__clear {
+  position: absolute;
+  right: 3px;
+  width: 26px;
+  height: 26px;
+}
+
+.dtp {
+  position: fixed;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  box-shadow: 0 14px 40px rgb(0 0 0 / 0.55);
+  animation: dtp-in 0.12s ease-out;
+}
+
+@keyframes dtp-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+.dtp--above {
+  animation-name: dtp-in-above;
+}
+
+@keyframes dtp-in-above {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dtp {
+    animation: none;
+  }
+}
+
+.dtp__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dtp__title {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.dtp__weekdays,
+.dtp__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.dtp__weekdays span {
+  padding: 2px 0;
+  color: var(--text-dim);
+  font-size: 11px;
+  text-align: center;
+}
+
+.dtp__day {
+  height: 34px;
+  padding: 0;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12.5px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.dtp__day:hover:not(:disabled):not(.dtp__day--selected) {
+  background: #1a2438;
+}
+
+.dtp__day:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.dtp__day--outside {
+  color: var(--text-dim);
+}
+
+.dtp__day--today {
+  border-color: color-mix(in srgb, var(--accent) 65%, transparent);
+}
+
+.dtp__day--selected {
+  color: var(--accent-ink);
+  font-weight: 600;
+  background: var(--accent);
+}
+
+.dtp__day:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.dtp__time {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding-top: 10px;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border);
+}
+
+.dtp__colon {
+  color: var(--text-muted);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.dtp-unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.dtp-unit__step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 20px;
+  padding: 0;
+  color: var(--text-muted);
+  background: none;
+  border: 0;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.dtp-unit__step:hover {
+  color: var(--text);
+  background: #1a2438;
+}
+
+.dtp-unit__input {
+  width: 44px;
+  padding: 4px 0;
+  color: var(--text);
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  font-size: 18px;
+  text-align: center;
+  background: var(--bg);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+}
+
+.dtp-unit__input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.dtp__presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.dtp__preset {
+  padding: 3px 10px;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 11.5px;
+  white-space: nowrap;
+  background: var(--bg);
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.dtp__preset:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.dtp__foot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}

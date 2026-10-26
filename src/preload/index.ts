@@ -1,7 +1,8 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type { DockerLogEndEvent, DockerLogEvent } from '@shared/schemas/docker';
+import type { RedisMessageEvent, RedisSubscriptionEndEvent } from '@shared/schemas/redis';
 import type { TerminalDataEvent, TerminalExitEvent } from '@shared/schemas/terminal';
-import { DOCKER_EVENTS, IPC_CHANNELS, TERMINAL_EVENTS, type StewardApi } from '@shared/types/ipc';
+import { DOCKER_EVENTS, IPC_CHANNELS, REDIS_EVENTS, TERMINAL_EVENTS, type StewardApi } from '@shared/types/ipc';
 
 /**
  * The entire bridge between the renderer and the main process.
@@ -35,6 +36,10 @@ function subscribe<T>(channel: string, listener: (payload: T) => void): () => vo
 const api: StewardApi = {
   app: {
     getInfo: () => invoke(IPC_CHANNELS.appGetInfo)
+  },
+  overview: {
+    summary: () => invoke(IPC_CHANNELS.overviewSummary),
+    activity: () => invoke(IPC_CHANNELS.overviewActivity)
   },
   projects: {
     list: (input) => invoke(IPC_CHANNELS.projectsList, input ?? {}),
@@ -198,6 +203,39 @@ const api: StewardApi = {
     listSavedQueries: (input) => invoke(IPC_CHANNELS.mongoSavedList, input),
     saveQuery: (input) => invoke(IPC_CHANNELS.mongoSavedSave, input),
     deleteSavedQuery: (input) => invoke(IPC_CHANNELS.mongoSavedDelete, input)
+  },
+  redis: {
+    list: (input) => invoke(IPC_CHANNELS.redisConnectionsList, input),
+    create: (input) => invoke(IPC_CHANNELS.redisConnectionsCreate, input),
+    update: (input) => invoke(IPC_CHANNELS.redisConnectionsUpdate, input),
+    remove: (input) => invoke(IPC_CHANNELS.redisConnectionsDelete, input),
+    test: (input) => invoke(IPC_CHANNELS.redisConnectionsTest, input),
+    testDraft: (input) => invoke(IPC_CHANNELS.redisConnectionsTestDraft, input),
+    pickFile: (input) => invoke(IPC_CHANNELS.redisPickFile, input),
+    scan: (input) => invoke(IPC_CHANNELS.redisKeysScan, input),
+    getKey: (input) => invoke(IPC_CHANNELS.redisKeysGet, input),
+    keyMemory: (input) => invoke(IPC_CHANNELS.redisKeysMemory, input),
+    streamInfo: (input) => invoke(IPC_CHANNELS.redisKeysStreamInfo, input),
+    writeKey: (input) => invoke(IPC_CHANNELS.redisKeysWrite, input),
+    deleteKey: (input) => invoke(IPC_CHANNELS.redisKeysDelete, input),
+    countPattern: (input) => invoke(IPC_CHANNELS.redisKeysCountPattern, input),
+    deletePattern: (input) => invoke(IPC_CHANNELS.redisKeysDeletePattern, input),
+    execute: (input) => invoke(IPC_CHANNELS.redisExecute, input),
+    listCommands: (input) => invoke(IPC_CHANNELS.redisCommandsList, input),
+    listSavedCommands: (input) => invoke(IPC_CHANNELS.redisSavedList, input),
+    saveCommand: (input) => invoke(IPC_CHANNELS.redisSavedSave, input),
+    deleteSavedCommand: (input) => invoke(IPC_CHANNELS.redisSavedDelete, input),
+    info: (input) => invoke(IPC_CHANNELS.redisInfo, input),
+    slowlog: (input) => invoke(IPC_CHANNELS.redisSlowlogGet, input),
+    resetSlowlog: (input) => invoke(IPC_CHANNELS.redisSlowlogReset, input),
+    clients: (input) => invoke(IPC_CHANNELS.redisClientsList, input),
+    config: (input) => invoke(IPC_CHANNELS.redisConfigGet, input),
+    analyzeMemory: (input) => invoke(IPC_CHANNELS.redisMemoryAnalyze, input),
+    subscribe: (input) => invoke(IPC_CHANNELS.redisPubsubSubscribe, input),
+    unsubscribe: (input) => invoke(IPC_CHANNELS.redisPubsubUnsubscribe, input),
+    publish: (input) => invoke(IPC_CHANNELS.redisPubsubPublish, input),
+    onMessage: (listener) => subscribe<RedisMessageEvent>(REDIS_EVENTS.message, listener),
+    onSubscriptionEnd: (listener) => subscribe<RedisSubscriptionEndEvent>(REDIS_EVENTS.subscriptionEnd, listener)
   }
 };
 

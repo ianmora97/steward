@@ -1,4 +1,5 @@
 import type { MongoSavedQuery, MongoSavedQueryKind } from '@shared/schemas/mongodb';
+import type { RedisSavedCommand } from '@shared/schemas/redis';
 import type { SqlDatabase } from './driver';
 
 export type DataConnectionKind = 'mongodb' | 'redis';
@@ -176,4 +177,48 @@ export function insertSavedQuery(db: SqlDatabase, query: MongoSavedQuery): void 
 
 export function deleteSavedQuery(db: SqlDatabase, id: string): number {
   return db.prepare('DELETE FROM mongo_saved_queries WHERE id = :id').run({ id }).changes;
+}
+
+// ── redis saved commands ───────────────────────────────────────────────────
+
+interface SavedCommandRow {
+  id: string;
+  connection_id: string;
+  name: string;
+  command_text: string;
+  created_at: string;
+}
+
+function toSavedCommand(row: SavedCommandRow): RedisSavedCommand {
+  return {
+    id: row.id,
+    connectionId: row.connection_id,
+    name: row.name,
+    commandText: row.command_text,
+    createdAt: row.created_at
+  };
+}
+
+export function listSavedCommands(db: SqlDatabase, connectionId: string): RedisSavedCommand[] {
+  return db
+    .prepare('SELECT * FROM redis_saved_commands WHERE connection_id = :connection_id ORDER BY name COLLATE NOCASE, id')
+    .all<SavedCommandRow>({ connection_id: connectionId })
+    .map(toSavedCommand);
+}
+
+export function insertSavedCommand(db: SqlDatabase, command: RedisSavedCommand): void {
+  db.prepare(
+    `INSERT INTO redis_saved_commands (id, connection_id, name, command_text, created_at)
+     VALUES (:id, :connection_id, :name, :command_text, :created_at)`
+  ).run({
+    id: command.id,
+    connection_id: command.connectionId,
+    name: command.name,
+    command_text: command.commandText,
+    created_at: command.createdAt
+  });
+}
+
+export function deleteSavedCommand(db: SqlDatabase, id: string): number {
+  return db.prepare('DELETE FROM redis_saved_commands WHERE id = :id').run({ id }).changes;
 }

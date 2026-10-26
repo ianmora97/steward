@@ -90,6 +90,30 @@ import {
   mongoValidationSetInputSchema
 } from '@shared/schemas/mongodb';
 import {
+  redisConnectionCreateInputSchema,
+  redisConnectionDraftInputSchema,
+  redisConnectionIdInputSchema,
+  redisConnectionListInputSchema,
+  redisConnectionUpdateInputSchema,
+  redisExecuteInputSchema,
+  redisKeyDeleteInputSchema,
+  redisKeyGetInputSchema,
+  redisKeyInputSchema,
+  redisKeyWriteInputSchema,
+  redisMemoryAnalyzeInputSchema,
+  redisPatternDeleteInputSchema,
+  redisPatternInputSchema,
+  redisPickFileInputSchema,
+  redisPubsubPublishInputSchema,
+  redisPubsubSubscribeInputSchema,
+  redisPubsubUnsubscribeInputSchema,
+  redisSavedDeleteInputSchema,
+  redisSavedListInputSchema,
+  redisSavedSaveInputSchema,
+  redisScanInputSchema,
+  redisSlowlogResetInputSchema
+} from '@shared/schemas/redis';
+import {
   environmentCreateInputSchema,
   environmentIdInputSchema,
   environmentListInputSchema,
@@ -191,6 +215,8 @@ import {
 import type { DeploymentService } from '../services/deployment.service';
 import type { DockerService } from '../services/docker.service';
 import type { MongoService } from '../services/mongo.service';
+import type { RedisService } from '../services/redis.service';
+import { createOverviewService } from '../services/overview.service';
 import type { GithubIntegrationService } from '../services/github-integration.service';
 import type { GithubActionsService } from '../services/github-actions.service';
 import type { GithubPullsService } from '../services/github-pulls.service';
@@ -223,6 +249,7 @@ export interface IpcContext {
   deployments: DeploymentService;
   docker: DockerService;
   mongo: MongoService;
+  redis: RedisService;
   /** Supplied by the Electron layer; see src/main/index.ts. */
   readAppInfo: () => Promise<AppInfo>;
   /** Opens the OS folder picker. Cancelling is a normal outcome, not an error. */
@@ -277,12 +304,23 @@ function defineHandler<Input, Output>(
 
 export function buildHandlerDefinitions(context: IpcContext): IpcHandlerDefinition[] {
   const { db } = context.database;
+  const overview = createOverviewService({ db, ssh: context.ssh });
 
   return [
     defineHandler({
       channel: IPC_CHANNELS.appGetInfo,
       schema: emptyPayloadSchema,
       handle: () => context.readAppInfo()
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.overviewSummary,
+      schema: emptyPayloadSchema,
+      handle: () => overview.summary()
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.overviewActivity,
+      schema: emptyPayloadSchema,
+      handle: () => overview.activity()
     }),
 
     defineHandler({
@@ -318,6 +356,7 @@ export function buildHandlerDefinitions(context: IpcContext): IpcHandlerDefiniti
         context.docker.closeByProject(input.id);
         // Connections cascade away with the project, but their encrypted secrets and open clients would stay.
         await context.mongo.purgeProject(input.id);
+        await context.redis.purgeProject(input.id);
         // The row would cascade away, but the encrypted token file would stay behind.
         context.github.purgeProject(input.id);
         return deleteProject(db, input.id);
@@ -994,6 +1033,152 @@ export function buildHandlerDefinitions(context: IpcContext): IpcHandlerDefiniti
       channel: IPC_CHANNELS.mongoSavedDelete,
       schema: mongoSavedQueryDeleteInputSchema,
       handle: (input) => context.mongo.deleteSavedQuery(input)
+    }),
+
+    defineHandler({
+      channel: IPC_CHANNELS.redisConnectionsList,
+      schema: redisConnectionListInputSchema,
+      handle: (input) => context.redis.listConnections(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.redisConnectionsCreate,
+      schema: redisConnectionCreateInputSchema,
+      handle: (input) => context.redis.createConnection(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.redisConnectionsUpdate,
+      schema: redisConnectionUpdateInputSchema,
+      handle: (input) => context.redis.updateConnection(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.redisConnectionsDelete,
+      schema: redisConnectionIdInputSchema,
+      handle: (input) => context.redis.removeConnection(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.redisConnectionsTest,
+      schema: redisConnectionIdInputSchema,
+      handle: (input) => context.redis.testConnection(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.redisConnectionsTestDraft,
+      schema: redisConnectionDraftInputSchema,
+      handle: (input) => context.redis.testDraft(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.redisPickFile,
+      schema: redisPickFileInputSchema,
+      handle: (input) => context.redis.pickFile(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.redisKeysScan,
+      schema: redisScanInputSchema,
+      handle: (input) => context.redis.scan(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.redisKeysGet,
+      schema: redisKeyGetInputSchema,
+      handle: (input) => context.redis.getKey(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.redisKeysMemory,
+      schema: redisKeyInputSchema,
+      handle: (input) => context.redis.keyMemory(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.redisKeysStreamInfo,
+      schema: redisKeyInputSchema,
+      handle: (input) => context.redis.streamInfo(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.redisKeysWrite,
+      schema: redisKeyWriteInputSchema,
+      handle: (input) => context.redis.writeKey(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.redisKeysDelete,
+      schema: redisKeyDeleteInputSchema,
+      handle: (input) => context.redis.deleteKey(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.redisKeysCountPattern,
+      schema: redisPatternInputSchema,
+      handle: (input) => context.redis.countPattern(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.redisKeysDeletePattern,
+      schema: redisPatternDeleteInputSchema,
+      handle: (input) => context.redis.deletePattern(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.redisExecute,
+      schema: redisExecuteInputSchema,
+      handle: (input) => context.redis.execute(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.redisCommandsList,
+      schema: redisConnectionIdInputSchema,
+      handle: (input) => context.redis.listCommands(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.redisSavedList,
+      schema: redisSavedListInputSchema,
+      handle: (input) => context.redis.listSavedCommands(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.redisSavedSave,
+      schema: redisSavedSaveInputSchema,
+      handle: (input) => context.redis.saveCommand(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.redisSavedDelete,
+      schema: redisSavedDeleteInputSchema,
+      handle: (input) => context.redis.deleteSavedCommand(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.redisInfo,
+      schema: redisConnectionIdInputSchema,
+      handle: (input) => context.redis.info(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.redisSlowlogGet,
+      schema: redisConnectionIdInputSchema,
+      handle: (input) => context.redis.slowlog(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.redisSlowlogReset,
+      schema: redisSlowlogResetInputSchema,
+      handle: (input) => context.redis.resetSlowlog(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.redisClientsList,
+      schema: redisConnectionIdInputSchema,
+      handle: (input) => context.redis.clients(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.redisConfigGet,
+      schema: redisConnectionIdInputSchema,
+      handle: (input) => context.redis.config(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.redisMemoryAnalyze,
+      schema: redisMemoryAnalyzeInputSchema,
+      handle: (input) => context.redis.analyzeMemory(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.redisPubsubSubscribe,
+      schema: redisPubsubSubscribeInputSchema,
+      handle: (input) => context.redis.subscribe(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.redisPubsubUnsubscribe,
+      schema: redisPubsubUnsubscribeInputSchema,
+      handle: (input) => context.redis.unsubscribe(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.redisPubsubPublish,
+      schema: redisPubsubPublishInputSchema,
+      handle: (input) => context.redis.publish(input)
     })
   ];
 }

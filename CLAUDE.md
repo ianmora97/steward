@@ -63,6 +63,8 @@ Flujo: el renderer llama funciones con nombre de `window.steward` → el preload
 ## Convenciones
 - TypeScript estricto (`noUncheckedIndexedAccess`). Imports de tipos con `import { type X }`.
 - Comentarios solo para el *por qué* no obvio; el código existente es el modelo de estilo.
+- UI: todo campo de fecha, hora o fecha-y-hora usa `components/DateTimePicker` (modos `date`, `time`, `datetime`), con los colores de la app. **Nunca** `<input type="date">`, `"time"` ni `"datetime-local"`: su popup nativo ignora el tema. Un plazo (expiración, caducidad) se elige como fecha en el calendario y se convierte a segundos al enviar.
+- UI: el texto de un botón, pestaña o selector segmentado **nunca se parte en dos líneas** (`white-space: nowrap` ya está en `.button`, `.subtabs__tab` y `.segmented__option`). Si no cabe, se acorta la etiqueta, se pasa a botón de icono con `title` y `aria-label`, o la fila hace `flex-wrap`. Las notas (`card__hint`) dentro de filas centradas llevan `margin: 0` para no descuadrar la línea.
 - Migraciones SQLite: solo hacia adelante, nunca editar una ya publicada; añadir una nueva en `src/main/db/migrations/index.ts`.
 - Dependencias nuevas: versión exacta, comprobar mantenimiento, licencia y que no traigan binarios nativos antes de añadirlas (los clientes de M10–M13 son JS puro). La spec del milestone dice cuáles se esperan.
 - Una spec por milestone en `docs/superpowers/specs/`; el plan de tareas se escribe al empezar el milestone, no antes.
