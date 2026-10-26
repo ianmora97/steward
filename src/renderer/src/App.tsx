@@ -13,6 +13,7 @@ import { DeploymentsPanel } from './features/deployments/DeploymentsPanel';
 import { DockerPanel } from './features/docker/DockerPanel';
 import { GitPanel } from './features/git/GitPanel';
 import { MongoPanel } from './features/mongodb/MongoPanel';
+import { MonitoringPanel } from './features/monitoring/MonitoringPanel';
 import { RedisPanel } from './features/redis/RedisPanel';
 import { SshPanel } from './features/ssh/SshPanel';
 import { TerminalPanel } from './features/terminal/TerminalPanel';
@@ -50,6 +51,8 @@ function PanelFor({ tabKey }: { tabKey: TabKey | null }): React.JSX.Element {
       return <RedisPanel />;
     case 'docker':
       return <DockerPanel />;
+    case 'monitoring':
+      return <MonitoringPanel />;
     default:
       return <EmptyState title="No tab selected" description="Every project keeps its Git tab." />;
   }

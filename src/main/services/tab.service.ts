@@ -34,6 +34,7 @@ const DEFAULT_TABS: readonly TabDefinition[] = [
   { tabKey: 'docker', pinned: false },
   { tabKey: 'mongodb', pinned: false },
   { tabKey: 'redis', pinned: false },
+  { tabKey: 'monitoring', pinned: false },
   { tabKey: 'settings', pinned: false }
 ];
 

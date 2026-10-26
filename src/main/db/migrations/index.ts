@@ -617,6 +617,82 @@ const m020: Migration = {
   sql: `ALTER TABLE environments ADD COLUMN icon TEXT;`
 };
 
+/**
+ * Observability sources (Grafana, Loki, Prometheus, Sentry) of a project. Credentials live in the secret store
+ * under the source id; `config_json` holds only what is not secret. The Monitoring tab is added hidden to the
+ * projects that exist: the + menu brings it in once a project wants it.
+ */
+const m021: Migration = {
+  version: 21,
+  name: 'observability-sources-and-monitoring-tab',
+  sql: `
+    CREATE TABLE observability_sources (
+      id                 TEXT NOT NULL PRIMARY KEY,
+      project_id         TEXT NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+      environment_id     TEXT REFERENCES environments (id) ON DELETE SET NULL,
+      kind               TEXT NOT NULL CHECK (kind IN ('grafana', 'loki', 'prometheus', 'sentry')),
+      name               TEXT NOT NULL,
+      base_url           TEXT NOT NULL,
+      config_json        TEXT NOT NULL,
+      allow_insecure_tls INTEGER NOT NULL DEFAULT 0 CHECK (allow_insecure_tls IN (0, 1)),
+      created_at         TEXT NOT NULL,
+      updated_at         TEXT NOT NULL,
+      UNIQUE (project_id, name)
+    );
+
+    CREATE INDEX idx_observability_sources_project ON observability_sources (project_id);
+
+    INSERT INTO workspace_tabs (id, project_id, tab_key, position, visible, pinned, source, integration_id, updated_at)
+      SELECT lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-4' || substr(hex(randomblob(2)), 2) ||
+                   '-a' || substr(hex(randomblob(2)), 2) || '-' || hex(randomblob(6))),
+             p.id, 'monitoring',
+             COALESCE((SELECT MAX(position) FROM workspace_tabs WHERE project_id = p.id), -1) + 1,
+             0, 0, 'builtin', NULL, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+        FROM projects p
+       WHERE NOT EXISTS (SELECT 1 FROM workspace_tabs t WHERE t.project_id = p.id AND t.tab_key = 'monitoring');
+  `
+};
+
+/**
+ * What Investigate works with: the services of a project (how to find each one in the logs and the metrics,
+ * and where it runs) and the signals worth looking at for any of them, written once as templates.
+ */
+const m022: Migration = {
+  version: 22,
+  name: 'observability-services-and-signals',
+  sql: `
+    CREATE TABLE observability_services (
+      id               TEXT NOT NULL PRIMARY KEY,
+      project_id       TEXT NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+      environment_id   TEXT REFERENCES environments (id) ON DELETE SET NULL,
+      name             TEXT NOT NULL,
+      repository_id    TEXT REFERENCES repositories (id) ON DELETE SET NULL,
+      log_selector     TEXT,
+      metric_matcher   TEXT,
+      ssh_host_id      TEXT REFERENCES ssh_hosts (id) ON DELETE SET NULL,
+      docker_container TEXT,
+      created_at       TEXT NOT NULL,
+      updated_at       TEXT NOT NULL
+    );
+
+    CREATE INDEX idx_observability_services_project ON observability_services (project_id);
+
+    CREATE TABLE observability_signals (
+      id             TEXT NOT NULL PRIMARY KEY,
+      project_id     TEXT NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+      name           TEXT NOT NULL,
+      kind           TEXT NOT NULL CHECK (kind IN ('promql', 'logql_metric')),
+      query_template TEXT NOT NULL,
+      unit           TEXT NOT NULL DEFAULT '',
+      position       INTEGER NOT NULL,
+      created_at     TEXT NOT NULL,
+      UNIQUE (project_id, name)
+    );
+
+    CREATE INDEX idx_observability_signals_project ON observability_signals (project_id, position);
+  `
+};
+
 export const MIGRATIONS: readonly Migration[] = [
   m001,
   m002,
@@ -637,7 +713,9 @@ export const MIGRATIONS: readonly Migration[] = [
   m017,
   m018,
   m019,
-  m020
+  m020,
+  m021,
+  m022
 ];
 
 export const LATEST_SCHEMA_VERSION = MIGRATIONS.reduce((max, m) => Math.max(max, m.version), 0);

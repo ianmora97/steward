@@ -241,6 +241,63 @@ import type {
   RedisTestResult,
   RedisWriteResult
 } from '../schemas/redis';
+import type {
+  GrafanaDashboardsInput,
+  GrafanaSourceInput,
+  InvestigateInput,
+  InvestigateResult,
+  LiveLogsEndEvent,
+  LiveLogsEvent,
+  LokiLabelsResult,
+  LokiLabelValuesInput,
+  LokiLabelValuesResult,
+  LokiLiveStartInput,
+  LokiLiveStopInput,
+  LokiLiveSubscription,
+  LokiQueryInput,
+  LokiQueryResult,
+  LokiSourceInput,
+  LokiVolumeInput,
+  LokiVolumeResult,
+  ObservabilityAlert,
+  ObservabilityDashboard,
+  ObservabilityDatasource,
+  ObservabilityOpenUrlInput,
+  ObservabilityPickedFile,
+  ObservabilityPickFileInput,
+  ObservabilityServiceCreateInput,
+  ObservabilityServiceEntry,
+  ObservabilityServiceIdInput,
+  ObservabilityServiceListInput,
+  ObservabilityServiceUpdateInput,
+  ObservabilitySignal,
+  ObservabilitySignalCreateInput,
+  ObservabilitySignalIdInput,
+  ObservabilitySignalListInput,
+  ObservabilitySignalPreview,
+  ObservabilitySignalPreviewInput,
+  ObservabilitySignalReorderInput,
+  ObservabilitySignalUpdateInput,
+  ObservabilitySource,
+  ObservabilitySourceCreateInput,
+  ObservabilitySourceDraftInput,
+  ObservabilitySourceIdInput,
+  ObservabilitySourceListInput,
+  ObservabilitySourceStatus,
+  ObservabilitySourceUpdateInput,
+  PrometheusInstantResult,
+  PrometheusMetricNamesInput,
+  PrometheusMetricNamesResult,
+  PrometheusQueryInput,
+  PrometheusRangeInput,
+  PrometheusRangeResult,
+  PrometheusSourceInput,
+  PrometheusTargetsResult,
+  SentryEvent,
+  SentryEventInput,
+  SentryIssuesInput,
+  SentryIssuesResult
+} from '../schemas/observability';
 
 /**
  * Every channel Steward exposes, enumerated.
@@ -433,7 +490,43 @@ export const IPC_CHANNELS = {
   redisMemoryAnalyze: 'redis:memory:analyze',
   redisPubsubSubscribe: 'redis:pubsub:subscribe',
   redisPubsubUnsubscribe: 'redis:pubsub:unsubscribe',
-  redisPubsubPublish: 'redis:pubsub:publish'
+  redisPubsubPublish: 'redis:pubsub:publish',
+
+  observabilitySourcesList: 'observability:sources:list',
+  observabilitySourcesCreate: 'observability:sources:create',
+  observabilitySourcesUpdate: 'observability:sources:update',
+  observabilitySourcesDelete: 'observability:sources:delete',
+  observabilitySourcesTest: 'observability:sources:test',
+  observabilitySourcesTestDraft: 'observability:sources:testDraft',
+  observabilityPickFile: 'observability:pickFile',
+  observabilityOpenUrl: 'observability:openUrl',
+  observabilityGrafanaDashboards: 'observability:grafana:dashboards',
+  observabilityGrafanaDatasources: 'observability:grafana:datasources',
+  observabilityGrafanaAlerts: 'observability:grafana:alerts',
+  observabilityPrometheusQuery: 'observability:prometheus:query',
+  observabilityPrometheusRange: 'observability:prometheus:queryRange',
+  observabilityPrometheusTargets: 'observability:prometheus:targets',
+  observabilityPrometheusAlerts: 'observability:prometheus:alerts',
+  observabilityPrometheusMetricNames: 'observability:prometheus:metricNames',
+  observabilityLokiLabels: 'observability:loki:labels',
+  observabilityLokiLabelValues: 'observability:loki:labelValues',
+  observabilityLokiQuery: 'observability:loki:query',
+  observabilityLokiVolume: 'observability:loki:volume',
+  observabilityLokiStartLive: 'observability:loki:startLive',
+  observabilityLokiStopLive: 'observability:loki:stopLive',
+  observabilityServicesList: 'observability:services:list',
+  observabilityServicesCreate: 'observability:services:create',
+  observabilityServicesUpdate: 'observability:services:update',
+  observabilityServicesDelete: 'observability:services:delete',
+  observabilitySignalsList: 'observability:signals:list',
+  observabilitySignalsCreate: 'observability:signals:create',
+  observabilitySignalsUpdate: 'observability:signals:update',
+  observabilitySignalsDelete: 'observability:signals:delete',
+  observabilitySignalsReorder: 'observability:signals:reorder',
+  observabilitySignalsPreview: 'observability:signals:preview',
+  observabilityInvestigate: 'observability:investigate',
+  observabilitySentryIssues: 'observability:sentry:issues',
+  observabilitySentryEvent: 'observability:sentry:event'
 } as const;
 
 /**
@@ -454,6 +547,11 @@ export const DOCKER_EVENTS = {
 export const REDIS_EVENTS = {
   message: 'redis:message',
   subscriptionEnd: 'redis:subscription-end'
+} as const;
+
+export const OBSERVABILITY_EVENTS = {
+  logs: 'observability:logs-live',
+  logsEnd: 'observability:logs-live-end'
 } as const;
 
 export const UI_EVENTS = {
@@ -740,5 +838,58 @@ export interface StewardApi {
     publish: (input: RedisPubsubPublishInput) => Promise<StewardResult<{ receivers: number }>>;
     onMessage: (listener: (event: RedisMessageEvent) => void) => () => void;
     onSubscriptionEnd: (listener: (event: RedisSubscriptionEndEvent) => void) => () => void;
+  };
+  /** Monitoring is read-only end to end: no channel here changes anything on Grafana, Loki, Prometheus or Sentry. */
+  observability: {
+    listSources: (input: ObservabilitySourceListInput) => Promise<StewardResult<ObservabilitySource[]>>;
+    /** Tokens and passwords go in once, are stored encrypted and never come back. */
+    createSource: (input: ObservabilitySourceCreateInput) => Promise<StewardResult<ObservabilitySource>>;
+    updateSource: (input: ObservabilitySourceUpdateInput) => Promise<StewardResult<ObservabilitySource>>;
+    removeSource: (input: ObservabilitySourceIdInput) => Promise<StewardResult<{ id: string }>>;
+    /** Checks the connection and the operational state of a saved source now. */
+    testSource: (input: ObservabilitySourceIdInput) => Promise<StewardResult<ObservabilitySourceStatus>>;
+    /** Tries a source that is not saved yet. */
+    testDraft: (input: ObservabilitySourceDraftInput) => Promise<StewardResult<ObservabilitySourceStatus>>;
+    /** Opens the OS file picker for a CA certificate. Only the chosen path comes back. */
+    pickFile: (input: ObservabilityPickFileInput) => Promise<StewardResult<ObservabilityPickedFile>>;
+    /** Opens a page of a saved source in the browser; the address is built in main from the saved source. */
+    openUrl: (input: ObservabilityOpenUrlInput) => Promise<StewardResult<{ opened: true }>>;
+    grafanaDashboards: (input: GrafanaDashboardsInput) => Promise<StewardResult<ObservabilityDashboard[]>>;
+    grafanaDatasources: (input: GrafanaSourceInput) => Promise<StewardResult<ObservabilityDatasource[]>>;
+    grafanaAlerts: (input: GrafanaSourceInput) => Promise<StewardResult<ObservabilityAlert[]>>;
+    /** An instant query. Answers with at most 500 samples and says when there were more. */
+    prometheusQuery: (input: PrometheusQueryInput) => Promise<StewardResult<PrometheusInstantResult>>;
+    /** A range query; main picks the step so the answer never exceeds what Prometheus accepts. */
+    prometheusRange: (input: PrometheusRangeInput) => Promise<StewardResult<PrometheusRangeResult>>;
+    prometheusTargets: (input: PrometheusSourceInput) => Promise<StewardResult<PrometheusTargetsResult>>;
+    prometheusAlerts: (input: PrometheusSourceInput) => Promise<StewardResult<ObservabilityAlert[]>>;
+    prometheusMetricNames: (input: PrometheusMetricNamesInput) => Promise<StewardResult<PrometheusMetricNamesResult>>;
+    lokiLabels: (input: LokiSourceInput) => Promise<StewardResult<LokiLabelsResult>>;
+    lokiLabelValues: (input: LokiLabelValuesInput) => Promise<StewardResult<LokiLabelValuesResult>>;
+    /** Lines come back redacted and capped; a range over 24 hours is refused. Metric queries come back as series. */
+    lokiQuery: (input: LokiQueryInput) => Promise<StewardResult<LokiQueryResult>>;
+    lokiVolume: (input: LokiVolumeInput) => Promise<StewardResult<LokiVolumeResult>>;
+    /** Lines arrive through `onLiveLogs` until `lokiStopLive`, a failure (`onLiveLogsEnd`) or the app closes. */
+    lokiStartLive: (input: LokiLiveStartInput) => Promise<StewardResult<LokiLiveSubscription>>;
+    lokiStopLive: (input: LokiLiveStopInput) => Promise<StewardResult<LokiLiveSubscription>>;
+    onLiveLogs: (listener: (event: LiveLogsEvent) => void) => () => void;
+    onLiveLogsEnd: (listener: (event: LiveLogsEndEvent) => void) => () => void;
+    /** How each service of the project is found in the logs and the metrics, and where it runs. */
+    listServices: (input: ObservabilityServiceListInput) => Promise<StewardResult<ObservabilityServiceEntry[]>>;
+    createService: (input: ObservabilityServiceCreateInput) => Promise<StewardResult<ObservabilityServiceEntry>>;
+    updateService: (input: ObservabilityServiceUpdateInput) => Promise<StewardResult<ObservabilityServiceEntry>>;
+    removeService: (input: ObservabilityServiceIdInput) => Promise<StewardResult<{ id: string }>>;
+    /** The queries worth watching for any service, written once as templates. */
+    listSignals: (input: ObservabilitySignalListInput) => Promise<StewardResult<ObservabilitySignal[]>>;
+    createSignal: (input: ObservabilitySignalCreateInput) => Promise<StewardResult<ObservabilitySignal>>;
+    updateSignal: (input: ObservabilitySignalUpdateInput) => Promise<StewardResult<ObservabilitySignal>>;
+    removeSignal: (input: ObservabilitySignalIdInput) => Promise<StewardResult<{ id: string }>>;
+    reorderSignals: (input: ObservabilitySignalReorderInput) => Promise<StewardResult<ObservabilitySignal[]>>;
+    previewSignal: (input: ObservabilitySignalPreviewInput) => Promise<StewardResult<ObservabilitySignalPreview>>;
+    /** Gathers the logs, metrics, alerts, container and deploys of one service in one window. Each part answers or fails on its own. */
+    investigate: (input: InvestigateInput) => Promise<StewardResult<InvestigateResult>>;
+    sentryIssues: (input: SentryIssuesInput) => Promise<StewardResult<SentryIssuesResult>>;
+    /** The latest event of an issue with its stack trace, redacted and capped. */
+    sentryEvent: (input: SentryEventInput) => Promise<StewardResult<SentryEvent>>;
   };
 }

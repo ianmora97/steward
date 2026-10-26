@@ -1,9 +1,10 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type { DockerLogEndEvent, DockerLogEvent } from '@shared/schemas/docker';
+import type { LiveLogsEndEvent, LiveLogsEvent } from '@shared/schemas/observability';
 import type { RedisMessageEvent, RedisSubscriptionEndEvent } from '@shared/schemas/redis';
 import type { TerminalDataEvent, TerminalExitEvent } from '@shared/schemas/terminal';
 import type { ZoomState } from '@shared/schemas/ui';
-import { DOCKER_EVENTS, IPC_CHANNELS, REDIS_EVENTS, TERMINAL_EVENTS, UI_EVENTS, type StewardApi } from '@shared/types/ipc';
+import { DOCKER_EVENTS, IPC_CHANNELS, OBSERVABILITY_EVENTS, REDIS_EVENTS, TERMINAL_EVENTS, UI_EVENTS, type StewardApi } from '@shared/types/ipc';
 
 /**
  * The entire bridge between the renderer and the main process.
@@ -242,6 +243,45 @@ const api: StewardApi = {
     publish: (input) => invoke(IPC_CHANNELS.redisPubsubPublish, input),
     onMessage: (listener) => subscribe<RedisMessageEvent>(REDIS_EVENTS.message, listener),
     onSubscriptionEnd: (listener) => subscribe<RedisSubscriptionEndEvent>(REDIS_EVENTS.subscriptionEnd, listener)
+  },
+  observability: {
+    listSources: (input) => invoke(IPC_CHANNELS.observabilitySourcesList, input),
+    createSource: (input) => invoke(IPC_CHANNELS.observabilitySourcesCreate, input),
+    updateSource: (input) => invoke(IPC_CHANNELS.observabilitySourcesUpdate, input),
+    removeSource: (input) => invoke(IPC_CHANNELS.observabilitySourcesDelete, input),
+    testSource: (input) => invoke(IPC_CHANNELS.observabilitySourcesTest, input),
+    testDraft: (input) => invoke(IPC_CHANNELS.observabilitySourcesTestDraft, input),
+    pickFile: (input) => invoke(IPC_CHANNELS.observabilityPickFile, input),
+    openUrl: (input) => invoke(IPC_CHANNELS.observabilityOpenUrl, input),
+    grafanaDashboards: (input) => invoke(IPC_CHANNELS.observabilityGrafanaDashboards, input),
+    grafanaDatasources: (input) => invoke(IPC_CHANNELS.observabilityGrafanaDatasources, input),
+    grafanaAlerts: (input) => invoke(IPC_CHANNELS.observabilityGrafanaAlerts, input),
+    prometheusQuery: (input) => invoke(IPC_CHANNELS.observabilityPrometheusQuery, input),
+    prometheusRange: (input) => invoke(IPC_CHANNELS.observabilityPrometheusRange, input),
+    prometheusTargets: (input) => invoke(IPC_CHANNELS.observabilityPrometheusTargets, input),
+    prometheusAlerts: (input) => invoke(IPC_CHANNELS.observabilityPrometheusAlerts, input),
+    prometheusMetricNames: (input) => invoke(IPC_CHANNELS.observabilityPrometheusMetricNames, input),
+    lokiLabels: (input) => invoke(IPC_CHANNELS.observabilityLokiLabels, input),
+    lokiLabelValues: (input) => invoke(IPC_CHANNELS.observabilityLokiLabelValues, input),
+    lokiQuery: (input) => invoke(IPC_CHANNELS.observabilityLokiQuery, input),
+    lokiVolume: (input) => invoke(IPC_CHANNELS.observabilityLokiVolume, input),
+    lokiStartLive: (input) => invoke(IPC_CHANNELS.observabilityLokiStartLive, input),
+    lokiStopLive: (input) => invoke(IPC_CHANNELS.observabilityLokiStopLive, input),
+    onLiveLogs: (listener) => subscribe<LiveLogsEvent>(OBSERVABILITY_EVENTS.logs, listener),
+    onLiveLogsEnd: (listener) => subscribe<LiveLogsEndEvent>(OBSERVABILITY_EVENTS.logsEnd, listener),
+    listServices: (input) => invoke(IPC_CHANNELS.observabilityServicesList, input),
+    createService: (input) => invoke(IPC_CHANNELS.observabilityServicesCreate, input),
+    updateService: (input) => invoke(IPC_CHANNELS.observabilityServicesUpdate, input),
+    removeService: (input) => invoke(IPC_CHANNELS.observabilityServicesDelete, input),
+    listSignals: (input) => invoke(IPC_CHANNELS.observabilitySignalsList, input),
+    createSignal: (input) => invoke(IPC_CHANNELS.observabilitySignalsCreate, input),
+    updateSignal: (input) => invoke(IPC_CHANNELS.observabilitySignalsUpdate, input),
+    removeSignal: (input) => invoke(IPC_CHANNELS.observabilitySignalsDelete, input),
+    reorderSignals: (input) => invoke(IPC_CHANNELS.observabilitySignalsReorder, input),
+    previewSignal: (input) => invoke(IPC_CHANNELS.observabilitySignalsPreview, input),
+    investigate: (input) => invoke(IPC_CHANNELS.observabilityInvestigate, input),
+    sentryIssues: (input) => invoke(IPC_CHANNELS.observabilitySentryIssues, input),
+    sentryEvent: (input) => invoke(IPC_CHANNELS.observabilitySentryEvent, input)
   }
 };
 

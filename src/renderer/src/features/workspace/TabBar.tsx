@@ -14,6 +14,7 @@ const TAB_LABELS: Record<TabKey, string> = {
   docker: 'Docker',
   mongodb: 'MongoDB',
   redis: 'Redis',
+  monitoring: 'Monitoring',
   settings: 'Settings'
 };
 
@@ -26,6 +27,7 @@ const TAB_ICONS: Record<TabKey, IconName> = {
   docker: 'docker',
   mongodb: 'mongodb',
   redis: 'database',
+  monitoring: 'pulse',
   settings: 'settings'
 };
 

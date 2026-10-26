@@ -1,0 +1,464 @@
+.panel.mnpage {
+  gap: var(--space-4);
+  max-width: 1100px;
+}
+
+.mnsection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.mnsection__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.mnsection__bar .card__hint {
+  margin: 0;
+}
+
+.mnlist {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.mnurl {
+  font-family: var(--font-mono);
+}
+
+.mnrow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-3);
+}
+
+.mnselect {
+  width: auto;
+  min-width: 160px;
+}
+
+.mnsearch {
+  flex: 1;
+  min-width: 180px;
+  max-width: 360px;
+}
+
+.mnresult {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.mnresult__text {
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.mnfolder + .mnfolder {
+  margin-top: var(--space-4);
+}
+
+.mnfolder__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-2);
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.mnrange {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.mnquery {
+  min-height: 72px;
+  resize: vertical;
+  font-family: var(--font-mono);
+  white-space: pre-wrap;
+}
+
+.mnsuggest {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.mnsuggest__item {
+  padding: var(--space-1) var(--space-2);
+  background: var(--bg-control);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+}
+
+.mnsuggest__item:hover {
+  background: var(--bg-control-hover);
+}
+
+.mntable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+}
+
+.mntable th,
+.mntable td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+
+.mntable th {
+  color: var(--text-muted);
+  font-weight: var(--font-weight-medium);
+}
+
+.mntable__num {
+  text-align: right !important;
+  white-space: nowrap;
+}
+
+.mntable__mono {
+  font-family: var(--font-mono);
+  word-break: break-all;
+}
+
+.mnchart__plot {
+  width: 100%;
+}
+
+.mnchart__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--font-size-xs);
+}
+
+.mnchart__legend li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  max-width: 100%;
+}
+
+.mnchart__swatch {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-pill);
+}
+
+.mnchart__label {
+  overflow: hidden;
+  font-family: var(--font-mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* uPlot draws its own legend table; keep it in the app's colours. */
+.mnchart .u-legend {
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
+}
+
+.mnchart .u-legend .u-marker {
+  border-radius: var(--radius-pill);
+}
+
+.mnbuilder {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.mnlive--on {
+  border-color: var(--tone-success-border);
+  color: var(--tone-success-fg);
+}
+
+.mnvolume {
+  margin-bottom: var(--space-3);
+}
+
+.mnvolume .card__hint {
+  margin: var(--space-1) 0 0;
+}
+
+/* The log list: a scroll box whose rows are placed by arithmetic, so only the visible ones exist. */
+.mnlog {
+  height: 420px;
+  overflow: auto;
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+}
+
+.mnlog__space {
+  position: relative;
+  min-width: 100%;
+}
+
+.mnlog__row {
+  position: absolute;
+  right: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0 var(--space-3);
+  background: none;
+  border: 0;
+  border-left: 2px solid transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.mnlog__row:hover {
+  background: var(--bg-hover);
+}
+
+.mnlog__row--selected {
+  background: var(--bg-control);
+}
+
+.mnlog__row--error {
+  border-left-color: var(--tone-failure-fg);
+}
+
+.mnlog__row--warn {
+  border-left-color: var(--tone-warning-fg);
+}
+
+.mnlog__time {
+  flex: none;
+  color: var(--text-dim);
+}
+
+.mnlog__level {
+  flex: none;
+  width: 44px;
+  color: var(--text-muted);
+  font-weight: var(--font-weight-semibold);
+}
+
+.mnlog__row--error .mnlog__level {
+  color: var(--tone-failure-fg);
+}
+
+.mnlog__row--warn .mnlog__level {
+  color: var(--tone-warning-fg);
+}
+
+.mnlog__text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mndetail {
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.mndetail__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.mndetail__spacer {
+  flex: 1;
+}
+
+.mndetail__labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin: var(--space-2) 0;
+}
+
+.mndetail__raw {
+  max-height: 240px;
+  margin: 0;
+  overflow: auto;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.mndetail__fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  max-height: 280px;
+  margin: 0;
+  overflow: auto;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+}
+
+.mndetail__field {
+  display: grid;
+  grid-template-columns: minmax(80px, 180px) 1fr;
+  gap: var(--space-3);
+}
+
+.mndetail__field dt {
+  color: var(--text-muted);
+}
+
+.mndetail__field dd {
+  margin: 0;
+  word-break: break-all;
+}
+
+.mnmono {
+  font-family: var(--font-mono);
+}
+
+.mnpreview {
+  margin: 0;
+  padding: var(--space-3);
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.mngrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--space-4);
+}
+
+.mnsignal__error {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+}
+
+/* The timeline: one thin track with a mark per event, then the same events in words. */
+.mntimeline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.mntimeline__track {
+  position: relative;
+  height: 24px;
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+}
+
+.mntimeline__mark {
+  position: absolute;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  background: var(--text-muted);
+  border-radius: var(--radius-pill);
+  transform: translate(-50%, -50%);
+}
+
+.mntimeline__mark--alert {
+  border-radius: 2px;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.mntimeline__mark--success {
+  background: var(--tone-success-fg);
+}
+
+.mntimeline__mark--failure {
+  background: var(--tone-failure-fg);
+}
+
+.mntimeline__mark--warning {
+  background: var(--tone-warning-fg);
+}
+
+.mntimeline__ends {
+  display: flex;
+  justify-content: space-between;
+  color: var(--text-dim);
+  font-size: var(--font-size-xs);
+}
+
+.mntimeline__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mntimeline__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+}
+
+.mntimeline__when {
+  color: var(--text-dim);
+  font-size: var(--font-size-xs);
+}
+
+.mnstack {
+  margin-top: var(--space-3);
+}
+
+.mnstack__value {
+  color: var(--text-muted);
+}
+
+.mnstack__frames {
+  max-height: 280px;
+  margin: var(--space-2) 0 0;
+  padding: var(--space-2) var(--space-3) var(--space-2) var(--space-6);
+  overflow: auto;
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-xs);
+}
+
+.mnstack__frame {
+  color: var(--text-muted);
+}
+
+.mnstack__frame--app {
+  color: var(--text);
+}
