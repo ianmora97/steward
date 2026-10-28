@@ -7,19 +7,15 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  verify:
-    name: Verify (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        # Both platforms from Milestone 1: a packaging or toolchain problem
-        # should fail here rather than on the day of a release.
-        os: [windows-latest, ubuntu-latest]
+  # Solo en el PR: revisión rápida de código antes de aprobar/mergear.
+  lint:
+    name: Lint
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
@@ -38,16 +34,123 @@ jobs:
       - name: Lint
         run: npm run lint
 
+  # Tras el merge a master: calcula la versión, la escribe en package.json y la sube.
+  version:
+    name: Version
+    if: github.event_name != 'pull_request' && !contains(github.event.head_commit.message, '[skip ci]')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      version: ${{ steps.bump.outputs.version }}
+      sha: ${{ steps.bump.outputs.sha }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Bump version
+        id: bump
+        run: |
+          last=$(git describe --tags --abbrev=0 --match 'v*' 2>/dev/null || true)
+          current=$(node -p "require('./package.json').version")
+
+          if [ -z "$last" ]; then
+            # Primer release: se publica la versión que ya tiene package.json.
+            next="$current"
+          else
+            msgs=$(git log "$last..HEAD" --format='%s%n%b')
+            base="${last#v}"
+            IFS=. read -r major minor patch <<< "$base"
+            if echo "$msgs" | grep -qE '^[a-z]+(\([^)]*\))?!:|^BREAKING CHANGE'; then
+              # En 0.x un cambio incompatible sube el minor, no salta a 1.0.0.
+              if [ "$major" = "0" ]; then minor=$((minor + 1)); patch=0; else major=$((major + 1)); minor=0; patch=0; fi
+            elif echo "$msgs" | grep -qE '^feat(\([^)]*\))?:'; then
+              minor=$((minor + 1)); patch=0
+            else
+              patch=$((patch + 1))
+            fi
+            next="$major.$minor.$patch"
+          fi
+
+          if [ "$next" != "$current" ]; then
+            npm version "$next" --no-git-tag-version --allow-same-version
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add package.json package-lock.json
+            git commit -m "chore(release): v$next [skip ci]"
+            git push origin HEAD:master
+          fi
+
+          echo "version=$next" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  # Instaladores para Windows, Linux y macOS con la versión ya escrita.
+  build:
+    name: Build (${{ matrix.os }})
+    needs: version
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.version.outputs.sha }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
       - name: Build
         run: npm run build
 
       - name: Package
-        run: npx electron-builder --dir
+        run: npx electron-builder --publish never
 
-      - name: Upload packaged app
+      - name: Upload installers
         uses: actions/upload-artifact@v4
         with:
           name: steward-${{ matrix.os }}
-          path: release/
+          path: |
+            release/*.exe
+            release/*.AppImage
+            release/*.dmg
+            release/*.zip
           retention-days: 7
           if-no-files-found: error
+
+  # Tag vX.Y.Z + GitHub Release con los instaladores.
+  release:
+    name: Release
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v${{ needs.version.outputs.version }}" dist/* \
+            --repo "${{ github.repository }}" \
+            --target "${{ needs.version.outputs.sha }}" \
+            --title "Steward v${{ needs.version.outputs.version }}" \
+            --generate-notes

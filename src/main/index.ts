@@ -20,6 +20,7 @@ import { createSecretStore } from './security/secret-store';
 import { createSshService } from './services/ssh.service';
 import { createTerminalService, type TerminalService } from './services/terminal.service';
 import { createUiSettingsService, type UiSettingsService } from './services/ui-settings.service';
+import appIcon from '../../build/icon.png?asset';
 
 const isDev = !app.isPackaged;
 const rendererDevUrl = process.env['ELECTRON_RENDERER_URL'];
@@ -252,6 +253,7 @@ function createWindow(): BrowserWindow {
     show: false,
     backgroundColor: '#0b0e13',
     title: 'Steward',
+    icon: appIcon,
     autoHideMenuBar: true,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),

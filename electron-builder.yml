@@ -8,10 +8,16 @@ files:
   - package.json
 asarUnpack:
   - "**/node_modules/node-pty/**"
+# `npm run package` usa --dir (sin instalador, rápido). CI usa estos targets.
 win:
-  target: dir
+  target: nsis
 linux:
-  target: dir
+  target: AppImage
   category: Development
 mac:
-  target: dir
+  target:
+    - dmg
+    - zip
+  category: public.app-category.developer-tools
+  # Sin certificado de Apple: la app sale sin firmar (Gatekeeper pedirá confirmación).
+  identity: null

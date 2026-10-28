@@ -128,6 +128,9 @@ Categories: **Added** · **Changed** · **Fixed** · **Removed** · **Security**
 - **M4** Tooling: `node-pty` (pseudo-terminals) and `@xterm/xterm` added; the native module is unpacked from the app archive when packaging.
 
 ### Changed
+- **M13** Steward now has its own icon (the shield with a terminal prompt): on the window and taskbar, and in the Windows, Linux and macOS installers.
+- **M13** Tooling: every merge to `master` now bumps the version (`feat:` → minor, `!:`/`BREAKING CHANGE` → breaking, anything else → patch), commits it to `package.json`, builds installers for Windows (`.exe`), Linux (`.AppImage`) and macOS (`.dmg`, `.zip`; unsigned) and publishes them as a GitHub Release tagged `vX.Y.Z`. The first release uses the version already in `package.json`.
+- **M13** Tooling: CI no longer runs the full build twice. A pull request only runs type-check and lint (a quick review before approving); build, packaging and the artifact run once, after the merge to `master`.
 - **M12** The tab bar's **+** menu can add *Monitoring*; existing projects get the tab hidden until you add it (database migrations 21 and 22).
 - **M11.5** Database: migration 20 adds an `icon` to environments (existing environments stay automatic).
 - **M11.5** The selected project in the sidebar is marked in its own colour (red project, red highlight) instead of always blue, with text that stays readable on light colours.
