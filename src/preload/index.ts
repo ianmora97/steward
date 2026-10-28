@@ -1,10 +1,11 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type { DockerLogEndEvent, DockerLogEvent } from '@shared/schemas/docker';
+import type { CheckFinishedEvent } from '@shared/schemas/cloud';
 import type { LiveLogsEndEvent, LiveLogsEvent } from '@shared/schemas/observability';
 import type { RedisMessageEvent, RedisSubscriptionEndEvent } from '@shared/schemas/redis';
 import type { TerminalDataEvent, TerminalExitEvent } from '@shared/schemas/terminal';
 import type { ZoomState } from '@shared/schemas/ui';
-import { DOCKER_EVENTS, IPC_CHANNELS, OBSERVABILITY_EVENTS, REDIS_EVENTS, TERMINAL_EVENTS, UI_EVENTS, type StewardApi } from '@shared/types/ipc';
+import { CLOUD_EVENTS, DOCKER_EVENTS, IPC_CHANNELS, OBSERVABILITY_EVENTS, REDIS_EVENTS, TERMINAL_EVENTS, UI_EVENTS, type StewardApi } from '@shared/types/ipc';
 
 /**
  * The entire bridge between the renderer and the main process.
@@ -282,6 +283,19 @@ const api: StewardApi = {
     investigate: (input) => invoke(IPC_CHANNELS.observabilityInvestigate, input),
     sentryIssues: (input) => invoke(IPC_CHANNELS.observabilitySentryIssues, input),
     sentryEvent: (input) => invoke(IPC_CHANNELS.observabilitySentryEvent, input)
+  },
+  cloud: {
+    listDomains: (input) => invoke(IPC_CHANNELS.domainsList, input),
+    createDomain: (input) => invoke(IPC_CHANNELS.domainsCreate, input),
+    updateDomain: (input) => invoke(IPC_CHANNELS.domainsUpdate, input),
+    removeDomain: (input) => invoke(IPC_CHANNELS.domainsDelete, input),
+    listChecks: (input) => invoke(IPC_CHANNELS.checksList, input),
+    createCheck: (input) => invoke(IPC_CHANNELS.checksCreate, input),
+    updateCheck: (input) => invoke(IPC_CHANNELS.checksUpdate, input),
+    removeCheck: (input) => invoke(IPC_CHANNELS.checksDelete, input),
+    runCheck: (input) => invoke(IPC_CHANNELS.checksRunNow, input),
+    checkResults: (input) => invoke(IPC_CHANNELS.checksResults, input),
+    onCheckFinished: (listener) => subscribe<CheckFinishedEvent>(CLOUD_EVENTS.checkFinished, listener)
   }
 };
 

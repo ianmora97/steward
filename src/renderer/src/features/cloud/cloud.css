@@ -1,0 +1,183 @@
+.panel.cdpage {
+  gap: var(--space-4);
+  max-width: 1100px;
+}
+
+.cdsection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.cdsection__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.cdsection__bar .card__hint {
+  margin: 0;
+}
+
+.cdlist {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.cdmono {
+  font-family: var(--font-mono);
+}
+
+.cdform {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: 0 var(--space-5) var(--space-5);
+}
+
+.cdrow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-3);
+}
+
+.cdchecks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.cddomainhead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.cddomainhead__name {
+  margin: 0;
+  font-size: var(--font-size-lg, 1.05rem);
+}
+
+.cdcheck__title {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.cdcheck__target {
+  color: var(--text-muted);
+  font-weight: 400;
+  word-break: break-all;
+}
+
+.cdcheck__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.cdcheck__summary {
+  margin: 0 0 var(--space-3);
+}
+
+.cdswitch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.cddetail {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: var(--space-2) var(--space-4);
+  margin: 0 0 var(--space-3);
+}
+
+.cddetail dt {
+  color: var(--text-muted);
+}
+
+.cddetail dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.cdlines {
+  display: block;
+  white-space: pre-wrap;
+}
+
+.cdchain {
+  margin: 0;
+  padding-left: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.cdhistory {
+  margin-top: var(--space-3);
+}
+
+.cdhistory__title {
+  margin: 0 0 var(--space-2);
+  font-size: inherit;
+  color: var(--text-muted);
+}
+
+.cdhistory__list {
+  list-style: none;
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.cdhistory__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.cdhistory__summary {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cdhistory__row .card__hint {
+  margin: 0;
+  white-space: nowrap;
+}
+
+.cdtypes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.cdtype {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+/* A domain's own actions, next to its checks. */
+.cddomainhead__actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-2);
+}

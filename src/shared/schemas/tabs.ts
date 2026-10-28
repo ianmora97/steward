@@ -55,7 +55,7 @@ export const OPTIONAL_TAB_KEYS: readonly TabKey[] = ['ssh', 'deployments', 'dock
 
 /** What each optional tab is for, shown in the **+** menu. */
 export const TAB_DESCRIPTIONS: Partial<Record<TabKey, string>> = {
-  ssh: 'SSH access to your servers and their status',
+  ssh: 'Your servers, their domains and uptime checks, by environment',
   deployments: 'Environments, deploy targets and history',
   docker: 'Containers, images and Compose',
   mongodb: 'Browse and edit MongoDB databases',

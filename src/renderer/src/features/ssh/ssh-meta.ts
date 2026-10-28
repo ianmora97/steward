@@ -87,6 +87,9 @@ function rank(environment: string): number {
   return index === -1 ? KNOWN_ORDER.length : index;
 }
 
+/** Where an environment sits in the familiar order (prod first); unknown names share the rank after them. */
+export const environmentRank = rank;
+
 export interface EnvironmentGroup {
   /** null = the connections that have no environment yet. */
   environment: string | null;

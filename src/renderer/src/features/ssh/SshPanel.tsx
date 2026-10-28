@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { DomainSummary } from '@shared/schemas/cloud';
 import type { Environment } from '@shared/schemas/environments';
 import type { Execution } from '@shared/schemas/git';
 import type { SshHost } from '@shared/schemas/ssh';
@@ -8,7 +9,12 @@ import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { ErrorBanner } from '../../components/ErrorBanner';
 import { Icon } from '../../components/Icon';
 import { useAppStore } from '../../stores/app.store';
+import { useCloudStore } from '../../stores/cloud.store';
 import { useTerminalStore } from '../../stores/terminal.store';
+import { DomainDetail } from '../cloud/DomainDetail';
+import { DomainDialog } from '../cloud/DomainDialog';
+import { useCloudFeed } from '../cloud/useCloudFeed';
+import '../cloud/cloud.css';
 import { ConnectionEditor, type HostFields } from './ConnectionEditor';
 import { ConnectionList } from './ConnectionList';
 import { HostKeyReview } from './SshSession';
@@ -22,6 +28,10 @@ import { toast } from '../../stores/toast.store';
 
 const REFRESH_MS = 5000;
 const NO_SESSIONS: TerminalSession[] = [];
+const NO_DOMAINS: DomainSummary[] = [];
+
+/** The tab shows one thing at a time: the map of environments, one connection, or one domain with its checks. */
+type View = { kind: 'home' } | { kind: 'server' } | { kind: 'domain'; id: string };
 
 export function SshPanel(): React.JSX.Element {
   const projectId = useAppStore((state) => state.selectedProjectId);
@@ -33,6 +43,13 @@ export function SshPanel(): React.JSX.Element {
     projectId === null ? NO_SESSIONS : (state.sessionsByProject[projectId] ?? NO_SESSIONS)
   );
 
+  useCloudFeed(projectId);
+  const domains = useCloudStore((state) => (projectId === null ? undefined : state.domains[projectId])) ?? NO_DOMAINS;
+  const cloudError = useCloudStore((state) => state.error);
+  const dismissCloudError = useCloudStore((state) => state.dismissError);
+  const upsertDomain = useCloudStore((state) => state.upsert);
+  const loadDomains = useCloudStore((state) => state.load);
+
   const [hosts, setHosts] = useState<SshHost[]>([]);
   const [environments, setEnvironments] = useState<Environment[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -42,7 +59,9 @@ export function SshPanel(): React.JSX.Element {
   const [reviewing, setReviewing] = useState<SshHost | null>(null);
   const [deleting, setDeleting] = useState<SshHost | null>(null);
   const [testing, setTesting] = useState<ReadonlySet<string>>(new Set());
-  const [view, setView] = useState<'home' | 'connections'>('home');
+  const [view, setView] = useState<View>({ kind: 'home' });
+  // The "add a domain" dialog, with the server it will belong to when it was asked for from a server's card.
+  const [addingDomain, setAddingDomain] = useState<{ sshHostId: string | null } | null>(null);
   const [now, setNow] = useState(() => Date.now());
 
   const markChecking = useCallback((id: string, on: boolean): void => {
@@ -171,14 +190,28 @@ export function SshPanel(): React.JSX.Element {
     if (await createRemote(projectId as string, host.id)) setActiveTab('terminal');
   }
 
-  /** Every connection, three at a time: a slow or dead one must not hold up the rest, nor open dozens of ssh at once. */
+  /** The active checks of every domain, so "Check all" also says what the sites are doing right now. */
+  async function runDomainChecks(): Promise<number> {
+    const lists = await Promise.all(domains.map((domain) => window.steward.cloud.listChecks({ domainId: domain.id })));
+    const queue = lists.flatMap((result) => (result.success ? result.data.filter((check) => check.enabled) : []));
+    const worker = async (): Promise<void> => {
+      // The results reach the lists through the finished-check events, so nothing is kept here.
+      for (let check = queue.shift(); check !== undefined; check = queue.shift()) await window.steward.cloud.runCheck({ id: check.id });
+    };
+    const total = queue.length;
+    await Promise.all([worker(), worker(), worker()]);
+    return total;
+  }
+
+  /** Every connection and every check, three at a time: a slow or dead one must not hold up the rest. */
   async function testAll(): Promise<void> {
     const queue = [...hosts];
     const worker = async (): Promise<void> => {
       for (let host = queue.shift(); host !== undefined; host = queue.shift()) await test(host, false);
     };
-    await Promise.all([worker(), worker(), worker()]);
-    toast.info(`${hosts.length} connection${hosts.length === 1 ? '' : 's'} checked`);
+    const [, checksRun] = await Promise.all([Promise.all([worker(), worker(), worker()]), runDomainChecks()]);
+    const servers = `${hosts.length} connection${hosts.length === 1 ? '' : 's'}`;
+    toast.info(checksRun === 0 ? `${servers} checked` : `${servers} and ${checksRun} check${checksRun === 1 ? '' : 's'} run`);
   }
 
   async function save(fields: HostFields): Promise<StewardError | null> {
@@ -203,42 +236,45 @@ export function SshPanel(): React.JSX.Element {
     toast.success('Connection removed');
     setSelection(null);
     setHistory([]);
-    await reload();
+    setView({ kind: 'home' });
+    // Its domains are still there, now without a server: they move to the "Without a server" card.
+    await Promise.all([reload(), loadDomains(projectId as string)]);
   }
 
   return (
     <div className="panel sshpage">
       {error !== null && <ErrorBanner error={error} onDismiss={() => setError(null)} />}
+      {cloudError !== null && <ErrorBanner error={cloudError} onDismiss={dismissCloudError} />}
 
       <header className="sshpage__head">
         <div>
           <h2 className="sshpage__title">
-            VPC connections
+            VPC
             {hosts.some((host) => host.provider === 'aws') && <ProviderLogo provider="aws" height={26} />}
           </h2>
           <p className="sshpage__subtitle">
-            Manage SSH access to your instances and bastion hosts, organized by environment.
+            Your servers and the domains they serve, organized by environment: SSH access, whether they answer, and uptime checks.
           </p>
         </div>
-        <Button variant="primary" onClick={() => {
-            setSelection('new');
-            setView('connections');
-          }}>
-          <Icon name="plus" size={14} /> New connection
-        </Button>
+        <div className="sshpage__headactions">
+          {view.kind !== 'home' && (
+            <Button icon="chevronLeft" onClick={() => setView({ kind: 'home' })}>
+              Back to VPC
+            </Button>
+          )}
+          <Button variant="primary" onClick={() => {
+              setSelection('new');
+              setView({ kind: 'server' });
+            }}>
+            <Icon name="plus" size={14} /> New connection
+          </Button>
+        </div>
       </header>
 
-      <nav className="subtabs" aria-label="VPC sections">
-        {(['home', 'connections'] as const).map((value) => (
-          <button key={value} type="button" className={`subtabs__tab${view === value ? ' subtabs__tab--active' : ''}`} onClick={() => setView(value)}>
-            {value === 'home' ? 'Home' : 'Connections'}
-          </button>
-        ))}
-      </nav>
-
-      {loaded && view === 'home' && (
+      {loaded && view.kind === 'home' && (
         <VpcHome
           hosts={hosts}
+          domains={domains}
           environments={environments}
           activeHostIds={activeHostIds}
           checking={testing}
@@ -248,16 +284,22 @@ export function SshPanel(): React.JSX.Element {
           onConnect={(host) => void connect(host)}
           onManage={(host) => {
             setSelection(host.id);
-            setView('connections');
+            setView({ kind: 'server' });
           }}
           onNew={() => {
             setSelection('new');
-            setView('connections');
+            setView({ kind: 'server' });
           }}
+          onOpenDomain={(domainId) => setView({ kind: 'domain', id: domainId })}
+          onAddDomain={(sshHostId) => setAddingDomain({ sshHostId })}
         />
       )}
 
-      {loaded && view === 'connections' && (
+      {loaded && view.kind === 'domain' && (
+        <DomainDetail projectId={projectId} domainId={view.id} onBack={() => setView({ kind: 'home' })} />
+      )}
+
+      {loaded && view.kind === 'server' && (
         <div className="sshpage__body">
           <ConnectionList hosts={hosts} activeHostIds={activeHostIds} selection={effective} onSelect={setSelection} />
           <ConnectionEditor
@@ -295,6 +337,20 @@ export function SshPanel(): React.JSX.Element {
           onDone={(updated) => {
             setReviewing(null);
             replaceHost(updated);
+          }}
+        />
+      )}
+
+      {addingDomain !== null && (
+        <DomainDialog
+          projectId={projectId}
+          existing={null}
+          sshHostId={addingDomain.sshHostId}
+          onClose={() => setAddingDomain(null)}
+          onSaved={(saved) => {
+            setAddingDomain(null);
+            upsertDomain(saved);
+            // Its checks start within seconds; the cards follow through the finished-check events.
           }}
         />
       )}
