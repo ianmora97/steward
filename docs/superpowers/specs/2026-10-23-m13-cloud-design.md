@@ -18,7 +18,9 @@ Ver desde Steward cómo están las aplicaciones que ya corren en producción: qu
 | Monitoreo continuo | Los checks corren **mientras Steward está abierto**. No es un monitor 24/7 y la UI lo dice. |
 | Fuera de alcance | Crear o destruir infraestructura, ECS/EKS/RDS/S3/Lambda (posible 13.5), costos, IAM, security groups en escritura. |
 
-## 1. Datos (m021–m023)
+## 1. Datos (m023–m026)
+
+> Numeración corregida el 2026-10-27: m021 y m022 ya son de M12. m023 (13.1) crea `domains`, `endpoint_checks`, `check_results` y la pestaña; m024 quita la pestaña `cloud` (ver abajo); m025 (13.1) añade `domains.ssh_host_id` para que cada dominio cuelgue de su servidor; m026 (13.2) crea `cloud_accounts` y añade `domains.cloud_account_id`; m027 queda reservada. `check_results` guarda `status` (`ok` / `warn` / `fail`) en lugar de `ok INTEGER`, porque TLS tiene un estado intermedio.
 
 ```
 cloud_accounts(id PK, project_id FK→projects ON DELETE CASCADE,
@@ -30,7 +32,8 @@ cloud_accounts(id PK, project_id FK→projects ON DELETE CASCADE,
 
 domains(id PK, project_id FK, environment_id FK NULL ON DELETE SET NULL,
         repository_id FK NULL ON DELETE SET NULL,
-        cloud_account_id FK NULL ON DELETE SET NULL,
+        ssh_host_id FK→ssh_hosts NULL ON DELETE SET NULL,  -- m025: el servidor que lo sirve; NULL = CDN, estático, otro proveedor
+        cloud_account_id FK NULL ON DELETE SET NULL,   -- se añade en m026 (13.2): cloud_accounts aún no existe en m023
         hostname,                    -- validado como nombre DNS, minúsculas, sin esquema ni ruta
         notes, created_at, updated_at)
         UNIQUE(project_id, hostname)
@@ -42,13 +45,14 @@ endpoint_checks(id PK, project_id FK, domain_id FK NULL ON DELETE CASCADE,
                 interval_seconds, enabled INTEGER, created_at, updated_at)
 
 check_results(id PK, check_id FK→endpoint_checks ON DELETE CASCADE,
-              ts, ok INTEGER, latency_ms NULL, summary, detail_json)
+              ts, status CHECK IN ('ok','warn','fail'), latency_ms NULL, summary, detail_json)
               -- retención: 7 días y 2000 filas por check, podado al escribir
 ```
 
 - Secretos de cuentas (access key de AWS, token de Cloudflare) en `secret-store` por id de cuenta, como en M10–M12. Un perfil de AWS no guarda secreto: solo el nombre.
 - `ssh_hosts` ya tiene `ip_address`, `domain`, `provider`, `region`, `vpc_*` (m008–m009): sirven para enlazar infraestructura con servidores sin duplicar datos.
-- m021: `domains`, `endpoint_checks`, `check_results`, pestaña `cloud`. m022: `cloud_accounts`. m023: reservada para ajustes de 13.3–13.5.
+- m023: `domains`, `endpoint_checks`, `check_results`. m024: quita la fila de pestaña `cloud` que un desarrollo intermedio de m023 llegó a crear (los dominios viven en la pestaña VPC, sin pestaña propia). m025: `domains.ssh_host_id`, con relleno inicial para los dominios cuyo nombre ya coincide con el campo `domain` de una conexión del mismo proyecto. m026: `cloud_accounts` y `domains.cloud_account_id` (13.2). m027: reservada para ajustes de 13.3–13.5.
+- Un dominio sin entorno propio hereda el de su servidor al crearlo; borrar el servidor deja el dominio sin servidor (no lo borra).
 
 ## 2. Servicios en main
 
@@ -108,7 +112,11 @@ La UI lo muestra en columnas (listas conectadas, sin grafo de fuerzas) y marca l
 
 ## 3. UI (`features/cloud/`, `stores/cloud.store.ts`)
 
-- **Domains:** lista del proyecto con hostname, entorno, repositorio y **dos `Pill`** (conexión / operativo), días hasta caducidad del certificado, última latencia y proxy detectado. Detalle con resultados recientes de cada check (mini-gráfica de latencia) y registros DNS actuales.
+> Cambio del 2026-10-27: **no hay pestaña Cloud ni subpestañas.** La pestaña **VPC** es una sola vista de infraestructura: servidores, dominios y monitoreo juntos. Agrupa por entorno; cada servidor es una tarjeta y dentro de ella van los dominios que sirve; los dominios sin servidor tienen una tarjeta "Without a server" en su entorno. Desde la tarjeta se abre, en el mismo sitio y con "Back to VPC", el detalle del servidor (configuración e historial) o el del dominio (checks, gráfica e historial). Lo que llegue en 13.2–13.5 (cuentas, inventario, mapa, métricas, editor de DNS) se añade a esa misma vista.
+
+- **Dominio dentro de la tarjeta:** una fila por dominio con tres luces (DNS / certificado / página), hostname, días de certificado, latencia, cuándo se comprobó y su estado operativo. El botón **+** de la tarjeta añade un dominio ya enlazado a ese servidor.
+- **Detalle del dominio:** un `Card` por check con el último resultado según su tipo, gráfica de latencia con los fallos marcados e historial; desde ahí se edita o se borra el propio dominio.
+- **Resumen:** la cabecera cuenta servidores (alcanzable / atención / caído / sin comprobar) y, debajo, dominios (healthy / degraded / failing / sin comprobar). *Check all* comprueba los servidores y lanza además los checks activos de los dominios.
 - **Checks:** crear con plantillas (*HTTPS + certificado + DNS* con un clic al registrar un dominio), ejecutar ahora, historial.
 - **Accounts:** alta de AWS (perfil/region o access key) y Cloudflare (token), *Test connection*, política mínima copiable.
 - **Inventory:** pestañas AWS (Instances, Load balancers, CloudFront, Certificates, Route 53) y Cloudflare (Zones, DNS), con filtros y enlaces "abrir en la consola".

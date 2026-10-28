@@ -1,10 +1,11 @@
 import { join } from 'node:path';
 import { BrowserWindow, app, dialog, safeStorage, shell } from 'electron';
-import { DOCKER_EVENTS, OBSERVABILITY_EVENTS, REDIS_EVENTS, TERMINAL_EVENTS, UI_EVENTS, type AppInfo, type DirectoryPick } from '@shared/types/ipc';
+import { CLOUD_EVENTS, DOCKER_EVENTS, OBSERVABILITY_EVENTS, REDIS_EVENTS, TERMINAL_EVENTS, UI_EVENTS, type AppInfo, type DirectoryPick } from '@shared/types/ipc';
 import { openStewardDatabase, type StewardDatabase } from './db/connection';
 import { registerIpcHandlers } from './ipc/register';
 import { validateExistingDirectory, validateExistingFile } from './security/paths';
 import { getGitVersion } from './services/git.service';
+import { createCloudService, type CloudService } from './services/cloud.service';
 import { createDeploymentService } from './services/deployment.service';
 import { createDockerExec } from './services/docker-exec';
 import { createDockerService, type DockerService } from './services/docker.service';
@@ -30,6 +31,7 @@ let docker: DockerService | null = null;
 let mongo: MongoService | null = null;
 let redis: RedisService | null = null;
 let observability: ObservabilityService | null = null;
+let cloud: CloudService | null = null;
 let ui: UiSettingsService | null = null;
 
 function databaseFilePath(): string {
@@ -389,6 +391,11 @@ function startup(): void {
     emitLogsEnd: (event) => sendToWindow(OBSERVABILITY_EVENTS.logsEnd, event)
   });
 
+  cloud = createCloudService({
+    db: database.db,
+    emitCheckFinished: (event) => sendToWindow(CLOUD_EVENTS.checkFinished, event)
+  });
+
   ui = createUiSettingsService({
     db: database.db,
     apply: (zoom) => mainWindow?.webContents.setZoomFactor(zoom / 100),
@@ -407,6 +414,7 @@ function startup(): void {
     mongo,
     redis,
     observability,
+    cloud,
     ui,
     readAppInfo,
     pickDirectory,
@@ -448,6 +456,7 @@ if (!app.requestSingleInstanceLock()) {
     void mongo?.shutdown();
     void redis?.shutdown();
     observability?.shutdown();
+    cloud?.shutdown();
     try {
       database?.db.close();
     } catch (error) {

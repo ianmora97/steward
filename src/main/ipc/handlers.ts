@@ -149,6 +149,18 @@ import {
   sentryIssuesInputSchema
 } from '@shared/schemas/observability';
 import {
+  checkIdInputSchema,
+  checkResultsInputSchema,
+  createCheckInputSchema,
+  createDomainInputSchema,
+  deleteCheckInputSchema,
+  deleteDomainInputSchema,
+  listChecksInputSchema,
+  listDomainsInputSchema,
+  updateCheckInputSchema,
+  updateDomainInputSchema
+} from '@shared/schemas/cloud';
+import {
   environmentCreateInputSchema,
   environmentIdInputSchema,
   environmentListInputSchema,
@@ -250,6 +262,7 @@ import {
 import type { DeploymentService } from '../services/deployment.service';
 import type { DockerService } from '../services/docker.service';
 import type { MongoService } from '../services/mongo.service';
+import type { CloudService } from '../services/cloud.service';
 import type { ObservabilityService } from '../services/observability.service';
 import type { RedisService } from '../services/redis.service';
 import type { UiSettingsService } from '../services/ui-settings.service';
@@ -288,6 +301,7 @@ export interface IpcContext {
   mongo: MongoService;
   redis: RedisService;
   observability: ObservabilityService;
+  cloud: CloudService;
   ui: UiSettingsService;
   /** Supplied by the Electron layer; see src/main/index.ts. */
   readAppInfo: () => Promise<AppInfo>;
@@ -407,6 +421,7 @@ export function buildHandlerDefinitions(context: IpcContext): IpcHandlerDefiniti
         await context.mongo.purgeProject(input.id);
         await context.redis.purgeProject(input.id);
         context.observability.purgeProject(input.id);
+        context.cloud.purgeProject(input.id);
         // The row would cascade away, but the encrypted token file would stay behind.
         context.github.purgeProject(input.id);
         return deleteProject(db, input.id);
@@ -1405,6 +1420,57 @@ export function buildHandlerDefinitions(context: IpcContext): IpcHandlerDefiniti
       channel: IPC_CHANNELS.observabilitySentryEvent,
       schema: sentryEventInputSchema,
       handle: (input) => context.observability.sentryEvent(input)
+    }),
+
+    defineHandler({
+      channel: IPC_CHANNELS.domainsList,
+      schema: listDomainsInputSchema,
+      handle: (input) => context.cloud.listDomains(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.domainsCreate,
+      schema: createDomainInputSchema,
+      handle: (input) => context.cloud.createDomain(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.domainsUpdate,
+      schema: updateDomainInputSchema,
+      handle: (input) => context.cloud.updateDomain(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.domainsDelete,
+      schema: deleteDomainInputSchema,
+      handle: (input) => context.cloud.removeDomain(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.checksList,
+      schema: listChecksInputSchema,
+      handle: (input) => context.cloud.listChecks(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.checksCreate,
+      schema: createCheckInputSchema,
+      handle: (input) => context.cloud.createCheck(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.checksUpdate,
+      schema: updateCheckInputSchema,
+      handle: (input) => context.cloud.updateCheck(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.checksDelete,
+      schema: deleteCheckInputSchema,
+      handle: (input) => context.cloud.removeCheck(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.checksRunNow,
+      schema: checkIdInputSchema,
+      handle: (input) => context.cloud.runCheck(input)
+    }),
+    defineHandler({
+      channel: IPC_CHANNELS.checksResults,
+      schema: checkResultsInputSchema,
+      handle: (input) => context.cloud.checkResults(input)
     })
   ];
 }

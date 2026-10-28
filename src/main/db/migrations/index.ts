@@ -693,6 +693,93 @@ const m022: Migration = {
   `
 };
 
+/**
+ * Domains of a project and the checks that watch them (DNS, TLS, HTTP; TCP and ping later), with their recent
+ * results. Nothing here is secret: a check only reads what any visitor can see. `status` has a middle value
+ * ('warn') for a certificate that is close to expiring. Domains live inside the VPC tab, so there is no tab of
+ * their own.
+ */
+const m023: Migration = {
+  version: 23,
+  name: 'cloud-domains-and-checks',
+  sql: `
+    CREATE TABLE domains (
+      id             TEXT NOT NULL PRIMARY KEY,
+      project_id     TEXT NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+      environment_id TEXT REFERENCES environments (id) ON DELETE SET NULL,
+      repository_id  TEXT REFERENCES repositories (id) ON DELETE SET NULL,
+      hostname       TEXT NOT NULL,
+      notes          TEXT NOT NULL DEFAULT '',
+      created_at     TEXT NOT NULL,
+      updated_at     TEXT NOT NULL,
+      UNIQUE (project_id, hostname)
+    );
+
+    CREATE INDEX idx_domains_project ON domains (project_id);
+
+    CREATE TABLE endpoint_checks (
+      id               TEXT NOT NULL PRIMARY KEY,
+      project_id       TEXT NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+      domain_id        TEXT REFERENCES domains (id) ON DELETE CASCADE,
+      kind             TEXT NOT NULL CHECK (kind IN ('dns', 'tls', 'http', 'tcp', 'ping')),
+      target           TEXT NOT NULL,
+      config_json      TEXT NOT NULL,
+      interval_seconds INTEGER NOT NULL CHECK (interval_seconds >= 30),
+      enabled          INTEGER NOT NULL DEFAULT 1 CHECK (enabled IN (0, 1)),
+      created_at       TEXT NOT NULL,
+      updated_at       TEXT NOT NULL
+    );
+
+    CREATE INDEX idx_endpoint_checks_project ON endpoint_checks (project_id);
+    CREATE INDEX idx_endpoint_checks_domain ON endpoint_checks (domain_id);
+
+    CREATE TABLE check_results (
+      id          TEXT NOT NULL PRIMARY KEY,
+      check_id    TEXT NOT NULL REFERENCES endpoint_checks (id) ON DELETE CASCADE,
+      ts          TEXT NOT NULL,
+      status      TEXT NOT NULL CHECK (status IN ('ok', 'warn', 'fail')),
+      latency_ms  INTEGER,
+      summary     TEXT NOT NULL,
+      detail_json TEXT NOT NULL
+    );
+
+    CREATE INDEX idx_check_results_check ON check_results (check_id, ts DESC);
+  `
+};
+
+/**
+ * A Cloud tab existed for a moment during development of m023; domains ended up inside the VPC tab. Databases
+ * that already ran that version still carry its hidden tab row, which the tab list no longer understands.
+ */
+const m024: Migration = {
+  version: 24,
+  name: 'drop-cloud-tab',
+  sql: `DELETE FROM workspace_tabs WHERE tab_key = 'cloud';`
+};
+
+/**
+ * A domain belongs to the server that serves it, so the VPC tab can show both together instead of in two lists.
+ * Domains that already name the domain of a connection are linked to it; the rest stay without a server, which
+ * is right for a CDN or a static site.
+ */
+const m025: Migration = {
+  version: 25,
+  name: 'domains-on-ssh-hosts',
+  sql: `
+    ALTER TABLE domains ADD COLUMN ssh_host_id TEXT REFERENCES ssh_hosts (id) ON DELETE SET NULL;
+
+    CREATE INDEX idx_domains_ssh_host ON domains (ssh_host_id);
+
+    UPDATE domains SET ssh_host_id = (
+      SELECT ssh_hosts.id FROM ssh_hosts
+      WHERE ssh_hosts.project_id = domains.project_id
+        AND lower(ssh_hosts.domain) = domains.hostname
+      ORDER BY ssh_hosts.id
+      LIMIT 1
+    );
+  `
+};
+
 export const MIGRATIONS: readonly Migration[] = [
   m001,
   m002,
@@ -715,7 +802,10 @@ export const MIGRATIONS: readonly Migration[] = [
   m019,
   m020,
   m021,
-  m022
+  m022,
+  m023,
+  m024,
+  m025
 ];
 
 export const LATEST_SCHEMA_VERSION = MIGRATIONS.reduce((max, m) => Math.max(max, m.version), 0);

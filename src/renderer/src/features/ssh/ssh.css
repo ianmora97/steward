@@ -876,3 +876,11 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* The VPC header: going back to the map, and adding a connection, never on two lines. */
+.sshpage__headactions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-2);
+}

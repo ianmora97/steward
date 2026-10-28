@@ -298,6 +298,23 @@ import type {
   SentryIssuesInput,
   SentryIssuesResult
 } from '../schemas/observability';
+import type {
+  Check,
+  CheckFinishedEvent,
+  CheckIdInput,
+  CheckResult,
+  CheckResultsInput,
+  CreateCheckInput,
+  CreateDomainInput,
+  CreateDomainResult,
+  DeleteCheckInput,
+  DeleteDomainInput,
+  DomainSummary,
+  ListChecksInput,
+  ListDomainsInput,
+  UpdateCheckInput,
+  UpdateDomainInput
+} from '../schemas/cloud';
 
 /**
  * Every channel Steward exposes, enumerated.
@@ -526,7 +543,17 @@ export const IPC_CHANNELS = {
   observabilitySignalsPreview: 'observability:signals:preview',
   observabilityInvestigate: 'observability:investigate',
   observabilitySentryIssues: 'observability:sentry:issues',
-  observabilitySentryEvent: 'observability:sentry:event'
+  observabilitySentryEvent: 'observability:sentry:event',
+  domainsList: 'domains:list',
+  domainsCreate: 'domains:create',
+  domainsUpdate: 'domains:update',
+  domainsDelete: 'domains:delete',
+  checksList: 'checks:list',
+  checksCreate: 'checks:create',
+  checksUpdate: 'checks:update',
+  checksDelete: 'checks:delete',
+  checksRunNow: 'checks:runNow',
+  checksResults: 'checks:results'
 } as const;
 
 /**
@@ -552,6 +579,10 @@ export const REDIS_EVENTS = {
 export const OBSERVABILITY_EVENTS = {
   logs: 'observability:logs-live',
   logsEnd: 'observability:logs-live-end'
+} as const;
+
+export const CLOUD_EVENTS = {
+  checkFinished: 'cloud:check-finished'
 } as const;
 
 export const UI_EVENTS = {
@@ -891,5 +922,26 @@ export interface StewardApi {
     sentryIssues: (input: SentryIssuesInput) => Promise<StewardResult<SentryIssuesResult>>;
     /** The latest event of an issue with its stack trace, redacted and capped. */
     sentryEvent: (input: SentryEventInput) => Promise<StewardResult<SentryEvent>>;
+  };
+  /** Domains and the checks that watch them. Checks only read what any visitor can see: they resolve, connect and request. */
+  cloud: {
+    listDomains: (input: ListDomainsInput) => Promise<StewardResult<DomainSummary[]>>;
+    /** The name is normalized in main; anything that is not a plain domain name is rejected with `CHECK_INVALID_TARGET`. */
+    createDomain: (input: CreateDomainInput) => Promise<StewardResult<CreateDomainResult>>;
+    updateDomain: (input: UpdateDomainInput) => Promise<StewardResult<DomainSummary>>;
+    /** Also deletes the domain's checks and their history. */
+    removeDomain: (input: DeleteDomainInput) => Promise<StewardResult<{ id: string }>>;
+    listChecks: (input: ListChecksInput) => Promise<StewardResult<Check[]>>;
+    /** At most 20 active checks per project (`CHECK_LIMIT`). The address is built in main from the domain. */
+    createCheck: (input: CreateCheckInput) => Promise<StewardResult<Check>>;
+    updateCheck: (input: UpdateCheckInput) => Promise<StewardResult<Check>>;
+    /** Also deletes the check's history. */
+    removeCheck: (input: DeleteCheckInput) => Promise<StewardResult<{ id: string }>>;
+    /** Runs a check now and answers with its result; the same limit of four at a time applies. */
+    runCheck: (input: CheckIdInput) => Promise<StewardResult<CheckResult>>;
+    /** Newest first. */
+    checkResults: (input: CheckResultsInput) => Promise<StewardResult<CheckResult[]>>;
+    /** Fires each time a check finishes, whoever started it. */
+    onCheckFinished: (listener: (event: CheckFinishedEvent) => void) => () => void;
   };
 }

@@ -500,3 +500,198 @@
     transform: scaleX(0);
   }
 }
+
+/* Domain counters next to the servers', in the fleet panel. */
+.vpcdomstats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px dashed var(--border);
+}
+
+.vpcdomstats__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted);
+  font-size: var(--font-size-2xs);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.vpcdomstat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px;
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
+  white-space: nowrap;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+}
+
+.vpcdomstat strong {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.vpcdomstat--failing {
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--border));
+}
+
+.vpcdomstat--degraded {
+  border-color: color-mix(in srgb, var(--warn) 45%, var(--border));
+}
+
+/* The domains of a card: inside the server that serves them, under its facts. */
+.vpcdomains {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 10px;
+  border-top: 1px dashed #18233a;
+}
+
+.vpcdomains__head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-dim);
+}
+
+.vpcdomains__title {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--font-size-2xs);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.vpcdomains__empty {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: var(--font-size-xs);
+}
+
+/* One domain: its three checks as dots, then the name, how it answered and what it is doing. */
+.vpcdom {
+  --st: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 8px 7px 10px;
+  color: var(--text);
+  text-align: left;
+  background: #04070e;
+  border: 1px solid #141d31;
+  border-left: 2px solid var(--st);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition:
+    border-color var(--dur-base) var(--ease-out),
+    background var(--dur-base) var(--ease-out);
+}
+
+.vpcdom:hover {
+  background: #070d1a;
+  border-color: color-mix(in srgb, var(--st) 45%, #141d31);
+  border-left-color: var(--st);
+}
+
+.vpcdom--healthy {
+  --st: var(--ok);
+}
+
+.vpcdom--degraded {
+  --st: var(--warn);
+}
+
+.vpcdom--failing {
+  --st: var(--danger);
+}
+
+.vpcdom__dots {
+  display: inline-flex;
+  flex: none;
+  gap: 3px;
+}
+
+.vpcdom__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.vpcdom__name {
+  overflow: hidden;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vpcdom__facts {
+  overflow: hidden;
+  color: var(--text-dim);
+  font-size: var(--font-size-2xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vpcdom__badges {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.vpcdom .icon {
+  flex: none;
+  color: var(--text-dim);
+}
+
+/* The domains of an environment that are on no server of the project. */
+.vpccard--loose {
+  --st: var(--text-dim);
+  background: linear-gradient(180deg, #0a1020 0%, #060a14 100%);
+  border-style: dashed;
+}
+
+.vpccard__globe {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  color: var(--text-muted);
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.vpccard__name--plain {
+  cursor: default;
+}
+
+.vpcnote {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.vpcnote .card__hint {
+  margin: 0;
+}
